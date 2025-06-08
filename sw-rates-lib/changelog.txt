@@ -1,0 +1,10 @@
+---------------------------------------------------------------------------------------------------
+Version: 0.1.0
+Date: xxxx-xx-xx
+  Features:
+    - Get configuration of LuaEntity
+    - Supports ghosts of all kinds (marked for deconstruction, marked for upgrade, module removal & insertion plans)
+    - Enhance configurations with selection of fuel and fluid temperatures
+    - Check multiple configurations for equality
+    - Calculate production rates of configuration
+    - Use modifiers for LuaSurface and LuaForce

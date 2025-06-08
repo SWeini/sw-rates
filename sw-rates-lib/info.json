@@ -1,0 +1,13 @@
+{
+  "name": "sw-rates-lib",
+  "version": "0.1.0",
+  "factorio_version": "2.0",
+  "title": "Production Rates Library",
+  "author": "SWeini",
+  "description": "Calculating production rates was never easier",
+  "dependencies": [
+    "base >= 2.0.55",
+    "flib",
+    "big-data-string2"
+  ]
+}
