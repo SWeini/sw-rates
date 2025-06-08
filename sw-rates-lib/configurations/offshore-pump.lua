@@ -46,11 +46,13 @@ end
 
 ---@param conf Rates.Configuration.OffshorePump
 logic.get_production = function(conf, result, options)
-    configuration.calculate_energy_source(result, conf.entity, conf.entity.energy_usage) -- TODO: check for quality needs
+    local energy_usage = conf.entity.get_max_energy_usage(conf.quality)
+    configuration.calculate_energy_source(result, conf.entity, energy_usage)
+    local speed = conf.entity.get_pumping_speed(conf.quality)
     result[#result + 1] = {
         tag = "product",
         node = node.create.fluid(conf.fluid, conf.fluid.default_temperature),
-        amount = conf.entity.pumping_speed * 60
+        amount = speed * 60
     }
 end
 
