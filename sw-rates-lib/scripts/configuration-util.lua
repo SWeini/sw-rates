@@ -212,7 +212,7 @@ end
 
 ---@param quality LuaQualityPrototype
 ---@param bonus number
----@param force LuaForce
+---@param force LuaForce?
 ---@return { quality: LuaQualityPrototype, multiplier: number }[]?
 function util.calculate_quality_distribution(quality, bonus, force)
     if (bonus <= 0) then
@@ -224,7 +224,7 @@ function util.calculate_quality_distribution(quality, bonus, force)
     local left = 1
     while (left > 0) do
         local quality_next = quality.next
-        local prob_next = quality_next and force.is_quality_unlocked(quality_next) and quality.next_probability or 0
+        local prob_next = quality_next and (force == nil or force.is_quality_unlocked(quality_next)) and quality.next_probability or 0
         local bonus_next = prob_next * bonus
         if (bonus_next < 1) then
             local stay_probability = left - bonus_next

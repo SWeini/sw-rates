@@ -135,7 +135,7 @@ logic.get_production = function(conf, result, options)
 
     if (mineable.products) then
         local quality_distribution = nil
-        if (options.force and options.apply_quality) then
+        if (options.apply_quality) then
             quality_distribution = configuration.calculate_quality_distribution(prototypes.quality.normal,
                 effective_values.quality, options.force)
         end
