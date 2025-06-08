@@ -2,9 +2,9 @@
 Version: 0.1.0
 Date: xxxx-xx-xx
   Features:
-    - Wind turbines (use their average power output)
+    - Wind turbines (uses their average power output)
     - Tidal power plants
     - Solar panels and Anti solar panel
-    - Dig site (approximation based on used creature and food)
+    - Dig site (speed based on used creature and food, ignores walking time)
     - Bitumen seep (in ghost mode: replaces drilling with final product)
     - Automated smart farm (consumes replicator, generates resources on the map)

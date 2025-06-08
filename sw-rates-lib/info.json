@@ -4,7 +4,7 @@
   "factorio_version": "2.0",
   "title": "Production Rates Library",
   "author": "SWeini",
-  "description": "Calculating production rates was never easier",
+  "description": "Calculating production rates was never easier.",
   "dependencies": [
     "base >= 2.0.55",
     "flib",

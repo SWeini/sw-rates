@@ -140,8 +140,8 @@ logic.get_production = function(conf, result, options)
     local target_temperature = conf.entity.target_temperature or fluids.output.default_temperature
     local energy_per_fluid = fluids.output.heat_capacity * target_temperature
     local flow = extra_data.fusion_reactor_max_fluid_usage(conf.entity) * (1 + conf.quality.level * 0.3)
-    local energy_usage = flow * energy_per_fluid
-    local power_input = conf.entity.get_max_energy_usage(conf.quality)
+    local burner_energy_usage = flow * energy_per_fluid
+    local energy_usage = conf.entity.get_max_energy_usage(conf.quality)
 
     local neighbour_bonus = extra_data.fusion_reactor_neighbour_bonus(conf.entity)
     local output_temperature = target_temperature * (1 + conf.neighbours * neighbour_bonus)
@@ -149,12 +149,12 @@ logic.get_production = function(conf, result, options)
         output_temperature = fluids.output.max_temperature
     end
 
-    configuration.calculate_energy_source(result, conf.entity, energy_usage)
+    configuration.calculate_energy_source(result, conf.entity, burner_energy_usage)
     result[#result + 1] = {
         tag = "energy-source-input",
         tag_extra = "fusion-reactor",
         node = node.create.electric_power(),
-        amount = -power_input * 60 / configuration.energy_factor
+        amount = -energy_usage * 60 / configuration.energy_factor
     }
 
     result[#result + 1] = {

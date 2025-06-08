@@ -7,4 +7,4 @@ Date: xxxx-xx-xx
     - Enhance configurations with selection of fuel and fluid temperatures
     - Check multiple configurations for equality
     - Calculate production rates of configuration
-    - Use modifiers for LuaSurface and LuaForce
+    - Respect LuaSurface and LuaForce

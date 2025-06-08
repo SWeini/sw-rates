@@ -3,6 +3,7 @@ local math2d = require("math2d")
 local location = require("location")
 
 local util = {
+    --- All energy values are divided by this factor to not have extremely huge numbers.
     energy_factor = 1000000.0
 }
 
