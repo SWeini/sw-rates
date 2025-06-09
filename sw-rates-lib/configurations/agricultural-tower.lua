@@ -8,6 +8,7 @@ do
 end
 
 local configuration = require("scripts.configuration-util")
+local configuration_api = require("scripts.configuration")
 local node = require("scripts.node")
 local progression = require("scripts.progression")
 
@@ -162,23 +163,63 @@ logic.get_from_entity = function(entity, options)
     local possible_seeds = {} ---@type LuaItemPrototype[]
     for _, seed in pairs(get_accepted_seeds(options.entity)) do
         if (can_plant_seed(entity.surface, seed)) then
-            if (has_compatible_cell(entity, seed)) then
-                possible_seeds[#possible_seeds + 1] = seed
-            end
+            possible_seeds[#possible_seeds + 1] = seed
         end
     end
 
+    if (#possible_seeds == 0) then
+        return
+    end
+
+    local preferred_seeds ---@type LuaItemPrototype[]
     if (#possible_seeds == 1) then
+        preferred_seeds = possible_seeds
+    else
+        preferred_seeds = {}
+        for _, seed in ipairs(possible_seeds) do
+            if (has_compatible_cell(entity, seed)) then
+                preferred_seeds[#preferred_seeds + 1] = seed
+            end
+        end
+
+        if (#preferred_seeds == 0) then
+            preferred_seeds = possible_seeds
+        end
+    end
+
+    if (#preferred_seeds == 1) then
         ---@type Rates.Configuration.AgriculturalTower
         return {
             type = nil, ---@diagnostic disable-line: assign-type-mismatch
             id = nil, ---@diagnostic disable-line: assign-type-mismatch
             entity = options.entity,
             quality = options.quality,
-            seed = possible_seeds[1],
+            seed = preferred_seeds[1],
             seed_quality = prototypes.quality.normal
         }
     end
+
+    local children = {} ---@type Rates.Configuration[]
+    for _, seed in ipairs(preferred_seeds) do
+        ---@type Rates.Configuration.AgriculturalTower
+        local child = {
+            type = "agricultural-tower",
+            id = nil, ---@diagnostic disable-line: assign-type-mismatch
+            entity = options.entity,
+            quality = options.quality,
+            seed = seed,
+            seed_quality = prototypes.quality.normal
+        }
+        child.id = configuration_api.get_id(child)
+        children[#children + 1] = child
+    end
+
+    ---@type Rates.Configuration.Meta
+    return {
+        type = "meta",
+        id = nil, ---@diagnostic disable-line: assign-type-mismatch
+        children = children
+    }
 end
 
 return logic
