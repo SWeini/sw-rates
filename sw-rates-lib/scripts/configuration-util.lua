@@ -225,7 +225,8 @@ function util.calculate_quality_distribution(quality, bonus, force)
     local left = 1
     while (left > 0) do
         local quality_next = quality.next
-        local prob_next = quality_next and (force == nil or force.is_quality_unlocked(quality_next)) and quality.next_probability or 0
+        local prob_next = quality_next and (force == nil or force.is_quality_unlocked(quality_next)) and
+            quality.next_probability or 0
         local bonus_next = prob_next * bonus
         if (bonus_next < 1) then
             local stay_probability = left - bonus_next
@@ -674,14 +675,15 @@ function util.filter_module_effects_allowed(effects, allowed)
         for _, property in ipairs(all_module_effects) do
             if (not allowed[property]) then
                 local effect = module.module_effects and module.module_effects[property] or 0
-                local positive = effect > 0
-                if (not positive_module_effect[property]) then
-                    positive = not positive
-                end
+                if (effect ~= 0) then
+                    local positive = effect > 0
+                    if (not positive_module_effect[property]) then
+                        positive = not positive
+                    end
 
-                if (positive) then
-                    game.print("effect " .. property .. " not allowed: " .. effect)
-                    return false
+                    if (positive) then
+                        return false
+                    end
                 end
             end
         end

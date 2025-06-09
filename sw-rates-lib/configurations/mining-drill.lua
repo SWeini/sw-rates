@@ -237,12 +237,6 @@ logic.get_from_entity = function(entity, options)
         end
     end
 
-    ---@param module LuaItemPrototype
-    ---@return boolean
-    local function accept_module(module)
-        return true
-    end
-
     local module_effects = configuration.get_useful_module_effects(entity, options.use_ghosts)
     configuration.filter_module_effects_receiver(module_effects, options.entity.effect_receiver)
     configuration.filter_module_effects_allowed(module_effects, options.entity.allowed_effects)
