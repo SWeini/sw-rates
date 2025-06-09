@@ -4,7 +4,7 @@ local location = require("location")
 
 local util = {
     --- All energy values are divided by this factor to not have extremely huge numbers.
-    energy_factor = 1000000.0
+    energy_factor = 1e6
 }
 
 ---@param fluids table<string, table<number, true>>

@@ -12,6 +12,10 @@
 ---@field get_id? fun(node: Rates.Node): string?
 ---Used to provide GUI for this node
 ---@field gui_default? fun(node: Rates.Node): Rates.Gui.NodeDescription
+---Used to provide a printable representation for this node
+---@field gui_text? fun(node: Rates.Node, options: Rates.Node.GuiTextOptions?): LocalisedString
+---Used to provide information about how to format an amount of this node
+---@field gui_number_format? fun(node: Rates.Node): Rates.Node.NumberFormat
 
 ---Creates any of the registered nodes.
 ---@class Rates.Node.Creator
@@ -20,6 +24,13 @@
 ---@class (exact) Rates.Gui.NodeDescription
 ---@field sprite? SpritePath
 ---@field quality? LuaQualityPrototype
+
+---@class Rates.Node.GuiTextOptions
+---@field mode? "icon-only" | "text-only" | "icon-and-text" -- defaults to "icon-and-text"
+
+---@class Rates.Node.NumberFormat
+---@field factor number
+---@field unit? "J" | "W" | "N"
 
 local registry = require("node-registry")
 
@@ -74,8 +85,47 @@ local function gui_default(node)
     return {}
 end
 
+---@param node Rates.Node
+---@param options Rates.Node.GuiTextOptions?
+---@return LocalisedString
+local function gui_text(node, options)
+    local logic = registry.get(node.type)
+    if (logic) then
+        if (logic.gui_text) then
+            return logic.gui_text(node, options)
+        end
+    else
+        local interface = interface_name(node.type)
+        if (remote.interfaces[interface].gui_text) then
+            return remote.call(interface, "gui_text", node, options) --[[@as LocalisedString]]
+        end
+    end
+
+    return node.id
+end
+
+---@param node Rates.Node
+---@return { factor: number, unit: nil | "J" | "W" | "N" }
+local function gui_number_format(node)
+    local logic = registry.get(node.type)
+    if (logic) then
+        if (logic.gui_number_format) then
+            return logic.gui_number_format(node)
+        end
+    else
+        local interface = interface_name(node.type)
+        if (remote.interfaces[interface].gui_number_format) then
+            return remote.call(interface, "gui_number_format", node) --[[@as Rates.Node.NumberFormat]]
+        end
+    end
+
+    return { factor = 1 }
+end
+
 return {
     create = registry.create, ---@type Rates.Node.Creator
     register = register,
-    gui_default = gui_default
+    gui_default = gui_default,
+    gui_text = gui_text,
+    gui_number_format = gui_number_format,
 }

@@ -17,4 +17,9 @@ result.gui_default = function(node)
     return { sprite = "virtual-signal/signal-battery-full" }
 end
 
+---@param node Rates.Node.ElectricBuffer
+result.gui_number_format = function(node)
+    return { factor = 1e6, unit = "J" }
+end
+
 return result

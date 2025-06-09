@@ -26,4 +26,31 @@ result.gui_default = function(node)
     return { sprite = "entity/" .. node.plant.name }
 end
 
+---@param tile_restrictions AutoplaceSpecificationRestriction[]?
+---@return LocalisedString
+local function format_tile_restrictions(tile_restrictions)
+    if (not tile_restrictions) then
+        return { "sw-rates-node.agricultural-cell-unrestricted" }
+    end
+
+    local result = { "" }
+    for _, restriction in ipairs(tile_restrictions) do
+        local tile = restriction.first
+        if (tile) then
+            result[#result + 1] = "[img=tile." .. tile .. "]"
+        end
+    end
+
+    return result
+end
+
+---@param node Rates.Node.AgriculturalCell
+result.gui_text = function(node, options)
+    local plant = "[entity=" .. node.plant.name .. "]"
+    local restriction = format_tile_restrictions(node.plant.autoplace_specification and
+        node.plant.autoplace_specification.tile_restriction)
+    local result = { "sw-rates-node.agricultural-cell-format", plant, restriction }
+    return result
+end
+
 return result

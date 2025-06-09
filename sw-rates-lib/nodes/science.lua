@@ -26,4 +26,9 @@ result.gui_default = function(node)
     return { sprite = "technology/" .. node.technology.name }
 end
 
+---@param node Rates.Node.Science
+result.gui_text = function(node, options)
+    return "[technology=" .. node.technology.name .. "]"
+end
+
 return result

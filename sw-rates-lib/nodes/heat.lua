@@ -82,4 +82,44 @@ result_any.gui_default = function(node)
     return { sprite = "tooltip-category-heat" }
 end
 
+---@param node Rates.Node.Heat
+result.gui_text = function(node, options)
+    return { "", "[img=tooltip-category-heat] ", { "tooltip-category.heat" },
+        " (" .. node.temperature .. " ", { "si-unit-degree-celsius" }, ")" }
+end
+
+---@param min number?
+---@param max number?
+---@return LocalisedString
+local function format_temperature(min, max)
+    if (min and max) then
+        return min .. "-" .. max
+    elseif (min) then
+        return "≥ " .. min
+    elseif (max) then
+        return "≤ " .. max
+    end
+end
+
+---@param node Rates.Node.Any.Details.Heat
+result_any.gui_text = function(node, options)
+    local temperature = format_temperature(node.min_temperature, node.max_temperature)
+    if (temperature) then
+        return { "", "[img=tooltip-category-heat] ", { "tooltip-category.heat" },
+            " (", temperature, " ", { "si-unit-degree-celsius" }, ")" }
+    else
+        return { "", "[img=tooltip-category-heat] ", { "tooltip-category.heat" } }
+    end
+end
+
+---@param node Rates.Node.Heat
+result.gui_number_format = function(node)
+    return { factor = 1e6, unit = "W" }
+end
+
+---@param node Rates.Node.Any.Details.Heat
+result_any.gui_number_format = function(node)
+    return { factor = 1e6, unit = "W" }
+end
+
 return { types = { result, result_any } }

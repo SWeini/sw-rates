@@ -6,6 +6,8 @@ do
     ---@field details? Rates.Node.Any.Details
 end
 
+local util = require("scripts.node")
+
 local creator = {} ---@class Rates.Node.Creator
 local result = { type = "any", creator = creator } ---@type Rates.Node.Type
 
@@ -40,9 +42,31 @@ end
 
 ---@param node Rates.Node.Any
 result.gui_default = function(node)
+    if (node.details) then
+        return util.gui_default(node.details)
+    end
+
     return {
         sprite = "virtual-signal/signal-anything"
     }
+end
+
+---@param node Rates.Node.Any
+result.gui_text = function(node, options)
+    if (node.details) then
+        return util.gui_text(node.details, options)
+    end
+
+    return node.id
+end
+
+---@param node Rates.Node.Any
+result.gui_number_format = function(node)
+    if (node.details) then
+        return util.gui_number_format(node.details)
+    end
+
+    return { factor = 1 }
 end
 
 return result

@@ -96,4 +96,37 @@ result_any.gui_default = function(node)
     return { sprite = "fluid/" .. node.fluid.name }
 end
 
+---@param node Rates.Node.Fluid
+result.gui_text = function(node, options)
+    local temps = generated_temperatures.get_generated_fluid_temperatures(node.fluid)
+    if (#temps == 1 and temps[1] == node.temperature) then
+        return "[fluid=" .. node.fluid.name .. "]"
+    else
+        return { "", "[fluid=" .. node.fluid.name .. "] (" .. node.temperature .. " ", { "si-unit-degree-celsius" }, ")" }
+    end
+end
+
+---@param min number?
+---@param max number?
+---@return LocalisedString
+local function format_temperature(min, max)
+    if (min and max) then
+        return min .. "-" .. max
+    elseif (min) then
+        return "≥ " .. min
+    elseif (max) then
+        return "≤ " .. max
+    end
+end
+
+---@param node Rates.Node.Any.Details.Fluid
+result_any.gui_text = function(node, options)
+    local temperature = format_temperature(node.min_temperature, node.max_temperature)
+    if (temperature) then
+        return { "", "[fluid=" .. node.fluid.name .. "] (", temperature, " ", { "si-unit-degree-celsius" }, ")" }
+    else
+        return { "", "[fluid=" .. node.fluid.name .. "]" }
+    end
+end
+
 return { types = { result, result_any } }

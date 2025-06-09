@@ -6,6 +6,7 @@ local registry = require("scripts.node-registry")
 --- | Rates.Node.Base
 --- | Rates.Node.Extension alias this type in your mod to extend Rates.Node to your own types
 --- | Rates.Node.Any
+--- | Rates.Node.Any.Details
 ---
 --- | Rates.Node.AgriculturalCell
 --- | Rates.Node.ElectricBuffer

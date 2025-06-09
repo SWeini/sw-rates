@@ -89,4 +89,45 @@ result_any.gui_default = function(node)
     return { sprite = "tooltip-category-consumes" }
 end
 
+---@param category LuaFuelCategoryPrototype
+---@param options Rates.Node.GuiTextOptions
+---@return LocalisedString
+local function gui_text(category, options)
+    local image = "tooltip-category-" .. category.name
+    if (not helpers.is_valid_sprite_path(image)) then
+        image = "tooltip-category-consumes"
+    end
+
+    return { "", "[img=" .. image .. "] ", { "fuel-category-name." .. category.name } }
+end
+
+---@param node Rates.Node.ItemFuel
+result.gui_text = function(node, options)
+    return gui_text(node.category, options)
+end
+
+---@param node Rates.Node.Any.Details.ItemFuel
+result_any.gui_text = function(node, options)
+    local result = { "" } ---@type LocalisedString
+    for i, category in ipairs(node.categories) do
+        if (i > 1) then
+            result[#result + 1] = " / "
+        end
+
+        result[#result + 1] = gui_text(category, options)
+    end
+
+    return result
+end
+
+---@param node Rates.Node.ItemFuel
+result.gui_number_format = function(node)
+    return { factor = 1e6, unit = "W" }
+end
+
+---@param node Rates.Node.Any.Details.ItemFuel
+result_any.gui_number_format = function(node)
+    return { factor = 1e6, unit = "W" }
+end
+
 return { types = { result, result_any } }
