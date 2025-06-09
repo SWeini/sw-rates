@@ -113,18 +113,19 @@ end
 ---@param conf Rates.Configuration.AgriculturalTower
 logic.get_production = function(conf, result, options)
     local plant_result = conf.seed.plant_result ---@cast plant_result -nil
-    local duration = plant_result.growth_ticks / 60
     local num_tiles = 7 * 7 - 1
-    local frequency = num_tiles / duration
-
-    local energy_usage = conf.entity.get_max_energy_usage(conf.quality)
-    configuration.calculate_energy_source(result, conf.entity, energy_usage)
 
     result[#result + 1] = {
         tag = "infrastructure",
         node = node.create.agricultural_cell(plant_result),
         amount = -num_tiles
     }
+
+    local duration = plant_result.growth_ticks / 60
+    local frequency = num_tiles / duration
+
+    local energy_usage = conf.entity.get_max_energy_usage(conf.quality)
+    configuration.calculate_energy_source(result, conf.entity, energy_usage)
 
     result[#result + 1] = {
         tag = "ingredient",

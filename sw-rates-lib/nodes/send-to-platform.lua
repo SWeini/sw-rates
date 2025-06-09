@@ -17,4 +17,9 @@ result.gui_default = function(node)
     return { sprite = "utility/space_age_icon" }
 end
 
+---@param node Rates.Node.SendToPlatform
+result.gui_text = function(node, options)
+    return "[space-age] rocket to space platform"
+end
+
 return result

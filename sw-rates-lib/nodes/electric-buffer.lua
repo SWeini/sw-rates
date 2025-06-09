@@ -18,6 +18,11 @@ result.gui_default = function(node)
 end
 
 ---@param node Rates.Node.ElectricBuffer
+result.gui_text = function(node, options)
+    return { "", "[img=virtual-signal.signal-battery-full] buffer for ", { "tooltip-category.electricity" } }
+end
+
+---@param node Rates.Node.ElectricBuffer
 result.gui_number_format = function(node)
     return { factor = 1e6, unit = "J" }
 end
