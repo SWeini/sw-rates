@@ -120,7 +120,7 @@ local function dump_amount(amount)
     return message
 end
 
----@alias EntityCounts table<string, { configuration: Rates.Configuration.Reactor, count: integer }>
+---@alias EntityCounts table<string, { configuration: Rates.Configuration, count: integer }>
 
 ---@param player LuaPlayer
 ---@param entities { configuration: Rates.Configuration.Reactor, count: integer }[]
