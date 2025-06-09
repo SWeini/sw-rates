@@ -30,7 +30,7 @@ The API is already many iterations old, so I hope it is stable and extensible no
 ## Supported entity types
 - `accumulator` (100%)
 - `agricultural-tower` (95%; hardcoded grid size)
-- `asteroid-collector` (50%; must be filtered to work)
+- `asteroid-collector` (80%; speed is a constant 1/s which is obviously wrong)
 - `beacon` (not as separate entity, but providing effects to other buildings)
 - `boiler` (95%; uses default temperature if the fluidbox is empty, or ghost; does not work with `boiler_mode="heat-fluid-inside"`)
 - `burner-generator` (100%)

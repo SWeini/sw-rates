@@ -7,16 +7,23 @@ do
 end
 
 local configuration = require("scripts.configuration-util")
+local configuration_api = require("scripts.configuration")
 local node = require("scripts.node")
 local progression = require("scripts.progression")
 
 local logic = { type = "asteroid-collector" } ---@type Rates.Configuration.Type
 
 local entities = configuration.get_all_entities("asteroid-collector")
-local asteroids = prototypes.asteroid_chunk
+
+local asteroid_chunks = {} ---@type table<string, LuaAsteroidChunkPrototype>
+for name, asteroid in pairs(prototypes.asteroid_chunk) do
+    if (not asteroid.parameter and asteroid.name ~= "asteroid-chunk-unknown") then
+        asteroid_chunks[name] = asteroid
+    end
+end
 
 ---@param space LuaSpaceLocationPrototype
----@return { [string]: number }
+---@return table<string, number>
 local function get_space_asteroid_ratio(space)
     local result = {} ---@type { [string]: number }
     for _, spawn in ipairs(space.asteroid_spawn_definitions or {}) do
@@ -49,7 +56,7 @@ local function get_connection_probability(spawn)
 end
 
 ---@param connection LuaSpaceConnectionPrototype
----@return { [string]: number }
+---@return table<string, number>
 local function get_connection_asteroid_ratio(connection)
     local result = {} ---@type { [string]: number }
     for _, spawn in ipairs(connection.asteroid_spawn_definitions or {}) do
@@ -59,6 +66,23 @@ local function get_connection_asteroid_ratio(connection)
     end
 
     return result
+end
+
+---@param surface LuaSurface
+---@return table<string, number>?
+local function get_surface_asteroid_ratio(surface)
+    local platform = surface.platform
+    if (not platform) then
+        return
+    end
+
+    if (platform.space_location) then
+        return get_space_asteroid_ratio(platform.space_location)
+    end
+
+    if (platform.space_connection) then
+        return get_connection_asteroid_ratio(platform.space_connection)
+    end
 end
 
 ---@param conf Rates.Configuration.AsteroidCollector
@@ -96,7 +120,7 @@ end
 ---@param result Rates.Configuration.AsteroidCollector[]
 logic.fill_basic_configurations = function(result, options)
     for _, entity in pairs(entities) do
-        for _, asteroid in pairs(asteroids) do
+        for _, asteroid in pairs(asteroid_chunks) do
             result[#result + 1] = {
                 type = nil, ---@diagnostic disable-line: assign-type-mismatch
                 id = nil, ---@diagnostic disable-line: assign-type-mismatch
@@ -114,17 +138,52 @@ logic.get_from_entity = function(entity, options)
     end
 
     local filter = entity.get_filter(1)
-    if (not filter) then
+    if (filter) then
+        ---@type Rates.Configuration.AsteroidCollector
+        return {
+            type = nil, ---@diagnostic disable-line: assign-type-mismatch
+            id = nil, ---@diagnostic disable-line: assign-type-mismatch
+            entity = options.entity,
+            quality = options.quality,
+            asteroid = prototypes.asteroid_chunk[filter.name]
+        }
+    end
+
+    local asteroid_ratio = get_surface_asteroid_ratio(entity.surface)
+    local sum_of_ratios = 0
+    local children = {} ---@type Rates.Configuration[]
+    local children_ratio = {} ---@type number[]
+    for name, ratio in pairs(asteroid_ratio or {}) do
+        if (ratio > 0) then
+            ---@type Rates.Configuration.AsteroidCollector
+            local child = {
+                type = "asteroid-collector",
+                id = nil, ---@diagnostic disable-line: assign-type-mismatch
+                entity = options.entity,
+                quality = options.quality,
+                asteroid = prototypes.asteroid_chunk[name]
+            }
+            child.id = configuration_api.get_id(child)
+            children[#children + 1] = child
+            children_ratio[#children_ratio + 1] = ratio
+            sum_of_ratios = sum_of_ratios + ratio
+        end
+    end
+
+    if (#children == 0 or sum_of_ratios == 0) then
         return
     end
 
-    ---@type Rates.Configuration.AsteroidCollector
+    for i = 1, #children_ratio do
+        children_ratio[i] = children_ratio[i] / sum_of_ratios
+    end
+
+    ---@type Rates.Configuration.Meta
     return {
-        type = nil, ---@diagnostic disable-line: assign-type-mismatch
+        type = "meta",
         id = nil, ---@diagnostic disable-line: assign-type-mismatch
-        entity = options.entity,
-        quality = options.quality,
-        asteroid = prototypes.asteroid_chunk[filter.name]
+        children = children,
+        children_suggested_factors = children_ratio
     }
 end
 
