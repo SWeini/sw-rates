@@ -126,4 +126,20 @@ logic.get_from_entity = function(entity, options)
     }
 end
 
-return logic
+---@param conf Rates.Configuration.FusionGenerator
+---@return LuaFluidPrototype
+local function get_input_fluid(conf)
+    return get_fluids(conf.entity).input
+end
+
+---@param conf Rates.Configuration.FusionGenerator
+---@return LuaFluidPrototype
+local function get_output_fluid(conf)
+    return get_fluids(conf.entity).output
+end
+
+return {
+    types = { logic },
+    get_input_fluid = get_input_fluid,
+    get_output_fluid = get_output_fluid,
+}
