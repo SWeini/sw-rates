@@ -1,4 +1,7 @@
 require("all-nodes")
+if (script.mod_name ~= "sw-rates-lib") then
+    require("all-configurations")
+end
 
 local location = require("scripts.location")
 local progression = require("scripts.progression")
