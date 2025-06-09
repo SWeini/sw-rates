@@ -4,6 +4,7 @@
   "factorio_version": "2.0",
   "title": "Production Rates for Pyanodons Alternative Eneregy",
   "author": "SWeini",
+  "homepage": "https://github.com/SWeini/sw-rates",
   "description": "Supports many of the scripted mechanics in PyAE, such as dig site and automated smart farm.",
   "dependencies": [
     "sw-rates-lib",

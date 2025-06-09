@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.0
-Date: xxxx-xx-xx
+Date: 2025-06-09
   Features:
     - Reactor layout
     - Fusion reactor/generator layout

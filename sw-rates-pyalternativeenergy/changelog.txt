@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.0
-Date: xxxx-xx-xx
+Date: 2025-06-09
   Features:
     - Wind turbines (uses their average power output)
     - Tidal power plants

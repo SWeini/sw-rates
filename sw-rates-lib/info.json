@@ -4,6 +4,7 @@
   "factorio_version": "2.0",
   "title": "Production Rates Library",
   "author": "SWeini",
+  "homepage": "https://github.com/SWeini/sw-rates",
   "description": "Calculating production rates was never easier.",
   "dependencies": [
     "base >= 2.0.55",
