@@ -17,30 +17,6 @@ local entities = configuration.get_all_entities("reactor")
 
 ---@param entity LuaEntity
 ---@param use_ghosts boolean
----@return string?
-local function get_entity_name(entity, use_ghosts)
-    if (not use_ghosts) then
-        return entity.name
-    end
-
-    if (entity.type == "entity-ghost") then
-        return entity.ghost_name
-    end
-
-    if (entity.to_be_deconstructed()) then
-        return
-    end
-
-    local upgrade = entity.get_upgrade_target()
-    if (upgrade) then
-        return upgrade.name
-    end
-
-    return entity.name
-end
-
----@param entity LuaEntity
----@param use_ghosts boolean
 ---@return integer
 local function count_neighbours(entity, use_ghosts)
     local data = configuration.get_useful_entity_data(entity, use_ghosts)
