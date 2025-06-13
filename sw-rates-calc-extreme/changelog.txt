@@ -1,0 +1,7 @@
+---------------------------------------------------------------------------------------------------
+Version: 0.1.0
+Date: 2025-06-13
+  Features:
+    - Calculate effective production rates
+    - Assumption: things being produced and consumed should be balanced
+    - Assumed balance can be overridden
