@@ -14,12 +14,12 @@ end
 
 ---@param node Rates.Node.SendToOrbit
 result.gui_default = function(node)
-    return { sprite = "utility/space_age_icon" }
-end
-
----@param node Rates.Node.SendToOrbit
-result.gui_text = function(node, options)
-    return "rocket to orbit"
+    ---@type Rates.Gui.NodeDescription
+    return {
+        icon = { sprite = "utility/space_age_icon" },
+        name = { "sw-rates-node.send-to-orbit" },
+        tooltip = { "", "1 ", { "sw-rates-node.stack" } },
+    }
 end
 
 return result

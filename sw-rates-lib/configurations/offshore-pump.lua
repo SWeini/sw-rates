@@ -41,7 +41,10 @@ end
 
 ---@param conf Rates.Configuration.OffshorePump
 logic.gui_recipe = function(conf)
-    return { sprite = "fluid/" .. conf.fluid.name }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        element = { type = "fluid", name = conf.fluid.name }
+    }
 end
 
 ---@param conf Rates.Configuration.OffshorePump

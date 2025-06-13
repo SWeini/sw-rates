@@ -21,12 +21,28 @@ end
 
 ---@param conf Rates.Configuration.FluidFuel
 logic.gui_recipe = function(conf)
-    return { sprite = "tooltip-category-fuel" }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        icon = { sprite = "tooltip-category-fuel" },
+        name = { "sw-rates-node.fluid-fuel" }
+    }
 end
 
 ---@param conf Rates.Configuration.FluidFuel
 logic.gui_entity = function(conf)
-    return { sprite = "fluid/" .. conf.fluid.name }
+    local qualifier ---@type LocalisedString
+    local temps = generated_temperatures.get_generated_fluid_temperatures(node.fluid)
+    if (#temps == 1 and temps[1] == node.temperature) then
+        qualifier = nil
+    else
+        qualifier = { "", node.temperature, { "si-unit-degree-celsius" } }
+    end
+
+    ---@type Rates.Gui.NodeDescription
+    return {
+        element = { type = "fluid", name = conf.fluid.name },
+        qualifier = qualifier
+    }
 end
 
 ---@param conf Rates.Configuration.FluidFuel

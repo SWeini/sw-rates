@@ -46,10 +46,16 @@ end
 ---@param conf Rates.Configuration.MiningDrill
 logic.gui_recipe = function(conf)
     if (conf.resource) then
-        return { sprite = "entity/" .. conf.resource.name }
+        ---@type Rates.Gui.NodeDescription
+        return {
+            element = { type = "entity", name = conf.resource.name }
+        }
     end
 
-    return { sprite = "utility/resources_depleted_icon" }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        icon = { sprite = "utility/resources_depleted_icon" }
+    }
 end
 
 ---@param conf Rates.Configuration.MiningDrill

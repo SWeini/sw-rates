@@ -26,12 +26,10 @@ end
 
 ---@param node Rates.Node.MapEntity
 result.gui_default = function(node)
-    return { sprite = "entity/" .. node.entity.name, quality = node.quality }
-end
-
----@param node Rates.Node.MapEntity
-result.gui_text = function(node, options)
-    return "[entity=" .. node.entity.name .. ",quality=" .. node.quality.name .. "]"
+    ---@type Rates.Gui.NodeDescription
+    return {
+        element = { type = "entity-with-quality", name = node.entity.name, quality = node.quality.name },
+    }
 end
 
 return result

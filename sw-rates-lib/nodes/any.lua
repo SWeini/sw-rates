@@ -46,27 +46,11 @@ result.gui_default = function(node)
         return util.gui_default(node.details)
     end
 
+    ---@type Rates.Gui.NodeDescription
     return {
-        sprite = "virtual-signal/signal-anything"
+        icon = { sprite = "virtual-signal/signal-anything" },
+        name = node.id
     }
-end
-
----@param node Rates.Node.Any
-result.gui_text = function(node, options)
-    if (node.details) then
-        return util.gui_text(node.details, options)
-    end
-
-    return node.id
-end
-
----@param node Rates.Node.Any
-result.gui_number_format = function(node)
-    if (node.details) then
-        return util.gui_number_format(node.details)
-    end
-
-    return { factor = 1 }
 end
 
 return result

@@ -33,7 +33,10 @@ end
 
 ---@param conf Rates.Configuration.PyBiofluid
 logic.gui_recipe = function(conf)
-    return { sprite = "item/guano" }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        element = { type = "item", name = "guano" }
+    }
 end
 
 ---@param conf Rates.Configuration.PyBiofluid

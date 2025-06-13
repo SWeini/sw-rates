@@ -18,6 +18,8 @@ local type_filters = {
     "offshore-pump",
     "reactor",
     "rocket-silo",
+    "simple-entity-with-owner",
+    "simple-entity-with-force",
     "solar-panel",
     "thruster",
 }

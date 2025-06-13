@@ -21,36 +21,42 @@ result.get_id = function(node)
     return node.plant.name
 end
 
----@param node Rates.Node.AgriculturalCell
-result.gui_default = function(node)
-    return { sprite = "entity/" .. node.plant.name }
-end
-
----@param tile_restrictions AutoplaceSpecificationRestriction[]?
----@return LocalisedString
-local function format_tile_restrictions(tile_restrictions)
-    if (not tile_restrictions) then
-        return { "sw-rates-node.agricultural-cell-unrestricted" }
+---@param plant LuaEntityPrototype
+local function format_placement_tooltip(plant)
+    local autoplace = plant.autoplace_specification
+    if (not autoplace) then
+        return
     end
 
-    local result = { "" }
-    for _, restriction in ipairs(tile_restrictions) do
+    local tile_restriction = autoplace.tile_restriction
+    if (not tile_restriction) then
+        return
+    end
+
+    local tooltip = { "" } ---@type LocalisedString
+    local plant_richtext = { "", "[entity=" .. plant.name .. "] ", plant.localised_name }
+    tooltip[#tooltip + 1] = { "sw-rates-node.agricultural-cell-placement", plant_richtext }
+
+    for _, restriction in ipairs(tile_restriction) do
         local tile = restriction.first
         if (tile) then
-            result[#result + 1] = "[img=tile." .. tile .. "]"
+            tooltip[#tooltip + 1] = "\n[img=tile." .. tile .. "] "
+            tooltip[#tooltip + 1] = prototypes.tile[tile].localised_name
         end
     end
 
-    return result
+    return tooltip
 end
 
 ---@param node Rates.Node.AgriculturalCell
-result.gui_text = function(node, options)
-    local plant = "[entity=" .. node.plant.name .. "]"
-    local restriction = format_tile_restrictions(node.plant.autoplace_specification and
-        node.plant.autoplace_specification.tile_restriction)
-    local result = { "sw-rates-node.agricultural-cell-format", plant, restriction }
-    return result
+result.gui_default = function(node)
+    ---@type Rates.Gui.NodeDescription
+    return {
+        element = { type = "entity", name = node.plant.name },
+        name = { "sw-rates-node.agricultural-cell", node.plant.localised_name },
+        tooltip = format_placement_tooltip(node.plant),
+        number_format = { factor = 1, unit = "#" },
+    }
 end
 
 return result

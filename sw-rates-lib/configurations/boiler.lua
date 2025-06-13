@@ -31,7 +31,10 @@ end
 ---@param conf Rates.Configuration.Boiler
 logic.gui_recipe = function(conf)
     local fluid = get_fluids(conf.entity).output
-    return { sprite = "fluid/" .. fluid.name }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        element = { type = "fluid", name = fluid.name }
+    }
 end
 
 ---@param conf Rates.Configuration.Boiler

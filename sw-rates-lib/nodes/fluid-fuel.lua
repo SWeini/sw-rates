@@ -14,17 +14,13 @@ end
 
 ---@param node Rates.Node.FluidFuel
 result.gui_default = function(node)
-    return { sprite = "tooltip-category-fuel" }
-end
-
----@param node Rates.Node.FluidFuel
-result.gui_text = function(node, options)
-    return { "", "[img=tooltip-category-fuel] fluid fuel" }
-end
-
----@param node Rates.Node.FluidFuel
-result.gui_number_format = function(node)
-    return { factor = 1e6, unit = "W" }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        icon = { sprite = "tooltip-category-fuel" },
+        name = { "sw-rates-node.fluid-fuel" },
+        tooltip = { "sw-rates-node.fluid-fuel-tooltip" },
+        number_format = { factor = 1e6, unit = "W" },
+    }
 end
 
 return result

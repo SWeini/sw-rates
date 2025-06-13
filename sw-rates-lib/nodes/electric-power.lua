@@ -29,17 +29,12 @@ end
 
 ---@param node Rates.Node.ElectricPower
 result.gui_default = function(node)
-    return { sprite = "tooltip-category-electricity" }
-end
-
----@param node Rates.Node.ElectricPower
-result.gui_text = function(node, options)
-    return { "", "[img=tooltip-category-electricity] ", { "tooltip-category.electricity" } }
-end
-
----@param node Rates.Node.ElectricPower
-result.gui_number_format = function(node)
-    return { factor = 1e6, unit = "W" }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        icon = { sprite = "tooltip-category-electricity" },
+        name = { "sw-rates-node.electric-power" },
+        number_format = { factor = 1e6, unit = "W" },
+    }
 end
 
 return result

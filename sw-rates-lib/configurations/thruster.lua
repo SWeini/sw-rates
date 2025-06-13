@@ -44,7 +44,11 @@ end
 
 ---@param conf Rates.Configuration.Thruster
 logic.gui_recipe = function(conf)
-    return { sprite = "tooltip-category-thrust" }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        icon = { sprite = "tooltip-category-thrust" },
+        name = { "sw-rates-node.thrust" }
+    }
 end
 
 ---@param conf Rates.Configuration.Thruster

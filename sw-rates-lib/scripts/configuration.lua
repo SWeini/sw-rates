@@ -285,10 +285,17 @@ local function gui_entity(conf)
     end
 
     if (conf.entity) then
-        return { sprite = "entity/" .. conf.entity.name, quality = conf.quality }
+        ---@type Rates.Gui.NodeDescription
+        return {
+            element = { type = "entity-with-quality", name = conf.entity.name, quality = conf.quality.name }
+        }
     end
 
-    return {}
+    ---@type Rates.Gui.NodeDescription
+    return {
+        icon = { sprite = "virtual-signal/signal-question-mark" },
+        name = conf.id
+    }
 end
 
 ---@param conf Rates.Configuration

@@ -1,5 +1,4 @@
 local api = require("__sw-rates-lib__.api-usage")
-local flib_format = require("__flib__.format")
 
 ---@generic T : any
 ---@param map table<any, T>
@@ -13,45 +12,16 @@ local function to_value_array(map)
     return result
 end
 
----@param str LocalisedString
----@return LocalisedString
-local function compress_string(str)
-    local type = type(str)
-    if (type ~= "table") then
-        return str
-    end
-
-    for i = 2, #str do
-        str[i] = compress_string(str[i])
-    end
-
-    if (#str > 20 and str[1] == "") then
-        local new_str = { "" } ---@type LocalisedString
-        local i = 2
-        while i <= #str do
-            local part = { "" } ---@type LocalisedString
-            for j = 0, 19 do
-                part[#part + 1] = str[i + j]
-            end
-            new_str[#new_str + 1] = part
-            i = i + 20
-        end
-
-        return new_str
-    end
-
-    return str
-end
-
 ---@param amount Rates.Configuration.Amount
 ---@return LocalisedString
 local function dump_amount(amount)
     local node = amount.node
+    local gui = api.node.gui_default(node)
     local message = { "" } ---@type LocalisedString
     if (amount.tag == "infrastructure" and amount.amount < 0) then
-        message[#message + 1] = flib_format.number(math.abs(amount.amount))
-        message[#message + 1] = " x "
-        message[#message + 1] = api.node.gui_text(node)
+        message[#message + 1] = api.gui.format_number(math.abs(amount.amount))
+        message[#message + 1] = " × "
+        message[#message + 1] = api.gui.gui_message(gui)
         return message
     elseif (amount.amount > 0) then
         message[#message + 1] = { "tooltip-category.generates" }
@@ -62,23 +32,7 @@ local function dump_amount(amount)
     end
 
     message[#message + 1] = " "
-    message[#message + 1] = api.node.gui_text(node)
-    message[#message + 1] = ": "
-    local format = api.node.gui_number_format(node)
-    if (amount.tag == "infrastructure") then
-        message[#message + 1] = flib_format.number(math.abs(amount.amount) * format.factor)
-    elseif (format.unit == nil) then
-        local per_second = math.abs(amount.amount) * format.factor
-        if (per_second < 0.1) then
-            message[#message + 1] = flib_format.number(per_second * 60)
-            message[#message + 1] = { "per-minute-suffix" }
-        else
-            message[#message + 1] = flib_format.number(per_second)
-            message[#message + 1] = { "per-second-suffix" }
-        end
-    else
-        message[#message + 1] = flib_format.number(math.abs(amount.amount) * format.factor, true) .. format.unit
-    end
+    message[#message + 1] = api.gui.gui_message(gui, math.abs(amount.amount))
 
     return message
 end
@@ -116,6 +70,10 @@ end
 ---@param conf Rates.Configuration
 ---@return LocalisedString
 local function dump_modules(conf)
+    while (conf.type == "meta") do
+        conf = conf.children[1]
+    end
+
     if (not conf.module_effects) then
         return
     end
@@ -127,8 +85,12 @@ local function dump_modules(conf)
     end
 
     for _, beacon in ipairs(conf.module_effects.beacons or {}) do
-        result[#result + 1] = "\n" ..
-            beacon.count .. " x [entity=" .. beacon.beacon.name .. ",quality=" .. beacon.quality.name .. "]: "
+        if (beacon.beacon.hidden) then
+            result[#result + 1] = "\n"
+        else
+            result[#result + 1] = "\n" ..
+                beacon.count .. " x [entity=" .. beacon.beacon.name .. ",quality=" .. beacon.quality.name .. "]: "
+        end
         for i, module in ipairs(beacon.total_modules) do
             if (i > 1) then
                 result[#result + 1] = ", "
@@ -181,7 +143,7 @@ local function analyze_entities(player, surface, entities)
         message[#message + 1] = dump_recipe(conf.configuration)
         message[#message + 1] = dump_production(conf.configuration, options, conf.count)
 
-        player.print(compress_string(message))
+        player.print(api.gui.compress_string(message))
     end
 end
 

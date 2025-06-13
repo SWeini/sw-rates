@@ -17,12 +17,18 @@ end
 
 ---@param conf Rates.Configuration.Recipe
 logic.gui_recipe = function(conf)
-    return { sprite = "recipe/" .. conf.recipe.name }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        element = { type = "recipe", name = conf.recipe.name }
+    }
 end
 
 ---@param conf Rates.Configuration.Recipe
 logic.gui_entity = function(conf)
-    return { sprite = "recipe/" .. conf.recipe.name }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        element = { type = "recipe", name = conf.recipe.name }
+    }
 end
 
 ---@param conf Rates.Configuration.Recipe

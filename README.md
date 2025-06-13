@@ -207,7 +207,10 @@ local logic = { type = "my-mod-super-special-entity" } ---@type Rates.Configurat
 ---@param conf Rates.Configuration.MyModSuperSpecialEntity
 logic.gui_recipe = function(conf)
     -- entity makes power, so let's show the electricity symbol
-    return { sprite = "tooltip-category-electricity" }
+    return {
+        icon = { sprite = "tooltip-category-electricity" },
+        name = { "sw-rates-node.electric-power" }
+    }
 end
 
 ---@param conf Rates.Configuration.MyModSuperSpecialEntity

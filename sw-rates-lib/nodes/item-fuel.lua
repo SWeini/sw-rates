@@ -76,58 +76,39 @@ end
 
 ---@param node Rates.Node.ItemFuel
 result.gui_default = function(node)
-    local specific = "tooltip-category-" .. node.category.name
-    if (helpers.is_valid_sprite_path(specific)) then
-        return { sprite = specific }
+    local sprite = "tooltip-category-" .. node.category.name
+    if (not helpers.is_valid_sprite_path(sprite)) then
+        sprite = "tooltip-category-consumes"
     end
 
-    return { sprite = "tooltip-category-consumes" }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        icon = { sprite = sprite },
+        name = node.category.localised_name,
+        number_format = { factor = 1e6, unit = "W" },
+    }
 end
 
 ---@param node Rates.Node.Any.Details.ItemFuel
 result_any.gui_default = function(node)
-    return { sprite = "tooltip-category-consumes" }
-end
-
----@param category LuaFuelCategoryPrototype
----@param options Rates.Node.GuiTextOptions
----@return LocalisedString
-local function gui_text(category, options)
-    local image = "tooltip-category-" .. category.name
-    if (not helpers.is_valid_sprite_path(image)) then
-        image = "tooltip-category-consumes"
-    end
-
-    return { "", "[img=" .. image .. "] ", { "fuel-category-name." .. category.name } }
-end
-
----@param node Rates.Node.ItemFuel
-result.gui_text = function(node, options)
-    return gui_text(node.category, options)
-end
-
----@param node Rates.Node.Any.Details.ItemFuel
-result_any.gui_text = function(node, options)
-    local result = { "" } ---@type LocalisedString
+    local tooltip = { "" } ---@type LocalisedString
     for i, category in ipairs(node.categories) do
         if (i > 1) then
-            result[#result + 1] = " / "
+            tooltip[#tooltip + 1] = "\n"
         end
 
-        result[#result + 1] = gui_text(category, options)
+        local sprite = "tooltip-category-" .. category.name
+        local img = helpers.is_valid_sprite_path(sprite) and "[img=" .. sprite .. "] " or ""
+        tooltip[#tooltip + 1] = { "", img, category.localised_name }
     end
 
-    return result
-end
-
----@param node Rates.Node.ItemFuel
-result.gui_number_format = function(node)
-    return { factor = 1e6, unit = "W" }
-end
-
----@param node Rates.Node.Any.Details.ItemFuel
-result_any.gui_number_format = function(node)
-    return { factor = 1e6, unit = "W" }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        icon = { sprite = "tooltip-category-consumes" },
+        name = { "sw-rates-node.item-fuel" },
+        tooltip = tooltip,
+        number_format = { factor = 1e6, unit = "W" },
+    }
 end
 
 return { types = { result, result_any } }

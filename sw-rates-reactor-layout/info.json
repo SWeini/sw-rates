@@ -1,12 +1,12 @@
 {
   "name": "sw-rates-reactor-layout",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "factorio_version": "2.0",
   "title": "Reactor Layout",
   "author": "SWeini",
   "homepage": "https://github.com/SWeini/sw-rates",
   "description": "Select your (fusion) reactor and see its max power production.",
   "dependencies": [
-    "sw-rates-lib"
+    "sw-rates-lib >= 0.2.0"
   ]
 }

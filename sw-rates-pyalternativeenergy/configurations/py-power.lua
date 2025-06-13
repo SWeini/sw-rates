@@ -25,16 +25,15 @@ local turbines = {
     ["vawt-turbine-mk02"] = 20 * 1e6,
     ["vawt-turbine-mk03"] = 50 * 1e6,
     ["vawt-turbine-mk04"] = 85 * 1e6,
-
-    ["tidal-mk01"] = 6 * 1e6,
-    ["tidal-mk02"] = 30 * 1e6,
-    ["tidal-mk03"] = 55 * 1e6,
-    ["tidal-mk04"] = 75 * 1e6
 }
 
 ---@param conf Rates.Configuration.PyPower
 logic.gui_recipe = function(conf)
-    return { sprite = "tooltip-category-electricity" }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        icon = { sprite = "tooltip-category-electricity" },
+        name = { "sw-rates-node.electric-power" }
+    }
 end
 
 ---@param conf Rates.Configuration.PyPower

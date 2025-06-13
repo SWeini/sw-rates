@@ -347,14 +347,14 @@ function util.has_surface_conditions(surface, conditions)
     return true
 end
 
----@type { [defines.inventory]: true }
+---@type table<string, defines.inventory>
 local module_inventories = {
-    [defines.inventory.assembling_machine_modules] = true,
-    [defines.inventory.beacon_modules] = true,
-    [defines.inventory.furnace_modules] = true,
-    [defines.inventory.lab_modules] = true,
-    [defines.inventory.mining_drill_modules] = true,
-    [defines.inventory.rocket_silo_modules] = true
+    ["assembling-machine"] = defines.inventory.crafter_modules,
+    ["beacon"] = defines.inventory.beacon_modules,
+    ["furnace"] = defines.inventory.crafter_modules,
+    ["lab"] = defines.inventory.lab_modules,
+    ["mining-drill"] = defines.inventory.mining_drill_modules,
+    ["rocket-silo"] = defines.inventory.crafter_modules,
 }
 
 local all_module_effects = { "consumption", "speed", "productivity", "pollution", "quality" }
@@ -439,15 +439,18 @@ function util.collect_modules(entity, use_ghosts)
         return result
     end
 
+    local module_inventory_index
     local requester
     if (entity.type == "entity-ghost") then
         requester = entity
+        module_inventory_index = module_inventories[entity.ghost_type]
     else
         requester = entity.item_request_proxy
+        module_inventory_index = module_inventories[entity.type]
         if (requester) then
             for _, plan in ipairs(requester.removal_plan) do
                 for _, pos in pairs(plan.items.in_inventory or {}) do
-                    if (module_inventories[pos.inventory]) then
+                    if (pos.inventory == module_inventory_index) then
                         result[pos.stack + 1] = nil
                     end
                 end
@@ -458,7 +461,7 @@ function util.collect_modules(entity, use_ghosts)
     if (requester) then
         for _, plan in ipairs(requester.insert_plan) do
             for _, pos in pairs(plan.items.in_inventory or {}) do
-                if (module_inventories[pos.inventory]) then
+                if (pos.inventory == module_inventory_index) then
                     local quality = plan.id.quality and prototypes.quality[plan.id.quality] or prototypes.quality.normal
                     result[pos.stack + 1] = { module = prototypes.item[plan.id.name], quality = quality }
                 end

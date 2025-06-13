@@ -132,7 +132,19 @@ end
 ---@param conf Rates.Configuration.FusionReactor
 logic.gui_recipe = function(conf)
     local fluids = get_fluids(conf.entity)
-    return { sprite = "fluid/" .. fluids.output.name }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        element = { type = "fluid", name = fluids.output.name }
+    }
+end
+
+---@param conf Rates.Configuration.FusionReactor
+logic.gui_entity = function(conf)
+    ---@type Rates.Gui.NodeDescription
+    return {
+        element = { type = "entity-with-quality", name = conf.entity.name, quality = conf.quality.name },
+        qualifier = "+" .. conf.neighbours
+    }
 end
 
 logic.get_production = function(conf, result, options)

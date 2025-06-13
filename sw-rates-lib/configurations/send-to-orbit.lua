@@ -20,12 +20,19 @@ end
 
 ---@param conf Rates.Configuration.SendToOrbit
 logic.gui_recipe = function(conf)
-    return { sprite = "item/" .. conf.item.name, quality = conf.quality }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        element = { type = "item-with-quality", name = conf.item.name, quality = conf.quality.name }
+    }
 end
 
 ---@param conf Rates.Configuration.SendToOrbit
 logic.gui_entity = function(conf)
-    return { sprite = "utility/space_age_icon" }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        icon = { sprite = "utility/space_age_icon" },
+        name = { "sw-rates-node.send-to-orbit" }
+    }
 end
 
 ---@param conf Rates.Configuration.SendToOrbit

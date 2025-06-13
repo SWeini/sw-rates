@@ -16,7 +16,11 @@ local entities = configuration.get_all_entities("solar-panel")
 
 ---@param conf Rates.Configuration.SolarPanel
 logic.gui_recipe = function(conf)
-    return { sprite = "tooltip-category-electricity" }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        icon = { sprite = "tooltip-category-electricity" },
+        name = { "sw-rates-node.electric-power" }
+    }
 end
 
 ---@param conf Rates.Configuration.SolarPanel

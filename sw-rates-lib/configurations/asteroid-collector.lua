@@ -92,7 +92,10 @@ end
 
 ---@param conf Rates.Configuration.AsteroidCollector
 logic.gui_recipe = function(conf)
-    return { sprite = "asteroid-chunk/" .. conf.asteroid.name }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        element = { type = "asteroid-chunk", name = conf.asteroid.name }
+    }
 end
 
 ---@param conf Rates.Configuration.AsteroidCollector

@@ -158,7 +158,10 @@ end
 
 ---@param conf Rates.Configuration.CraftingMachine
 logic.gui_recipe = function(conf)
-    return { sprite = "recipe/" .. conf.recipe.name, quality = conf.recipe_quality }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        element = { type = "recipe-with-quality", name = conf.recipe.name, quality = conf.recipe_quality.name }
+    }
 end
 
 ---@param conf Rates.Configuration.CraftingMachine

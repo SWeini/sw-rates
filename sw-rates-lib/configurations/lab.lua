@@ -41,7 +41,11 @@ end
 
 ---@param conf Rates.Configuration.Lab
 logic.gui_recipe = function(conf)
-    return { sprite = "technology/" .. conf.technology.name }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        element = { type = "item", name = "science" },
+        icon = { sprite = "technology/" .. conf.technology.name }
+    }
 end
 
 ---@param conf Rates.Configuration.Lab

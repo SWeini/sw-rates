@@ -20,13 +20,19 @@ end
 
 ---@param conf Rates.Configuration.ItemSpoil
 logic.gui_recipe = function(conf)
-    return { sprite = "item/" .. conf.item.spoil_result.name, quality = conf.quality }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        element = { type = "item-with-quality", name = conf.item.spoil_result.name, quality = conf.quality.name }
+    }
     -- or use "tooltip-category-spoilable"?
 end
 
 ---@param conf Rates.Configuration.ItemSpoil
 logic.gui_entity = function(conf)
-    return { sprite = "item/" .. conf.item.name, quality = conf.quality }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        element = { type = "item-with-quality", name = conf.item.name, quality = conf.quality.name }
+    }
 end
 
 ---@param conf Rates.Configuration.ItemSpoil

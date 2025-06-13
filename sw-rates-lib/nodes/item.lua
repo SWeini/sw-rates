@@ -26,12 +26,10 @@ end
 
 ---@param node Rates.Node.Item
 result.gui_default = function(node)
-    return { sprite = "item/" .. node.item.name, quality = node.quality }
-end
-
----@param node Rates.Node.Item
-result.gui_text = function(node, options)
-    return "[item=" .. node.item.name .. ",quality=" .. node.quality.name .. "]"
+    ---@type Rates.Gui.NodeDescription
+    return {
+        element = { type = "item-with-quality", name = node.item.name, quality = node.quality.name },
+    }
 end
 
 return result

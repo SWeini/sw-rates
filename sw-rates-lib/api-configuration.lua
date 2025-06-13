@@ -14,5 +14,5 @@ return {
     progression = progression,
     node = node,
     configuration = configuration,
-    extra_data = extra_data
+    extra_data = extra_data,
 }

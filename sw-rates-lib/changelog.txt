@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.0
+Date: 2025-06-13
+  Changes:
+    - Improved agricultural towers
+    - Improved asteroid collectors
+    - New API for GUI integration
+    - Improved number formatting
+---------------------------------------------------------------------------------------------------
 Version: 0.1.0
 Date: 2025-06-09
   Features:

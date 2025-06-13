@@ -1,13 +1,13 @@
 {
   "name": "sw-rates-pyalternativeenergy",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "factorio_version": "2.0",
   "title": "Production Rates for Pyanodons Alternative Eneregy",
   "author": "SWeini",
   "homepage": "https://github.com/SWeini/sw-rates",
   "description": "Supports many of the scripted mechanics in PyAE, such as dig site and automated smart farm.",
   "dependencies": [
-    "sw-rates-lib",
-    "pyalternativeenergy"
+    "sw-rates-lib >= 0.2.0",
+    "pyalternativeenergy >= 3.1.23"
   ]
 }

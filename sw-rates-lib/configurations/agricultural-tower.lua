@@ -108,7 +108,10 @@ end
 ---@param conf Rates.Configuration.AgriculturalTower
 logic.gui_recipe = function(conf)
     local plant_result = conf.seed.plant_result ---@cast plant_result -nil
-    return { sprite = "entity/" .. plant_result.name }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        element = { type = "entity", name = plant_result.name }
+    }
 end
 
 ---@param conf Rates.Configuration.AgriculturalTower

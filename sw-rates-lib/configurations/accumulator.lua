@@ -14,7 +14,11 @@ local entities = configuration.get_all_entities("accumulator")
 
 ---@param conf Rates.Configuration.Accumulator
 logic.gui_recipe = function(conf)
-    return { sprite = "virtual-signal/signal-battery-full" }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        icon = { sprite = "virtual-signal/signal-battery-full" },
+        name = { "sw-rates-node.electric-buffer" }
+    }
 end
 
 ---@param conf Rates.Configuration.Accumulator

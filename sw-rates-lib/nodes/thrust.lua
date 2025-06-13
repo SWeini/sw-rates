@@ -14,17 +14,12 @@ end
 
 ---@param node Rates.Node.Thrust
 result.gui_default = function(node)
-    return { sprite = "tooltip-category-thrust" }
-end
-
----@param node Rates.Node.Thrust
-result.gui_text = function(node, options)
-    return { "", "[img=tooltip-category-thrust] ", { "description.thrust" } }
-end
-
----@param node Rates.Node.Thrust
-result.gui_number_format = function(node)
-    return { factor = 1e6, unit = "N" }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        icon = { sprite = "tooltip-category-thrust" },
+        name = { "sw-rates-node.thrust" },
+        number_format = { factor = 1e6, unit = "N" }
+    }
 end
 
 return result

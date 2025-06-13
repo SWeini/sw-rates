@@ -14,17 +14,12 @@ end
 
 ---@param node Rates.Node.ElectricBuffer
 result.gui_default = function(node)
-    return { sprite = "virtual-signal/signal-battery-full" }
-end
-
----@param node Rates.Node.ElectricBuffer
-result.gui_text = function(node, options)
-    return { "", "[img=virtual-signal.signal-battery-full] buffer for ", { "tooltip-category.electricity" } }
-end
-
----@param node Rates.Node.ElectricBuffer
-result.gui_number_format = function(node)
-    return { factor = 1e6, unit = "J" }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        icon = { sprite = "virtual-signal/signal-battery-full" },
+        name = { "sw-rates-node.electric-buffer" },
+        number_format = { factor = 1e6, unit = "J" },
+    }
 end
 
 return result

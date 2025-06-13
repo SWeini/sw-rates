@@ -50,7 +50,10 @@ end
 
 ---@param conf Rates.Configuration.PyDigsite
 logic.gui_recipe = function(conf)
-    return { sprite = "entity/ore-nexelit" }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        element = { type = "entity", name = "ore-nexelit" }
+    }
 end
 
 ---@param conf Rates.Configuration.PyDigsite

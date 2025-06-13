@@ -32,7 +32,11 @@ end
 
 ---@param conf Rates.Configuration.FusionGenerator
 logic.gui_recipe = function(conf)
-    return { sprite = "tooltip-category-electricity" }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        icon = { sprite = "tooltip-category-electricity" },
+        name = { "sw-rates-node.electric-power" }
+    }
 end
 
 logic.get_production = function(conf, result, options)

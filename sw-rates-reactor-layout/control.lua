@@ -1,5 +1,4 @@
 local api = require("__sw-rates-lib__.api-usage")
-local flib_format = require("__flib__.format")
 local fusion_generator = require("__sw-rates-lib__.configurations.fusion-generator")
 
 ---@generic T : any
@@ -12,36 +11,6 @@ local function to_value_array(map)
     end
 
     return result
-end
-
----@param str LocalisedString
----@return LocalisedString
-local function compress_string(str)
-    local type = type(str)
-    if (type ~= "table") then
-        return str
-    end
-
-    for i = 2, #str do
-        str[i] = compress_string(str[i])
-    end
-
-    if (#str > 20 and str[1] == "") then
-        local new_str = { "" } ---@type LocalisedString
-        local i = 2
-        while i <= #str do
-            local part = { "" } ---@type LocalisedString
-            for j = 0, 19 do
-                part[#part + 1] = str[i + j]
-            end
-            new_str[#new_str + 1] = part
-            i = i + 20
-        end
-
-        return new_str
-    end
-
-    return str
 end
 
 ---@param fluids table<string, { fluid: LuaFluidPrototype, weighted_temperature: number, amount: number }>
@@ -63,6 +32,7 @@ end
 ---@return LocalisedString
 local function dump_amount(amount)
     local node = amount.node
+    local gui = api.node.gui_default(node)
     local message = { "" } ---@type LocalisedString
     if (amount.amount > 0) then
         message[#message + 1] = { "tooltip-category.generates" }
@@ -73,21 +43,7 @@ local function dump_amount(amount)
     end
 
     message[#message + 1] = " "
-    message[#message + 1] = api.node.gui_text(node)
-    message[#message + 1] = ": "
-    local format = api.node.gui_number_format(node)
-    if (format.unit == nil) then
-        local per_second = math.abs(amount.amount) * format.factor
-        if (per_second < 0.1) then
-            message[#message + 1] = flib_format.number(per_second * 60)
-            message[#message + 1] = { "per-minute-suffix" }
-        else
-            message[#message + 1] = flib_format.number(per_second)
-            message[#message + 1] = { "per-second-suffix" }
-        end
-    else
-        message[#message + 1] = flib_format.number(math.abs(amount.amount) * format.factor, true) .. format.unit
-    end
+    message[#message + 1] = api.gui.gui_message(gui, math.abs(amount.amount))
 
     local fuel_categories = nil
     if (node.type == "item-fuel") then
@@ -102,17 +58,10 @@ local function dump_amount(amount)
     if (fuel_categories) then
         for _, category in ipairs(fuel_categories) do
             for _, item in pairs(prototypes.get_item_filtered { { filter = "fuel-category", ["fuel-category"] = category.name } }) do
+                local per_second = math.abs(amount.amount) * 1e6 / item.fuel_value
+                local item_node = api.node.create.item(item, prototypes.quality.normal)
                 message[#message + 1] = "\n    "
-                message[#message + 1] = api.node.gui_text(api.node.create.item(item, prototypes.quality.normal))
-                message[#message + 1] = ": "
-                local per_second = math.abs(amount.amount) * format.factor / item.fuel_value
-                if (per_second < 0.1) then
-                    message[#message + 1] = flib_format.number(per_second * 60)
-                    message[#message + 1] = { "per-minute-suffix" }
-                else
-                    message[#message + 1] = flib_format.number(per_second)
-                    message[#message + 1] = { "per-second-suffix" }
-                end
+                message[#message + 1] = api.gui.gui_message(api.node.gui_default(item_node), per_second)
             end
         end
     end
@@ -160,7 +109,7 @@ local function analyze_reactor(player, entities)
         message[#message + 1] = dump_amount(amount)
     end
 
-    player.print(compress_string(message))
+    player.print(api.gui.compress_string(message))
 end
 
 ---@param player LuaPlayer
@@ -217,10 +166,10 @@ local function analyze_fusion_reactor(player, entities)
         local node = api.node.create.fluid(fluid.fluid, temperature)
         message[#message + 1] = dump_amount({ tag = "product", node = node, amount = fluid.amount })
         local energy = temperature * fluid.amount * fluid.fluid.heat_capacity
-        message[#message + 1] = "\n    corresponds to " .. flib_format.number(energy, true) .. "W"
+        message[#message + 1] = "\n    corresponds to " .. api.gui.format_number(energy) .. "W"
     end
 
-    player.print(compress_string(message))
+    player.print(api.gui.compress_string(message))
 
     local result = {} ---@type table<string, { fluid: LuaFluidPrototype, temperature: number, amount: number }>
     for key, entry in pairs(fluids) do
@@ -280,11 +229,11 @@ local function analyze_fusion_generator(player, entities, fluids)
         local node = amount.node
         if (node.type == "fluid" and amount.amount < 0) then
             local energy = node.temperature * -amount.amount * node.fluid.heat_capacity
-            message[#message + 1] = "\n    corresponds to " .. flib_format.number(energy, true) .. "W"
+            message[#message + 1] = "\n    corresponds to " .. api.gui.format_number(energy) .. "W"
         end
     end
 
-    player.print(compress_string(message))
+    player.print(api.gui.compress_string(message))
 end
 
 ---@param entities EntityCounts

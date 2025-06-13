@@ -1,5 +1,6 @@
 local api = require("__sw-rates-lib__.api-configuration")
 local progression = api.progression
+local mining = require("__sw-rates-lib__.configurations.mining-drill")
 
 local logic = { type = "py-bitumenseep", stats = { priority = 100 } } ---@type Rates.Configuration.Type
 
@@ -64,16 +65,20 @@ logic.get_from_entity = function(entity, options)
         return
     end
 
+    local temp = mining.get_from_entity(entity, options)
+    if (not temp) then
+        return
+    end
+
+    if (not temp.resource or temp.resource.name ~= "bitumen-seep") then
+        return
+    end
+
     local resource = prototypes.entity[drill]
-    ---@type Rates.Configuration.MiningDrill
-    return {
-        type = "mining-drill",
-        id = nil, ---@diagnostic disable-line: assign-type-mismatch
-        entity = options.entity,
-        quality = options.quality,
-        module_effects = { modules = {}, beacons = {} },
-        resource = resource
-    }
+    temp.type = "mining-drill"
+    temp.id = nil
+    temp.resource = resource
+    return temp
 end
 
 return logic

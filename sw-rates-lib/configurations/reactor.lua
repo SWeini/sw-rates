@@ -52,7 +52,21 @@ end
 
 ---@param conf Rates.Configuration.Reactor
 logic.gui_recipe = function(conf)
-    return { sprite = "tooltip-category-heat" }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        icon = { sprite = "tooltip-category-heat" },
+        name = { "sw-rates-node.heat" },
+        qualifier = { "", conf.entity.heat_buffer_prototype.max_temperature, { "si-unit-degree-celsius" } },
+    }
+end
+
+---@param conf Rates.Configuration.Reactor
+logic.gui_entity = function(conf)
+    ---@type Rates.Gui.NodeDescription
+    return {
+        element = { type = "entity-with-quality", name = conf.entity.name, quality = conf.quality.name },
+        qualifier = conf.neighbours ~= 0 and ("+" .. conf.neighbours) or nil
+    }
 end
 
 ---@param conf Rates.Configuration.Reactor
@@ -109,7 +123,12 @@ logic.get_from_entity = function(entity, options)
         return
     end
 
-    local neighbours = count_neighbours(entity, options.use_ghosts)
+    local neighbours ---@type number
+    if (options.entity.neighbour_bonus and options.entity.neighbour_bonus ~= 0) then
+        neighbours = count_neighbours(entity, options.use_ghosts)
+    else
+        neighbours = 0
+    end
 
     ---@type Rates.Configuration.Reactor
     return {

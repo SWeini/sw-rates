@@ -20,16 +20,25 @@ end
 
 ---@param conf Rates.Configuration.ItemFuel
 logic.gui_recipe = function(conf)
-    local specific_sprite = "tooltip-category-" .. conf.item.fuel_category
-    if (helpers.is_valid_sprite_path(specific_sprite)) then
-        return { sprite = specific_sprite }
+    local category = conf.item.fuel_category ---@cast category -nil
+    local sprite = "tooltip-category-" .. category
+    if (not helpers.is_valid_sprite_path(sprite)) then
+        sprite = "tooltip-category-fuel"
     end
-    return { sprite = "tooltip-category-fuel" }
+
+    ---@type Rates.Gui.NodeDescription
+    return {
+        icon = { sprite = sprite },
+        name = prototypes.fuel_category[category].localised_name
+    }
 end
 
 ---@param conf Rates.Configuration.ItemFuel
 logic.gui_entity = function(conf)
-    return { sprite = "item/" .. conf.item.name, quality = conf.quality }
+    ---@type Rates.Gui.NodeDescription
+    return {
+        element = { type = "item-with-quality", name = conf.item.name, quality = conf.quality.name }
+    }
 end
 
 ---@param conf Rates.Configuration.ItemFuel
