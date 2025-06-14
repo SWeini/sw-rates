@@ -6,6 +6,7 @@ end
 local api = require("__sw-rates-lib__.api-configuration")
 local node = api.node
 local progression = api.progression
+local configuration = require("__sw-rates-lib__.scripts.configuration")
 local crafting = require("__sw-rates-lib__.configurations.crafting-machine")
 
 local logic = { type = "py-smartfarm", stats = { priority = 100 } } ---@type Rates.Configuration.Type
@@ -129,12 +130,18 @@ logic.get_from_entity = function(entity, options)
         return
     end
 
-    local temp = crafting.get_from_entity(entity, options)
-    if (temp) then
-        temp.type = "py-smartfarm"
-        temp.id = nil
-        return temp
+    local result = crafting.get_from_entity(entity, options)
+    if (result.type == "meta") then
+        local child = result.children[1]
+        child.type = "py-smartfarm"
+        child.id = configuration.get_id(child)
+        result.id = nil
+    else
+        result.type = "py-smartfarm"
+        result.id = nil
     end
+
+    return result
 end
 
 return logic
