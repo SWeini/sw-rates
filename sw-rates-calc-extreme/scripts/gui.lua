@@ -126,49 +126,44 @@ end
 local function build_pane_total()
     ---@type flib.GuiElemDef
     return {
-        type = "flow",
-        style = "inset_frame_container_vertical_flow",
+        type = "frame",
+        style = "inside_shallow_frame",
         direction = "vertical",
         {
             type = "frame",
-            style = "inside_shallow_frame",
-            direction = "vertical",
+            style = "subheader_frame",
             {
-                type = "frame",
-                style = "subheader_frame",
-                {
-                    type = "label",
-                    style = "subheader_caption_label",
-                    caption = { "gui.sw-rates-calc-extreme-pane-total" }
-                },
-                { type = "empty-widget", style = "flib_horizontal_pusher" },
-                -- toolbar buttons for pane_total
-                -- {
-                --     type = "sprite-button",
-                --     name = "show_hide_total",
-                --     style = "flib_selected_frame_action_button",
-                --     sprite = "virtual-signal/up-arrow",
-                --     tooltip = "Show/hide total production"
-                -- }
+                type = "label",
+                style = "subheader_caption_label",
+                caption = { "gui.sw-rates-calc-extreme-pane-total" }
+            },
+            { type = "empty-widget", style = "flib_horizontal_pusher" },
+            -- toolbar buttons for pane_total
+            -- {
+            --     type = "sprite-button",
+            --     name = "show_hide_total",
+            --     style = "flib_selected_frame_action_button",
+            --     sprite = "virtual-signal/up-arrow",
+            --     tooltip = "Show/hide total production"
+            -- }
+        },
+        {
+            type = "scroll-pane",
+            horizontal_scroll_policy = "never",
+            vertical_scroll_policy = "auto-and-reserve-space",
+            style = "flib_naked_scroll_pane",
+            style_mods = {
+                top_padding = 8,
+                bottom_padding = 8
             },
             {
-                type = "scroll-pane",
-                horizontal_scroll_policy = "never",
-                vertical_scroll_policy = "auto-and-reserve-space",
-                style = "flib_naked_scroll_pane",
+                type = "table",
+                name = "table_total",
+                column_count = 1,
                 style_mods = {
-                    top_padding = 8,
-                    bottom_padding = 8
+                    minimal_width = 300
                 },
                 {
-                    type = "table",
-                    name = "table_total",
-                    column_count = 1,
-                    style_mods = {
-                        minimal_width = 300
-                    },
-                    {
-                    }
                 }
             }
         }
@@ -179,55 +174,50 @@ end
 local function build_pane_buildings()
     ---@type flib.GuiElemDef
     return {
-        type = "flow",
-        style = "inset_frame_container_vertical_flow",
+        type = "frame",
+        style = "inside_shallow_frame",
         direction = "vertical",
         {
             type = "frame",
-            style = "inside_shallow_frame",
-            direction = "vertical",
+            style = "subheader_frame",
             {
-                type = "frame",
-                style = "subheader_frame",
-                {
-                    type = "label",
-                    style = "subheader_caption_label",
-                    caption = { "gui.sw-rates-calc-extreme-pane-buildings" }
-                },
-                { type = "empty-widget", style = "flib_horizontal_pusher" },
-                -- toolbar buttons for pane_buildings
-                -- frame_action_button("search_button", "utility/search",
-                --     { "gui.search-with-focus", "__CONTROL__search-focus__" },
-                --     on_search_button_click),
-                -- {
-                --     type = "sprite-button",
-                --     sprite = "virtual-signal/signal-ghost",
-                --     style = "flib_selected_frame_action_button"
-                -- },
-                -- {
-                --     type = "sprite-button",
-                --     sprite = "virtual-signal/signal-white",
-                --     style = "frame_action_button"
-                -- },
+                type = "label",
+                style = "subheader_caption_label",
+                caption = { "gui.sw-rates-calc-extreme-pane-buildings" }
+            },
+            { type = "empty-widget", style = "flib_horizontal_pusher" },
+            -- toolbar buttons for pane_buildings
+            -- frame_action_button("search_button", "utility/search",
+            --     { "gui.search-with-focus", "__CONTROL__search-focus__" },
+            --     on_search_button_click),
+            -- {
+            --     type = "sprite-button",
+            --     sprite = "virtual-signal/signal-ghost",
+            --     style = "flib_selected_frame_action_button"
+            -- },
+            -- {
+            --     type = "sprite-button",
+            --     sprite = "virtual-signal/signal-white",
+            --     style = "frame_action_button"
+            -- },
+        },
+        {
+            type = "scroll-pane",
+            horizontal_scroll_policy = "never",
+            vertical_scroll_policy = "auto-and-reserve-space",
+            style = "flib_naked_scroll_pane",
+            style_mods = {
+                top_padding = 8,
+                bottom_padding = 8
             },
             {
-                type = "scroll-pane",
-                horizontal_scroll_policy = "never",
-                vertical_scroll_policy = "auto-and-reserve-space",
-                style = "flib_naked_scroll_pane",
+                type = "table",
+                name = "table_buildings",
+                column_count = 4,
                 style_mods = {
-                    top_padding = 8,
-                    bottom_padding = 8
+                    minimal_width = 300
                 },
                 {
-                    type = "table",
-                    name = "table_buildings",
-                    column_count = 4,
-                    style_mods = {
-                        minimal_width = 300
-                    },
-                    {
-                    }
                 }
             }
         }
@@ -270,10 +260,6 @@ function gui.build(player)
         {
             type = "flow",
             style = "inset_frame_container_horizontal_flow",
-            style_mods = {
-                horizontal_spacing = 12,
-                top_margin = 8,
-            },
             direction = "horizontal",
             build_pane_total(),
             build_pane_buildings(),
