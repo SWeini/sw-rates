@@ -91,7 +91,7 @@ local function dump_modules(conf)
             result[#result + 1] = "\n" ..
                 beacon.count .. " x [entity=" .. beacon.beacon.name .. ",quality=" .. beacon.quality.name .. "]: "
         end
-        for i, module in ipairs(beacon.total_modules) do
+        for i, module in ipairs(beacon.per_beacon_modules) do
             if (i > 1) then
                 result[#result + 1] = ", "
             end

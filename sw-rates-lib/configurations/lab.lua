@@ -50,15 +50,7 @@ end
 
 ---@param conf Rates.Configuration.Lab
 logic.get_production = function(conf, result, options)
-    local effective_values = {} ---@type ModuleEffects
     local speed = conf.entity.get_researching_speed(conf.quality)
-
-    local all_effects = {} ---@type ModuleEffects[]
-
-    local effect_receiver = conf.entity.effect_receiver
-    if (effect_receiver) then
-        all_effects[#all_effects + 1] = effect_receiver.base_effect
-    end
 
     ---@param m LuaItemPrototype
     ---@return boolean
@@ -66,31 +58,23 @@ logic.get_production = function(conf, result, options)
         return true
     end
 
-    if (effect_receiver == nil or effect_receiver.uses_module_effects) then
-        local module_effects = configuration.get_module_effects(conf.module_effects.modules, is_module_allowed)
-        all_effects[#all_effects + 1] = module_effects
-    end
-
-    if (effect_receiver == nil or effect_receiver.uses_beacon_effects) then
-        local beacon_effects = configuration.get_beacon_effects(conf.module_effects.beacons, is_module_allowed)
-        all_effects[#all_effects + 1] = beacon_effects
-    end
-
-    if (options.surface) then
-        if (effect_receiver == nil or effect_receiver.uses_surface_effects) then
-            all_effects[#all_effects + 1] = location.get_global_effect(options.surface)
-        end
-    end
-
+    local surface_effect = options.surface and location.get_global_effect(options.surface)
+    local additional_effects = {} ---@type Rates.Internal.FloatModuleEffects[]
     if (options.force) then
-        all_effects[#all_effects + 1] = {
+        additional_effects[#additional_effects + 1] = {
             speed = options.force.laboratory_speed_modifier,
             productivity = options.force.laboratory_productivity_bonus
         }
     end
 
-    local sum_effects = configuration.module_add(all_effects)
-    effective_values = configuration.get_effective_values(sum_effects)
+    local effective_values = configuration.calculate_effects(
+        conf.entity.effect_receiver,
+        conf.module_effects,
+        surface_effect,
+        additional_effects,
+        nil,
+        is_module_allowed)
+
     local energy_usage = conf.entity.energy_usage * effective_values.consumption
     configuration.calculate_energy_source(result, conf.entity, energy_usage)
 

@@ -347,6 +347,12 @@ function util.has_surface_conditions(surface, conditions)
     return true
 end
 
+---int16_t in percentages
+---@alias Rates.Internal.ModuleEffect integer
+---@alias Rates.Internal.EffectType "consumption" | "speed" | "productivity" | "pollution" | "quality"
+---@alias Rates.Internal.FloatModuleEffects table<Rates.Internal.EffectType, number>
+---@alias Rates.Internal.ModuleEffects table<Rates.Internal.EffectType, Rates.Internal.ModuleEffect>
+
 ---@type table<string, defines.inventory>
 local module_inventories = {
     ["assembling-machine"] = defines.inventory.crafter_modules,
@@ -370,22 +376,92 @@ local positive_module_effect = {
 ---@param b Rates.Configuration.Module
 ---@return boolean
 local function compare_module(a, b)
+    if (a.count ~= b.count) then
+        return a.count > b.count
+    end
+
     if (a.module.name ~= b.module.name) then
         return a.module.name < b.module.name
     end
 
-    return a.quality.name < b.quality.name
+    if (a.quality.level ~= b.quality.level) then
+        return a.quality.level < b.quality.level
+    end
+
+    if (a.quality.name ~= b.quality.name) then
+        return a.quality.name < b.quality.name
+    end
+
+    -- a and b are equal, order doesn't matter
+    return false
 end
 
 ---@param a Rates.Configuration.Beacon
 ---@param b Rates.Configuration.Beacon
 ---@return boolean
 local function compare_beacon(a, b)
+    if (a.count ~= b.count) then
+        return a.count > b.count
+    end
+
+    if (a.beacon.hidden ~= b.beacon.hidden) then
+        return a.beacon.hidden < b.beacon.hidden
+    end
+
     if (a.beacon.name ~= b.beacon.name) then
         return a.beacon.name < b.beacon.name
     end
 
-    return a.quality.name < b.quality.name
+    if (a.quality.level ~= b.quality.level) then
+        return a.quality.level < b.quality.level
+    end
+
+    if (a.quality.name ~= b.quality.name) then
+        return a.quality.name < b.quality.name
+    end
+
+    if (#a.per_beacon_modules ~= #b.per_beacon_modules) then
+        return #a.per_beacon_modules > #b.per_beacon_modules
+    end
+
+    for i = 1, #a.per_beacon_modules do
+        local a_i = a.per_beacon_modules[i]
+        local b_i = b.per_beacon_modules[i]
+
+        if (a_i.count ~= b_i.count) then
+            return a_i.count > b_i.count
+        end
+
+        if (a_i.module.name ~= b_i.module.name) then
+            return a_i.module.name < b_i.module.name
+        end
+
+        if (a_i.quality.level ~= b_i.quality.level) then
+            return a_i.quality.level < b_i.quality.level
+        end
+
+        if (a_i.quality.name ~= b_i.quality.name) then
+            return a_i.quality.name < b_i.quality.name
+        end
+    end
+
+    -- a and b are equal, order doesn't matter
+    return false
+end
+
+---@param beacon Rates.Configuration.Beacon
+---@return string
+local function get_beacon_id(beacon)
+    local parts = {}
+    parts[#parts + 1] = beacon.beacon.name
+    parts[#parts + 1] = beacon.quality.name
+    for _, module in ipairs(beacon.per_beacon_modules) do
+        parts[#parts + 1] = module.module.name
+        parts[#parts + 1] = module.quality.name
+        parts[#parts + 1] = tostring(module.count)
+    end
+
+    return table.concat(parts, "/")
 end
 
 ---@param modules Rates.Configuration.Module[]
@@ -396,6 +472,63 @@ end
 ---@param beacons Rates.Configuration.Beacon[]
 function util.sort_beacons(beacons)
     table.sort(beacons, compare_beacon)
+end
+
+---@param beacons Rates.Configuration.Beacon[]
+---@param important_beacon_types table<string, true>
+---@return Rates.Configuration.Beacon[]
+local function remove_empty_beacons(beacons, important_beacon_types)
+    local result = {} ---@type Rates.Configuration.Beacon[]
+    for _, beacon in ipairs(beacons) do
+        if (#beacon.per_beacon_modules > 0 or important_beacon_types[beacon.beacon.name]) then
+            result[#result + 1] = beacon
+        end
+    end
+
+    return result
+end
+
+---@param beacons Rates.Configuration.Beacon[]
+---@return Rates.Configuration.Beacon[]
+function util.cleanup_beacons(beacons)
+    local every_beacon_counts = false
+    local important_beacon_types = {} ---@type table<string, true>
+    for _, beacon in ipairs(beacons) do
+        if (#beacon.per_beacon_modules > 0) then
+            local profile = beacon.beacon.profile
+            if (profile and #profile > 1) then
+                if (beacon.beacon.beacon_counter == "total") then
+                    every_beacon_counts = true
+                    break
+                else
+                    important_beacon_types[beacon.beacon.name] = true
+                end
+            end
+        end
+    end
+
+    if (not every_beacon_counts) then
+        beacons = remove_empty_beacons(beacons, important_beacon_types)
+    end
+
+    local beacons_by_id = {} ---@type table<string, Rates.Configuration.Beacon>
+    for _, beacon in ipairs(beacons) do
+        local beacon_id = get_beacon_id(beacon)
+        local entry = beacons_by_id[beacon_id]
+        if (entry) then
+            entry.count = entry.count + beacon.count
+        else
+            beacons_by_id[beacon_id] = beacon
+        end
+    end
+
+    local result = {} ---@type Rates.Configuration.Beacon[]
+    for _, beacon in pairs(beacons_by_id) do
+        result[#result + 1] = beacon
+    end
+
+    util.sort_beacons(result)
+    return result
 end
 
 ---@param modules Rates.Configuration.Module[]
@@ -414,10 +547,13 @@ end
 
 ---@param beacons Rates.Configuration.Beacon[]
 ---@param accept fun(module: LuaItemPrototype): boolean
+---@return Rates.Configuration.Beacon[]
 function util.filter_beacons(beacons, accept)
     for _, beacon in ipairs(beacons) do
-        beacon.total_modules = util.filter_modules(beacon.total_modules, accept)
+        beacon.per_beacon_modules = util.filter_modules(beacon.per_beacon_modules, accept)
     end
+
+    return util.cleanup_beacons(beacons)
 end
 
 ---@param entity LuaEntity
@@ -513,27 +649,6 @@ local function is_beacon_in_range(entity, beacon, beacon_prototype, beacon_quali
     return math2d.bounding_box.collides_with(supply_box, entity_box)
 end
 
----@param map table<string, { beacon: LuaEntityPrototype, quality: LuaQualityPrototype, count: integer, modules: table<string, Rates.Configuration.Module> }>
----@param beacon LuaEntityPrototype
----@param beacon_quality LuaQualityPrototype
----@return table<string, Rates.Configuration.Module>
-local function add_beacon(map, beacon, beacon_quality)
-    local key = beacon.name .. "/" .. beacon_quality.name
-    local entry = map[key]
-    if (not entry) then
-        entry = {
-            beacon = beacon,
-            quality = beacon_quality,
-            count = 0,
-            modules = {}
-        }
-        map[key] = entry
-    end
-
-    entry.count = entry.count + 1
-    return entry.modules
-end
-
 ---@param map table<string, Rates.Configuration.Module>
 ---@param module LuaItemPrototype
 ---@param module_quality LuaQualityPrototype
@@ -586,35 +701,34 @@ function util.collect_beacons(entity, use_ghosts)
         end
     end
 
-    local map = {} ---@type table<string, { beacon: LuaEntityPrototype, quality: LuaQualityPrototype, count: integer, modules: table<string, Rates.Configuration.Module> }>
+    local result = {} ---@type Rates.Configuration.Beacon[]
     for _, beacon in ipairs(useful_beacons) do
         if (is_beacon_in_range(entity, beacon.entity, beacon.prototype, beacon.quality)) then
-            local beacon_data = add_beacon(map, beacon.prototype, beacon.quality)
+            local beacon_modules = {} ---@type table<string, Rates.Configuration.Module>
             local module_slots = util.collect_modules(beacon.entity, use_ghosts)
             for _, module in pairs(module_slots) do
-                add_module(beacon_data, module.module, module.quality)
+                add_module(beacon_modules, module.module, module.quality)
             end
+
+            local modules = {} ---@type Rates.Configuration.Module[]
+            for _, entry in pairs(beacon_modules) do
+                modules[#modules + 1] = entry
+            end
+
+            util.sort_modules(modules)
+
+            ---@type Rates.Configuration.Beacon
+            local beacon_data = {
+                beacon = beacon.prototype,
+                quality = beacon.quality,
+                count = 1,
+                per_beacon_modules = modules
+            }
+            result[#result + 1] = beacon_data
         end
     end
 
-    local result = {} ---@type Rates.Configuration.Beacon[]
-    for _, beacon in pairs(map) do
-        local modules = {} ---@type Rates.Configuration.Module[]
-        for _, module in pairs(beacon.modules) do
-            modules[#modules + 1] = module
-        end
-
-        util.sort_modules(modules)
-        result[#result + 1] = {
-            beacon = beacon.beacon,
-            quality = beacon.quality,
-            count = beacon.count,
-            total_modules = modules
-        }
-    end
-
-    util.sort_beacons(result)
-    return result
+    return util.cleanup_beacons(result)
 end
 
 ---@param entity LuaEntity
@@ -625,6 +739,17 @@ function util.get_useful_module_effects(entity, use_ghosts)
     local modules = util.sum_modules(module_slots)
     local beacons = util.collect_beacons(entity, use_ghosts)
     return { modules = modules, beacons = beacons }
+end
+
+---@param name Rates.Internal.EffectType
+---@param x number
+---@return boolean
+local function is_positive_effect(name, x)
+    if (positive_module_effect[name]) then
+        return x > 0
+    else
+        return x < 0
+    end
 end
 
 ---@param effects Rates.Configuration.ModuleEffects
@@ -661,7 +786,7 @@ function util.filter_module_effects_category(effects, categories)
     end
 
     if (effects.beacons) then
-        util.filter_beacons(effects.beacons, accept)
+        effects.beacons = util.filter_beacons(effects.beacons, accept)
     end
 end
 
@@ -678,15 +803,8 @@ function util.filter_module_effects_allowed(effects, allowed)
         for _, property in ipairs(all_module_effects) do
             if (not allowed[property]) then
                 local effect = module.module_effects and module.module_effects[property] or 0
-                if (effect ~= 0) then
-                    local positive = effect > 0
-                    if (not positive_module_effect[property]) then
-                        positive = not positive
-                    end
-
-                    if (positive) then
-                        return false
-                    end
+                if (is_positive_effect(property, effect)) then
+                    return false
                 end
             end
         end
@@ -703,118 +821,228 @@ function util.filter_module_effects_allowed(effects, allowed)
     end
 end
 
----@param effects ModuleEffects
----@param multiplier number
----@param quality number
----@return ModuleEffects
-function util.module_mult(effects, multiplier, quality)
-    local result = {}
-    for _, property in ipairs(all_module_effects) do
-        local value = effects[property]
-        if (value) then
-            local positive = value > 0
-            if (not positive_module_effect[property]) then
-                positive = not positive
-            end
+---@param x number
+---@return integer
+local function to_integer_percentage(x)
+    -- x is supposed to be an integer, converted to float and divided by 100 (directly coming from the API)
+    -- x * 100 only has slight rounding errors due to floating point precision
+    return math.floor(x * 100 + 0.5)
+end
 
-            result[property] = value * multiplier * (positive and quality or 1)
-        end
+---@param effects Rates.Internal.FloatModuleEffects
+---@return Rates.Internal.ModuleEffects
+local function to_integer_percentage_effects(effects)
+    local result = {} ---@type Rates.Internal.ModuleEffects
+    for name, value in pairs(effects) do
+        result[name] = to_integer_percentage(value)
     end
+
     return result
 end
 
----@param effects ModuleEffects[]
----@return ModuleEffects
-function util.module_add(effects)
-    local result = {}
-    for _, property in ipairs(all_module_effects) do
-        local sum = 0
-        for _, effects in ipairs(effects) do
-            local value = effects[property]
-            if (value) then
-                sum = sum + value
+---@param x number
+---@return integer
+local function cast_to_integer(x)
+    if (x > 0) then
+        return math.floor(x)
+    elseif (x < 0) then
+        return math.ceil(x)
+    else
+        return 0
+    end
+end
+
+---@param x number
+---@return integer
+local function round_to_integer(x)
+    return math.floor(x + 0.5)
+end
+
+---@param x integer
+---@return integer
+local function clamp_to_16_bit(x)
+    if (x > 32767) then
+        return 32767
+    elseif (x < -32768) then
+        return -32768
+    else
+        return x
+    end
+end
+
+---@param module LuaItemPrototype
+---@param quality LuaQualityPrototype
+---@return Rates.Internal.ModuleEffects
+local function get_effect_of_single_module(module, quality)
+    local result = {} ---@type Rates.Internal.ModuleEffects
+
+    local effects = module.module_effects ---@type Rates.Internal.FloatModuleEffects
+    if (effects) then
+        for name, value in pairs(effects) do
+            if (value ~= 0) then
+                local percentage = to_integer_percentage(value)
+                if (is_positive_effect(name, value)) then
+                    -- negative effects are not increased by quality
+                    -- multiplier is 1 + 0.3 * quality.level
+                    -- just have to be careful because of rounding at the end
+                    local bonus = cast_to_integer((3 * quality.level * percentage) / 10)
+                    percentage = percentage + bonus
+                end
+
+                result[name] = percentage
             end
         end
-
-        if (sum ~= 0) then
-            result[property] = sum
-        end
     end
+
     return result
 end
 
----@param modules Rates.Configuration.Module[]
----@param module_check fun(module: LuaItemPrototype): boolean)
----@return ModuleEffects
-function util.get_module_effects(modules, module_check)
-    ---@type ModuleEffects[]
-    local result = {}
-    for _, module in ipairs(modules or {}) do
-        if (module_check(module.module)) then
-            local quality = 1 + module.quality.level * 0.3
-            local effects = util.module_mult(module.module.module_effects, module.count, quality)
-            table.insert(result, effects)
-        end
+---@param target Rates.Internal.ModuleEffects
+---@param effects Rates.Internal.ModuleEffects
+---@param multiplier integer?
+local function accumulate_effects(target, effects, multiplier)
+    if (not multiplier) then
+        multiplier = 1
     end
 
-    return util.module_add(result)
+    for name, value in pairs(effects) do
+        target[name] = (target[name] or 0) + value * multiplier
+    end
 end
 
----@param beacons Rates.Configuration.Beacon[]
+---@type EffectReceiver
+local default_effect_receiver = {
+    base_effect = {},
+    uses_beacon_effects = true,
+    uses_module_effects = true,
+    uses_surface_effects = true
+}
+
+---@param receiver EffectReceiver?
+---@param effects Rates.Configuration.ModuleEffects?
+---@param surface_effect Rates.Internal.FloatModuleEffects?
+---@param additional_effects Rates.Internal.FloatModuleEffects[]?
+---@param max_effect Rates.Internal.FloatModuleEffects?
 ---@param module_check fun(module: LuaItemPrototype): boolean)
----@return ModuleEffects
-function util.get_beacon_effects(beacons, module_check)
-    if (not beacons) then
-        return {}
+---@return Rates.Internal.FloatModuleEffects
+function util.calculate_effects(receiver, effects, surface_effect, additional_effects, max_effect, module_check)
+    local result = {} ---@type Rates.Internal.ModuleEffects
+
+    if (not receiver) then
+        receiver = default_effect_receiver
     end
 
-    local beacon_count = 0
-    local beacon_counts = {} ---@type table<string, integer>
-    for _, beacon in ipairs(beacons) do
-        beacon_count = beacon_count + beacon.count
-        local name = beacon.beacon.name
-        beacon_counts[name] = (beacon_counts[name] or 0) + beacon.count
+    accumulate_effects(result, to_integer_percentage_effects(receiver.base_effect))
+
+    if (receiver.uses_surface_effects and surface_effect) then
+        accumulate_effects(result, to_integer_percentage_effects(surface_effect))
     end
 
-    ---@type ModuleEffects[]
-    local result = {}
-    for _, beacon in ipairs(beacons) do
-        local profile = beacon.beacon.profile
-        if (not profile or #profile == 0) then
-            profile = { 1 }
-        end
-        local count
-        if (beacon.beacon.beacon_counter == "total") then
-            count = beacon_count
-        else
-            count = beacon_counts[beacon.beacon.name]
-        end
-        local idx = math.min(count, #profile)
-        local profile_multiplier = profile[idx]
-        local effectivity = beacon.beacon.distribution_effectivity
-        local effectivity_per_level = beacon.beacon.distribution_effectivity_bonus_per_quality_level or 0
-        local total_effectivity = (effectivity + beacon.quality.level * effectivity_per_level) * profile_multiplier
-        for _, module in ipairs(beacon.total_modules) do
+    local modules = effects and effects.modules
+    if (receiver.uses_module_effects and modules) then
+        for _, module in ipairs(modules) do
             if (module_check(module.module)) then
-                local quality = 1 + module.quality.level * 0.3
-                local effects = util.module_mult(module.module.module_effects, module.count * total_effectivity, quality)
-                table.insert(result, effects)
+                local module_effect = get_effect_of_single_module(module.module, module.quality)
+                accumulate_effects(result, module_effect, module.count)
             end
         end
     end
 
-    return util.module_add(result)
-end
+    local beacons = effects and effects.beacons
+    if (receiver.uses_beacon_effects and beacons) then
+        -- beacons are quite complex
+        -- the order here is very important because lots of rounding/clamping happens at specific points of the calculation
 
----@param effects ModuleEffects
----@return ModuleEffects
-function util.get_effective_values(effects)
+        local beacon_count = 0
+        local beacons_by_prototype = {} ---@type table<string, { beacon: LuaEntityPrototype, count: integer, effects: Rates.Internal.ModuleEffects } >
+        for _, beacon in ipairs(beacons) do
+            local name = beacon.beacon.name
+            local entry = beacons_by_prototype[name]
+            if (not entry) then
+                entry = { beacon = beacon.beacon, count = 0, effects = {} }
+                beacons_by_prototype[name] = entry
+            end
+
+            beacon_count = beacon_count + beacon.count
+            entry.count = entry.count + beacon.count
+
+            local effectivity = to_integer_percentage(beacon.beacon.distribution_effectivity)
+            local effectivity_per_level = to_integer_percentage(beacon.beacon
+                .distribution_effectivity_bonus_per_quality_level or 0)
+            local total_effectivity = effectivity + beacon.quality.level * effectivity_per_level
+            local single_beacon_inserted_effects = {} ---@type Rates.Internal.ModuleEffects
+            for _, module in ipairs(beacon.per_beacon_modules) do
+                if (module_check(module.module)) then
+                    local module_effect = get_effect_of_single_module(module.module, module.quality)
+                    accumulate_effects(single_beacon_inserted_effects, module_effect, module.count)
+                end
+            end
+
+            local single_beacon_distributed_effects = {} ---@type Rates.Internal.ModuleEffects
+            for name, value in pairs(single_beacon_inserted_effects) do
+                -- order is important: sum all modules in a beacon, then multiply with distribution effectivity and cast to int64_t
+                -- using percentages for total_effectivity to reduce issues with floating point precision
+                single_beacon_distributed_effects[name] = cast_to_integer((value * total_effectivity) / 100)
+            end
+
+            accumulate_effects(entry.effects, single_beacon_distributed_effects, beacon.count)
+        end
+
+        for _, beacon in pairs(beacons_by_prototype) do
+            local profile = beacon.beacon.profile
+            if (not profile or #profile == 0) then
+                profile = { 1 }
+            end
+            local count
+            if (beacon.beacon.beacon_counter == "total") then
+                count = beacon_count
+            else
+                count = beacon.count
+            end
+
+            local idx = math.min(count, #profile)
+            local profile_multiplier = profile[idx]
+
+            local effects_of_beacon_prototype = {} ---@type Rates.Internal.ModuleEffects
+            for name, value in pairs(beacon.effects) do
+                -- order is important: sum effects of beacons by prototype, then multiply with profile, round to int64_t and clamp to int16_t
+                -- I don't know exactly why this clamping happens in the engine, but it does
+                effects_of_beacon_prototype[name] = clamp_to_16_bit(round_to_integer(value * profile_multiplier))
+            end
+
+            accumulate_effects(result, effects_of_beacon_prototype)
+        end
+    end
+
+    if (additional_effects) then
+        for _, effect in ipairs(additional_effects) do
+            -- normally used for per-force bonus effects
+            accumulate_effects(result, to_integer_percentage_effects(effect))
+        end
+    end
+
+    if (max_effect) then
+        -- used for max recipe productivity
+        local max_effect = to_integer_percentage_effects(max_effect)
+        for name, value in pairs(max_effect) do
+            if ((result[name] or 0) > value) then
+                result[name] = value
+            end
+        end
+    end
+
+    for name, value in pairs(result) do
+        -- order is important: at the very end clamp to int16_t
+        result[name] = clamp_to_16_bit(value)
+    end
+
     return {
-        consumption = math.max(0.2, 1 + (effects.consumption or 0)),
-        speed = math.max(0.2, 1 + (effects.speed or 0)),
-        productivity = math.max(0, effects.productivity or 0),
-        pollution = math.max(0.2, 1 + (effects.pollution or 0)),
-        quality = math.max(0, effects.quality or 0)
+        -- also clamp to allowed minimum value and calculate effective values
+        consumption = math.max(20, 100 + (result.consumption or 0)) / 100,
+        speed = math.max(20, 100 + (result.speed or 0)) / 100,
+        productivity = math.max(0, result.productivity or 0) / 100,
+        pollution = math.max(20, 100 + (result.pollution or 0)) / 100,
+        quality = math.max(0, result.quality or 0) / 100
     }
 end
 

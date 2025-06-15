@@ -74,45 +74,31 @@ logic.get_production = function(conf, result, options)
     else
         speed = conf.entity.mining_speed
 
-        local all_effects = {} ---@type ModuleEffects[]
-
-        local effect_receiver = conf.entity.effect_receiver
-        if (effect_receiver) then
-            all_effects[#all_effects + 1] = effect_receiver.base_effect
-        end
-
         ---@param m LuaItemPrototype
         ---@return boolean
         local function is_module_allowed(m)
             return true
         end
 
-        if (effect_receiver == nil or effect_receiver.uses_module_effects) then
-            local module_effects = configuration.get_module_effects(conf.module_effects.modules, is_module_allowed)
-            all_effects[#all_effects + 1] = module_effects
-        end
-
-        if (effect_receiver == nil or effect_receiver.uses_beacon_effects) then
-            local beacon_effects = configuration.get_beacon_effects(conf.module_effects.beacons, is_module_allowed)
-            all_effects[#all_effects + 1] = beacon_effects
-        end
-
-        if (options.surface) then
-            if (effect_receiver == nil or effect_receiver.uses_surface_effects) then
-                all_effects[#all_effects + 1] = location.get_global_effect(options.surface)
-            end
-        end
-
+        local surface_effect = options.surface and location.get_global_effect(options.surface)
+        local additional_effects = {} ---@type Rates.Internal.FloatModuleEffects[]
         if (options.force) then
             if (conf.entity.uses_force_mining_productivity_bonus) then
-                all_effects[#all_effects + 1] = { productivity = options.force.mining_drill_productivity_bonus }
+                additional_effects[#additional_effects + 1] = {
+                    productivity = options.force.mining_drill_productivity_bonus
+                }
             end
         end
 
-        drain = conf.entity.resource_drain_rate_percent / 100 * conf.quality.mining_drill_resource_drain_multiplier
+        effective_values = configuration.calculate_effects(
+            conf.entity.effect_receiver,
+            conf.module_effects,
+            surface_effect,
+            additional_effects,
+            nil,
+            is_module_allowed)
 
-        local sum_effects = configuration.module_add(all_effects)
-        effective_values = configuration.get_effective_values(sum_effects)
+        drain = conf.entity.resource_drain_rate_percent / 100 * conf.quality.mining_drill_resource_drain_multiplier
         local energy_usage = conf.entity.energy_usage * effective_values.consumption
         configuration.calculate_energy_source(result, conf.entity, energy_usage)
     end

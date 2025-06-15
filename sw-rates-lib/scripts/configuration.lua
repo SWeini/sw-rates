@@ -95,7 +95,7 @@
 ---@field beacon LuaEntityPrototype
 ---@field quality LuaQualityPrototype
 ---@field count integer
----@field total_modules Rates.Configuration.Module[] all the modules spread out over all <count> beacons of this type
+---@field per_beacon_modules Rates.Configuration.Module[]
 
 local registry = require("configuration-registry")
 local util = require("configuration-util")
@@ -242,7 +242,7 @@ local function get_id(conf)
         end
         for _, beacon in ipairs(conf.module_effects.beacons or {}) do
             result = result .. "/b=" .. beacon.beacon.name .. "(" .. beacon.quality.name .. ")x" .. beacon.count
-            for _, module in ipairs(beacon.total_modules) do
+            for _, module in ipairs(beacon.per_beacon_modules) do
                 result = result .. "/bm=" .. module.module.name .. "(" .. module.quality.name .. ")x" .. module.count
             end
         end

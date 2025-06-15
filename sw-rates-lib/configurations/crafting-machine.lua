@@ -179,45 +179,35 @@ logic.get_production = function(conf, result, options)
     else
         speed = conf.entity.get_crafting_speed(conf.quality)
 
-        local all_effects = {} ---@type ModuleEffects[]
-
-        local effect_receiver = conf.entity.effect_receiver
-        if (effect_receiver) then
-            all_effects[#all_effects + 1] = effect_receiver.base_effect
-        end
-
         ---@param m LuaItemPrototype
         ---@return boolean
         local function is_module_allowed(m)
             return true
         end
 
-        if (effect_receiver == nil or effect_receiver.uses_module_effects) then
-            local module_effects = configuration.get_module_effects(conf.module_effects.modules, is_module_allowed)
-            all_effects[#all_effects + 1] = module_effects
-        end
-
-        if (effect_receiver == nil or effect_receiver.uses_beacon_effects) then
-            local beacon_effects = configuration.get_beacon_effects(conf.module_effects.beacons, is_module_allowed)
-            all_effects[#all_effects + 1] = beacon_effects
-        end
-
-        if (options.surface) then
-            if (effect_receiver == nil or effect_receiver.uses_surface_effects) then
-                all_effects[#all_effects + 1] = location.get_global_effect(options.surface)
-            end
-        end
-
+        local surface_effect = options.surface and location.get_global_effect(options.surface)
+        ---@type Rates.Internal.FloatModuleEffects
+        local max_effect = {
+            productivity = conf.recipe.maximum_productivity
+        }
+        local additional_effects = {} ---@type Rates.Internal.FloatModuleEffects[]
         if (options.force) then
             local recipe = options.force.recipes[conf.recipe.name]
             if (recipe) then
-                all_effects[#all_effects + 1] = { productivity = recipe.productivity_bonus }
+                additional_effects[#additional_effects + 1] = {
+                    productivity = recipe.productivity_bonus
+                }
             end
         end
 
-        local sum_effects = configuration.module_add(all_effects)
-        effective_values = configuration.get_effective_values(sum_effects)
-        effective_values.productivity = math.min(effective_values.productivity, conf.recipe.maximum_productivity)
+        effective_values = configuration.calculate_effects(
+            conf.entity.effect_receiver,
+            conf.module_effects,
+            surface_effect,
+            additional_effects,
+            max_effect,
+            is_module_allowed)
+
         local energy_usage = conf.entity.energy_usage * effective_values.consumption
         configuration.calculate_energy_source(result, conf.entity, energy_usage)
     end

@@ -533,7 +533,7 @@ local function cell_buildings_entity(row)
                 flow[#flow + 1] = create_count_label(tostring(beacon.count))
             end
 
-            for _, module in ipairs(beacon.total_modules) do
+            for _, module in ipairs(beacon.per_beacon_modules) do
                 flow[#flow + 1] = create_node_icon(api.node.gui_default(api.node.create.item(module.module,
                     module.quality)))
                 flow[#flow + 1] = create_count_label(tostring(module.count))
