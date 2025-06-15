@@ -3,6 +3,7 @@ Version: 0.3.0
 Date: ???
   Changes:
     - Improved accuracy of beacon effects
+    - Improved fuel detection for burner energy sources: no fuel for non-standard filters, uses currently_burning and whole inventory if not ambiguous
   Bugfixes:
     - Fixed crash with offshore-pump entities that have a filtered fluidbox
 ---------------------------------------------------------------------------------------------------

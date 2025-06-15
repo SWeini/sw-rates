@@ -410,6 +410,82 @@ local function get_basic_configurations(options)
     return result
 end
 
+---@param burner LuaBurner?
+---@return Rates.Configuration.ItemFuel?
+local function get_fuel_from_burner(burner)
+    if (not burner) then
+        return
+    end
+
+    local inventory = burner.inventory
+
+    local filter = inventory.get_filter(1)
+    if (filter) then
+        if (filter.comparator ~= "=") then
+            -- fuel value doesn't go up with quality, so this could theoretically be supported, but it isn't yet
+            return
+        end
+
+        for i = 2, #inventory do
+            local other_filter = inventory.get_filter(i)
+            if (not other_filter) then
+                return
+            end
+
+            if (filter.name ~= other_filter.name) then
+                return
+            end
+
+            if (filter.quality ~= other_filter.quality) then
+                return
+            end
+
+            if (filter.comparator ~= other_filter.comparator) then
+                return
+            end
+        end
+    else
+        for i = 2, #inventory do
+            if (inventory.get_filter(i)) then
+                return
+            end
+        end
+    end
+
+    if (filter) then
+        return {
+            type = "item-fuel",
+            id = nil, ---@diagnostic disable-line: assign-type-mismatch
+            item = prototypes.item[filter.name],
+            quality = prototypes.quality[filter.quality]
+        } --[[@as Rates.Configuration.ItemFuel]]
+    end
+
+    local item = burner.currently_burning --[[@as { name: LuaItemPrototype, quality: LuaQualityPrototype }?]]
+
+    for i = 1, #inventory do
+        local slot = inventory[i]
+        if (slot.valid_for_read) then
+            if (item) then
+                if (item.name.name ~= slot.name or item.quality.name ~= slot.quality.name) then
+                    return
+                end
+            else
+                item = { name = prototypes.item[slot.name], quality = slot.quality }
+            end
+        end
+    end
+
+    if (item) then
+        return {
+            type = "item-fuel",
+            id = nil, ---@diagnostic disable-line: assign-type-mismatch
+            item = item.name,
+            quality = item.quality
+        } --[[@as Rates.Configuration.ItemFuel]]
+    end
+end
+
 ---@param entity LuaEntity
 ---@param options Rates.Configuration.FromEntityOptions
 ---@return Rates.Configuration?
@@ -448,27 +524,7 @@ local function get_from_entity(entity, options)
             if (result.entity) then
                 local fuel = nil
                 if (result.entity.burner_prototype) then
-                    if (entity.burner) then
-                        local filter = entity.burner.inventory.get_filter(1)
-                        local burning = entity.burner
-                            .currently_burning --[[@as { name: LuaItemPrototype, quality: LuaQualityPrototype }]]
-                        if (filter) then
-                            fuel = {
-                                type = "item-fuel",
-                                id = nil, ---@diagnostic disable-line: assign-type-mismatch
-                                item = prototypes.item[filter.name],
-                                quality = filter.comparator == "=" and prototypes.quality[filter.quality] or
-                                    prototypes.quality.normal
-                            } --[[@as Rates.Configuration.ItemFuel]]
-                        elseif (burning) then
-                            fuel = {
-                                type = "item-fuel",
-                                id = nil, ---@diagnostic disable-line: assign-type-mismatch
-                                item = burning.name,
-                                quality = burning.quality
-                            } --[[@as Rates.Configuration.ItemFuel]]
-                        end
-                    end
+                    fuel = get_fuel_from_burner(entity.burner)
                 elseif (result.entity.fluid_energy_source_prototype) then
                     if (entity.type ~= "entity-ghost") then
                         local fluidbox = entity.fluidbox
