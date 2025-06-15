@@ -3,6 +3,8 @@ Version: 0.3.0
 Date: ???
   Changes:
     - Improved accuracy of beacon effects
+  Bugfixes:
+    - Fixed crash with offshore-pump entities that have a filtered fluidbox
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.0
 Date: 2025-06-13

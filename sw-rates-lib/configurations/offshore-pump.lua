@@ -155,7 +155,10 @@ logic.get_from_entity = function(entity, options)
         return
     end
 
-    local fluid = prototypes.fluid[entity.get_fluid_source_fluid()]
+    local fluid = get_filtered_fluid(options.entity)
+    if (not fluid) then
+        fluid = prototypes.fluid[entity.get_fluid_source_fluid()]
+    end
 
     ---@type Rates.Configuration.OffshorePump
     return {
