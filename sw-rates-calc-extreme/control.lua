@@ -38,7 +38,9 @@ local function on_player_selected_area(e)
 
     local entities = {}
     for _, entity in pairs(selected_entities) do
-        entities[#entities + 1] = entity
+        if (entity.valid) then
+            entities[#entities + 1] = entity
+        end
     end
 
     local sheet_data = sheet.build_from_entities(e.surface, entities)

@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.0
+Date: ???
+  Bugfixes:
+    - Fixed crash when shift-selecting after deconstructing previously selected entities
+---------------------------------------------------------------------------------------------------
 Version: 0.1.0
 Date: 2025-06-13
   Features:
