@@ -100,7 +100,7 @@ end
 
 ---@param conf Rates.Configuration.AsteroidCollector
 logic.get_production = function(conf, result, options)
-    configuration.calculate_energy_source(result, conf.entity, conf.entity.get_max_energy_usage(conf.quality))
+    configuration.calculate_energy_source(result, conf.entity, conf.entity.get_max_energy_usage(conf.quality), options.surface)
     configuration.calculate_products(result, prototypes.quality.normal, conf.asteroid.mineable_properties.products, 1, 0)
 end
 

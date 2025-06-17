@@ -58,7 +58,7 @@ logic.get_production = function(conf, result, options)
     local energy_usage = conf.entity.get_max_energy_usage(conf.quality)
     local factor = 1 + conf.quality.level * 0.3
     local performance = get_performance(conf.entity, load)
-    configuration.calculate_energy_source(result, conf.entity, energy_usage)
+    configuration.calculate_energy_source(result, conf.entity, energy_usage, options.surface)
     result[#result + 1] = {
         tag = "ingredient",
         tag_extra = "fuel",

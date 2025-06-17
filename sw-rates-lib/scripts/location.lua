@@ -71,9 +71,21 @@ local function get_daytime_parameters(location)
     error("invalid location")
 end
 
+---@param location Rates.Location
+---@return LuaAirbornePollutantPrototype?
+local function get_pollutant_type(location)
+    ---@diagnostic disable-next-line: param-type-mismatch
+    if (location.object_name == "LuaSurface") then ---@cast location LuaSurface
+        return location.pollutant_type
+    end
+
+    error("invalid location")
+end
+
 return {
     get_global_effect = get_global_effect,
     get_property = get_property,
     get_solar_power = get_solar_power,
     get_daytime_parameters = get_daytime_parameters,
+    get_pollutant_type = get_pollutant_type,
 }

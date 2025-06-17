@@ -18,6 +18,7 @@ local registry = require("scripts.node-registry")
 --- | Rates.Node.ItemFuel
 --- | Rates.Node.Item
 --- | Rates.Node.MapEntity
+--- | Rates.Node.Pollution
 --- | Rates.Node.Science
 --- | Rates.Node.SendToOrbit
 --- | Rates.Node.SendToPlatform
@@ -45,6 +46,7 @@ registry.register({
     require("nodes.item-fuel"),
     require("nodes.item"),
     require("nodes.map-entity"),
+    require("nodes.pollution"),
     require("nodes.science"),
     require("nodes.send-to-orbit"),
     require("nodes.send-to-platform"),

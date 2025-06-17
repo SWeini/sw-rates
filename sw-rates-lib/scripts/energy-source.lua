@@ -144,7 +144,9 @@ end
 ---@param result Rates.Configuration.Amount[]
 ---@param entity LuaEntityPrototype
 ---@param energy_usage number
-local function get_production(result, entity, energy_usage)
+---@param pollutant LuaAirbornePollutantPrototype?
+---@param pollution_multiplier number
+local function get_production(result, entity, energy_usage, pollutant, pollution_multiplier)
     local burner = entity.burner_prototype
     if (burner) then
         local fuel_usage = energy_usage * 60 / burner.effectivity
@@ -159,6 +161,19 @@ local function get_production(result, entity, energy_usage)
             amount = -fuel_usage,
             fuel_usage = fuel_usage
         }
+
+        if (pollutant) then
+            local emission = burner.emissions_per_joule[pollutant.name]
+            if (emission and emission ~= 0) then
+                result[#result + 1] = {
+                    tag = "pollution",
+                    tag_extra = "depends-on-fuel",
+                    node = node.create.pollution(pollutant),
+                    amount = energy_usage * 60
+                        * emission * (pollution_multiplier or 1)
+                }
+            end
+        end
 
         return
     end
@@ -176,6 +191,19 @@ local function get_production(result, entity, energy_usage)
                     amount = -fuel_usage / filter.fuel_value,
                     fuel_usage = fuel_usage
                 }
+
+                if (pollutant) then
+                    local emission = fluid.emissions_per_joule[pollutant.name]
+                    if (emission and emission ~= 0) then
+                        result[#result + 1] = {
+                            tag = "pollution",
+                            node = node.create.pollution(pollutant),
+                            amount = energy_usage * 60
+                                * emission * (pollution_multiplier or 1)
+                                * filter.emissions_multiplier
+                        }
+                    end
+                end
             else
                 result[#result + 1] = {
                     tag = "energy-source-input",
@@ -183,6 +211,19 @@ local function get_production(result, entity, energy_usage)
                     amount = -fuel_usage,
                     fuel_usage = fuel_usage
                 }
+
+                if (pollutant) then
+                    local emission = fluid.emissions_per_joule[pollutant.name]
+                    if (emission and emission ~= 0) then
+                        result[#result + 1] = {
+                            tag = "pollution",
+                            tag_extra = "depends-on-fuel",
+                            node = node.create.pollution(pollutant),
+                            amount = energy_usage * 60
+                                * emission * (pollution_multiplier or 1)
+                        }
+                    end
+                end
             end
         else
             if (filter) then
@@ -217,6 +258,19 @@ local function get_production(result, entity, energy_usage)
                         }
                     end
                 end
+
+                if (pollutant) then
+                    local emission = fluid.emissions_per_joule[pollutant.name]
+                    if (emission and emission ~= 0) then
+                        result[#result + 1] = {
+                            tag = "pollution",
+                            node = node.create.pollution(pollutant),
+                            amount = energy_usage * 60
+                                * emission * (pollution_multiplier or 1)
+                                * filter.emissions_multiplier
+                        }
+                    end
+                end
             else
                 -- TODO: fluid energy source from any heated fluid
             end
@@ -243,8 +297,29 @@ local function get_production(result, entity, energy_usage)
         result[#result + 1] = {
             tag = "energy-source-input",
             node = node.create.electric_power(),
-            amount = -(energy_usage + electric.drain) * 60
+            amount = -energy_usage * 60
         }
+
+        if (electric.drain ~= 0) then
+            result[#result + 1] = {
+                tag = "energy-source-input",
+                tag_extra = "drain",
+                node = node.create.electric_power(),
+                amount = -electric.drain * 60
+            }
+        end
+
+        if (pollutant) then
+            local emission = electric.emissions_per_joule[pollutant.name]
+            if (emission and emission ~= 0) then
+                result[#result + 1] = {
+                    tag = "pollution",
+                    node = node.create.pollution(pollutant),
+                    amount = energy_usage * 60
+                        * emission * (pollution_multiplier or 1)
+                }
+            end
+        end
 
         return
     end
@@ -252,15 +327,14 @@ end
 
 ---@param amounts Rates.Configuration.Amount[]
 ---@param tag string
----@return integer
-local function find_tag(amounts, tag)
+---@param tag_extra string?
+---@return integer?
+local function find_tag(amounts, tag, tag_extra)
     for i, amount in ipairs(amounts) do
-        if (amount.tag == tag) then
+        if (amount.tag == tag and amount.tag_extra == tag_extra) then
             return i
         end
     end
-
-    error("couldn't find production amount " .. tag)
 end
 
 ---@param destination Rates.Configuration.Amount[]
@@ -297,8 +371,19 @@ local function apply_fuel_to_production(result, fuel_amounts, entity, fuel, opti
 
         local destination_index = find_tag(result, "energy-source-input")
         local source_index = find_tag(fuel_amounts, "product")
+        if (not destination_index or not source_index) then
+            error("production amounts didn't match expected structure")
+        end
+
         local factor = -result[destination_index].amount / fuel_amounts[source_index].amount
         replace_fuel_amounts(result, destination_index, fuel_amounts, source_index, factor)
+
+        local pollution = find_tag(result, "pollution", "depends-on-fuel")
+        if (pollution) then
+            local amount = result[pollution]
+            amount.amount = amount.amount * fuel.item.fuel_emissions_multiplier
+        end
+
         return
     end
 
@@ -310,6 +395,10 @@ local function apply_fuel_to_production(result, fuel_amounts, entity, fuel, opti
 
         local destination_index = find_tag(result, "energy-source-input")
         local source_index = find_tag(fuel_amounts, "product")
+        if (not destination_index or not source_index) then
+            error("production amounts didn't match expected structure")
+        end
+
         local fluid_per_second = -result[destination_index].amount
         if (result[destination_index].node.type ~= "fluid") then
             fluid_per_second = fluid_per_second / fuel_amounts[source_index].amount
@@ -334,10 +423,16 @@ local function apply_fuel_to_production(result, fuel_amounts, entity, fuel, opti
         if (generated_energy < fuel_usage) then
             local factor = generated_energy / fuel_usage
             for _, amount in ipairs(result) do
-                if (amount.tag ~= "energy-source-input") then
+                if (amount.tag ~= "energy-source-input" and amount.tag_extra ~= "drain") then
                     amount.amount = amount.amount * factor
                 end
             end
+        end
+
+        local pollution = find_tag(result, "pollution", "depends-on-fuel")
+        if (pollution) then
+            local amount = result[pollution]
+            amount.amount = amount.amount * fuel.fluid.emissions_multiplier
         end
 
         return

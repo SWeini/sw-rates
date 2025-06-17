@@ -76,7 +76,7 @@ logic.get_production = function(conf, result, options)
         is_module_allowed)
 
     local energy_usage = conf.entity.energy_usage * effective_values.consumption
-    configuration.calculate_energy_source(result, conf.entity, energy_usage)
+    configuration.calculate_energy_source(result, conf.entity, energy_usage, options.surface, effective_values.pollution)
 
     local duration = conf.technology.research_unit_energy / 60
     local frequency = speed * effective_values.speed / duration

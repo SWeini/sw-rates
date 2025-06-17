@@ -75,8 +75,8 @@
 ---@field surface? Rates.Location used to add global effects on that surface
 
 ---@class (exact) Rates.Configuration.Amount
----@field tag "energy-source-input" | "energy-source-output" | "resource" | "mining-fluid" | "ingredient" | "product" | "infrastructure"
----@field tag_extra? number | string | "drain" | "burnt-result"
+---@field tag "energy-source-input" | "energy-source-output" | "pollution" | "resource" | "mining-fluid" | "ingredient" | "product" | "infrastructure"
+---@field tag_extra? number | string | "drain" | "depends-on-fuel"
 ---@field node Rates.Node
 ---@field amount number
 
@@ -314,20 +314,24 @@ end
 ---@param options Rates.Configuration.ProductionOptions
 ---@return Rates.Configuration.Amount[]
 local function get_production(conf, options)
+    local result = {} ---@type Rates.Configuration.Amount[]
+
     local logic = registry.get(conf.type)
     if (logic) then
         if (logic.get_production) then
-            local result = {} ---@type Rates.Configuration.Amount[]
             logic.get_production(conf, result, options)
-            return result
         end
     else
         if (remote.interfaces[interface_name(conf.type)].get_production) then
-            return remote.call(interface_name(conf.type), "get_production", conf, options) --[[@as Rates.Configuration.Amount[] ]]
+            result = remote.call(interface_name(conf.type), "get_production", conf, options) --[[@as Rates.Configuration.Amount[] ]]
         end
     end
 
-    return {}
+    if (conf.entity) then
+        util.calculate_constant_pollution(result, conf.entity, options.surface)
+    end
+
+    return result
 end
 
 ---@param options Rates.Progression.Options
@@ -463,6 +467,7 @@ local function get_from_entity(entity, options)
                     fuel = fuel
                 } --[[@as Rates.Configuration.Meta]]
             end
+
             return result
         end
     end

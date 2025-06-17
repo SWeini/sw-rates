@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.0
 Date: ???
+  Features:
+    - Calculate pollution rates
   Changes:
     - Improved accuracy of beacon effects
     - Improved fuel detection for burner energy sources: no fuel for non-standard filters, uses currently_burning and whole inventory if not ambiguous

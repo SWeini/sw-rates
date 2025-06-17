@@ -100,7 +100,7 @@ logic.get_production = function(conf, result, options)
 
         drain = conf.entity.resource_drain_rate_percent / 100 * conf.quality.mining_drill_resource_drain_multiplier
         local energy_usage = conf.entity.energy_usage * effective_values.consumption
-        configuration.calculate_energy_source(result, conf.entity, energy_usage)
+        configuration.calculate_energy_source(result, conf.entity, energy_usage, options.surface, effective_values.pollution)
     end
 
     if (not conf.resource) then

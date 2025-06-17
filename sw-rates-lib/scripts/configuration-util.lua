@@ -65,8 +65,37 @@ end
 ---@param result Rates.Configuration.Amount[]
 ---@param entity LuaEntityPrototype
 ---@param energy_usage number
-function util.calculate_energy_source(result, entity, energy_usage)
-    energy_source.get_production(result, entity, energy_usage)
+---@param surface Rates.Location?
+---@param pollution_multiplier number?
+function util.calculate_energy_source(result, entity, energy_usage, surface, pollution_multiplier)
+    local pollutant = surface and location.get_pollutant_type(surface)
+    energy_source.get_production(result, entity, energy_usage, pollutant, pollution_multiplier or 1)
+end
+
+---@param result Rates.Configuration.Amount[]
+---@param entity LuaEntityPrototype
+---@param surface Rates.Location?
+function util.calculate_constant_pollution(result, entity, surface)
+    if (not surface) then
+        return
+    end
+
+    local pollutant = location.get_pollutant_type(surface)
+    if (not pollutant) then
+        return
+    end
+
+    local emission = entity.emissions_per_second[pollutant.name]
+    if (not emission or emission == 0) then
+        return
+    end
+
+    result[#result + 1] = {
+        tag = "pollution",
+        tag_extra = "drain",
+        node = node.create.pollution(pollutant),
+        amount = emission
+    }
 end
 
 ---@param result Rates.Configuration.Amount[]
