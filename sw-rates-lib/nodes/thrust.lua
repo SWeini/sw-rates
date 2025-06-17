@@ -18,7 +18,7 @@ result.gui_default = function(node)
     return {
         icon = { sprite = "tooltip-category-thrust" },
         name = { "sw-rates-node.thrust" },
-        number_format = { factor = 1e6, unit = "N" }
+        number_format = { factor = 1, unit = "N" }
     }
 end
 

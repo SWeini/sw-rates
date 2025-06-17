@@ -58,7 +58,7 @@ local function dump_amount(amount)
     if (fuel_categories) then
         for _, category in ipairs(fuel_categories) do
             for _, item in pairs(prototypes.get_item_filtered { { filter = "fuel-category", ["fuel-category"] = category.name } }) do
-                local per_second = math.abs(amount.amount) * 1e6 / item.fuel_value
+                local per_second = math.abs(amount.amount) / item.fuel_value
                 local item_node = api.node.create.item(item, prototypes.quality.normal)
                 message[#message + 1] = "\n    "
                 message[#message + 1] = api.gui.gui_message(api.node.gui_default(item_node), per_second)

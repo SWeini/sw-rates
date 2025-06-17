@@ -26,8 +26,7 @@ logic.get_production = function(conf, result, options)
     result[#result + 1] = {
         tag = "product",
         node = node.create.electric_buffer(),
-        amount = conf.entity.electric_energy_source_prototype.buffer_capacity * (1 + conf.quality.level) /
-            configuration.energy_factor
+        amount = conf.entity.electric_energy_source_prototype.buffer_capacity * (1 + conf.quality.level)
     }
 end
 

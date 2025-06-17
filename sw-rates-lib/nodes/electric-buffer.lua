@@ -18,7 +18,7 @@ result.gui_default = function(node)
     return {
         icon = { sprite = "virtual-signal/signal-battery-full" },
         name = { "sw-rates-node.electric-buffer" },
-        number_format = { factor = 1e6, unit = "J" },
+        number_format = { factor = 1, unit = "J" },
     }
 end
 

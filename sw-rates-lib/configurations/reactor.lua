@@ -77,7 +77,7 @@ logic.get_production = function(conf, result, options)
     result[#result + 1] = {
         tag = "product",
         node = node.create.heat(conf.entity.heat_buffer_prototype.max_temperature),
-        amount = energy_usage * 60 / configuration.energy_factor * (1 + neighbour_bonus)
+        amount = energy_usage * 60 * (1 + neighbour_bonus)
     }
 end
 

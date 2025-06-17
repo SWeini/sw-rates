@@ -30,7 +30,7 @@ logic.get_production = function(conf, result, options)
     result[#result + 1] = {
         tag = "product",
         node = node.create.electric_power(),
-        amount = energy_usage * 60 / configuration.energy_factor
+        amount = energy_usage * 60
     }
 end
 

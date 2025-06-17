@@ -19,7 +19,7 @@ result.gui_default = function(node)
         icon = { sprite = "tooltip-category-fuel" },
         name = { "sw-rates-node.fluid-fuel" },
         tooltip = { "sw-rates-node.fluid-fuel-tooltip" },
-        number_format = { factor = 1e6, unit = "W" },
+        number_format = { factor = 1, unit = "W" },
     }
 end
 

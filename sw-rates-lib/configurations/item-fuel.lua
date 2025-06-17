@@ -61,7 +61,7 @@ logic.get_production = function(conf, result, options)
     result[#result + 1] = {
         tag = "product",
         node = node.create.item_fuel(prototypes.fuel_category[conf.item.fuel_category]),
-        amount = conf.item.fuel_value / configuration.energy_factor
+        amount = conf.item.fuel_value
     }
 end
 

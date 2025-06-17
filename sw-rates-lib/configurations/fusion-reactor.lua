@@ -166,7 +166,7 @@ logic.get_production = function(conf, result, options)
         tag = "energy-source-input",
         tag_extra = "fusion-reactor",
         node = node.create.electric_power(),
-        amount = -energy_usage * 60 / configuration.energy_factor
+        amount = -energy_usage * 60
     }
 
     result[#result + 1] = {

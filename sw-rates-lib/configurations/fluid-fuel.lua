@@ -56,7 +56,7 @@ logic.get_production = function(conf, result, options)
     result[#result + 1] = {
         tag = "product",
         node = node.create.fluid_fuel(),
-        amount = conf.fluid.fuel_value / configuration.energy_factor
+        amount = conf.fluid.fuel_value
     }
 end
 

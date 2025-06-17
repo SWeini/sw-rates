@@ -81,7 +81,7 @@ result.gui_default = function(node)
     return {
         icon = { sprite = sprite },
         name = node.category.localised_name,
-        number_format = { factor = 1e6, unit = "W" },
+        number_format = { factor = 1, unit = "W" },
     }
 end
 
@@ -103,7 +103,7 @@ result_any.gui_default = function(node)
         icon = { sprite = "tooltip-category-consumes" },
         name = { "sw-rates-node.item-fuel" },
         tooltip = tooltip,
-        number_format = { factor = 1e6, unit = "W" },
+        number_format = { factor = 1, unit = "W" },
     }
 end
 

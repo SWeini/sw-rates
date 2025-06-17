@@ -3,8 +3,6 @@ local math2d = require("math2d")
 local location = require("location")
 
 local util = {
-    --- All energy values are divided by this factor to not have extremely huge numbers.
-    energy_factor = 1e6
 }
 
 ---@param fluids table<string, table<number, true>>
@@ -69,7 +67,7 @@ end
 function util.calculate_energy_source(result, entity, energy_usage)
     local burner = entity.burner_prototype
     if (burner ~= nil) then
-        local amount = energy_usage * 60 / burner.effectivity / util.energy_factor
+        local amount = energy_usage * 60 / burner.effectivity
 
         local categories = {} ---@type LuaFuelCategoryPrototype[]
         for category, _ in pairs(burner.fuel_categories) do
@@ -88,7 +86,7 @@ function util.calculate_energy_source(result, entity, energy_usage)
     if (fluid ~= nil) then
         local filter = fluid.fluid_box.filter
         if (filter == nil) then
-            local amount = energy_usage * 60 / fluid.effectivity / util.energy_factor
+            local amount = energy_usage * 60 / fluid.effectivity
 
             result[#result + 1] = {
                 tag = "energy-source-input",
@@ -126,7 +124,7 @@ function util.calculate_energy_source(result, entity, energy_usage)
         result[#result + 1] = {
             tag = "energy-source-input",
             node = node.create.heat({ min = heat.min_working_temperature }),
-            amount = -energy_usage * 60 / util.energy_factor
+            amount = -energy_usage * 60
         }
 
         return
@@ -137,7 +135,7 @@ function util.calculate_energy_source(result, entity, energy_usage)
         result[#result + 1] = {
             tag = "energy-source-input",
             node = node.create.electric_power(),
-            amount = -(energy_usage + electric.drain) * 60 / util.energy_factor
+            amount = -(energy_usage + electric.drain) * 60
         }
 
         return
@@ -268,40 +266,40 @@ function util.calculate_solar_power(result, day, night, solar_panel_mode, proper
             result[#result + 1] = {
                 tag = "product",
                 node = node.create.electric_power(),
-                amount = day / util.energy_factor
+                amount = day
             }
         else
             if (day == night) then
                 result[#result + 1] = {
                     tag = "product",
                     node = node.create.electric_power(),
-                    amount = day / util.energy_factor
+                    amount = day
                 }
             elseif (day > night) then
                 if (night > 0) then
                     result[#result + 1] = {
                         tag = "product",
                         node = node.create.electric_power(),
-                        amount = night / util.energy_factor
+                        amount = night
                     }
                 end
                 result[#result + 1] = {
                     tag = "product",
                     node = node.create.electric_power(true),
-                    amount = (day - night) / util.energy_factor
+                    amount = day - night
                 }
             elseif (night > day) then
                 if (day > 0) then
                     result[#result + 1] = {
                         tag = "product",
                         node = node.create.electric_power(),
-                        amount = day / util.energy_factor
+                        amount = day
                     }
                 end
                 result[#result + 1] = {
                     tag = "product",
                     node = node.create.electric_power(false),
-                    amount = (night - day) / util.energy_factor
+                    amount = night - day
                 }
             end
         end
@@ -320,13 +318,13 @@ function util.calculate_solar_power(result, day, night, solar_panel_mode, proper
             result[#result + 1] = {
                 tag = "ingredient",
                 node = node.create.electric_buffer(),
-                amount = -energy_buffer / util.energy_factor
+                amount = -energy_buffer
             }
         end
         result[#result + 1] = {
             tag = "product",
             node = node.create.electric_power(),
-            amount = average / util.energy_factor
+            amount = average
         }
     end
 end

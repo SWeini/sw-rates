@@ -78,7 +78,7 @@ result.gui_default = function(node)
         icon = { sprite = "tooltip-category-heat" },
         name = { "sw-rates-node.heat" },
         qualifier = { "", node.temperature, { "si-unit-degree-celsius" } },
-        number_format = { factor = 1e6, unit = "W" },
+        number_format = { factor = 1, unit = "W" },
     }
 end
 
@@ -102,7 +102,7 @@ result_any.gui_default = function(node)
         icon = { sprite = "tooltip-category-heat" },
         name = { "sw-rates-node.heat" },
         qualifier = format_any_temperature(node.min_temperature, node.max_temperature),
-        number_format = { factor = 1e6, unit = "W" },
+        number_format = { factor = 1, unit = "W" },
     }
 end
 

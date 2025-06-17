@@ -75,7 +75,7 @@ logic.get_production = function(conf, result, options)
     result[#result + 1] = {
         tag = "product",
         node = node.create.thrust(),
-        amount = fuel * performance.effectivity * 1000 * factor / configuration.energy_factor -- as MN
+        amount = fuel * performance.effectivity * 1000 * factor -- as N
     }
 end
 
