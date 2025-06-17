@@ -1,6 +1,7 @@
 local node = require("node")
 local math2d = require("math2d")
 local location = require("location")
+local energy_source = require("energy-source")
 
 local util = {
 }
@@ -65,81 +66,7 @@ end
 ---@param entity LuaEntityPrototype
 ---@param energy_usage number
 function util.calculate_energy_source(result, entity, energy_usage)
-    local burner = entity.burner_prototype
-    if (burner ~= nil) then
-        local amount = energy_usage * 60 / burner.effectivity
-
-        local categories = {} ---@type LuaFuelCategoryPrototype[]
-        for category, _ in pairs(burner.fuel_categories) do
-            categories[#categories + 1] = prototypes.fuel_category[category]
-        end
-        result[#result + 1] = {
-            tag = "energy-source-input",
-            node = node.create.item_fuels(categories),
-            amount = -amount
-        }
-
-        return
-    end
-
-    local fluid = entity.fluid_energy_source_prototype
-    if (fluid ~= nil) then
-        local filter = fluid.fluid_box.filter
-        if (filter == nil) then
-            local amount = energy_usage * 60 / fluid.effectivity
-
-            result[#result + 1] = {
-                tag = "energy-source-input",
-                node = node.create.fluid_fuel(),
-                amount = -amount
-            }
-        elseif (fluid.burns_fluid) then
-            result[#result + 1] = {
-                tag = "energy-source-input",
-                node = node.create.fluid(filter, {}),
-                amount = -energy_usage * 60 / fluid.effectivity / filter.fuel_value
-            }
-        else
-            local fluid_usage_per_tick = entity.fluid_usage_per_tick
-            if (fluid_usage_per_tick ~= nil) then
-                result[#result + 1] = {
-                    tag = "energy-source-input",
-                    node = node.create.fluid(filter, {}),
-                    amount = -fluid_usage_per_tick * 60
-                }
-            else
-                result[#result + 1] = {
-                    tag = "energy-source-input",
-                    node = node.create.fluid(filter, {}),
-                    amount = -1
-                }
-            end
-        end
-
-        return
-    end
-
-    local heat = entity.heat_energy_source_prototype
-    if (heat ~= nil) then
-        result[#result + 1] = {
-            tag = "energy-source-input",
-            node = node.create.heat({ min = heat.min_working_temperature }),
-            amount = -energy_usage * 60
-        }
-
-        return
-    end
-
-    local electric = entity.electric_energy_source_prototype
-    if (electric) then
-        result[#result + 1] = {
-            tag = "energy-source-input",
-            node = node.create.electric_power(),
-            amount = -(energy_usage + electric.drain) * 60
-        }
-
-        return
-    end
+    energy_source.get_production(result, entity, energy_usage)
 end
 
 ---@param result Rates.Configuration.Amount[]

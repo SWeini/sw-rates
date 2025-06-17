@@ -3,13 +3,14 @@ do
     ---@field type "meta"
     ---@field children Rates.Configuration[]
     ---@field children_suggested_factors? number[]
-    ---@field fuel? Rates.Configuration.ItemFuel | Rates.Configuration.FluidFuel
+    ---@field fuel? Rates.Configuration.Fuel
     ---@field selection? table<string, string>
     ---@field suggested? Rates.Configuration[]
 end
 
 local configuration = require("scripts.configuration")
 local node_util = require("scripts.node")
+local energy_source = require("scripts.energy-source")
 
 local logic = { type = "meta" } ---@type Rates.Configuration.Type
 
@@ -61,32 +62,7 @@ logic.get_production = function(conf, result, options)
             local amounts = configuration.get_production(child, options)
             if (conf.fuel) then
                 local fuel_amounts = configuration.get_production(conf.fuel, options)
-                local i = 1
-                while (amounts[i].tag ~= "energy-source-input") do
-                    i = i + 1
-                end
-
-                local j = 1
-                while (fuel_amounts[j].tag ~= "product") do
-                    j = j + 1
-                end
-
-                local energy_usage = amounts[i].amount
-                local fuel_usage = -energy_usage / fuel_amounts[j].amount
-
-                table.remove(amounts, i)
-
-                for k, amount in ipairs(fuel_amounts) do
-                    if (k ~= j) then
-                        table.insert(amounts, i, {
-                            tag = amount.tag,
-                            tag_extra = amount.tag_extra,
-                            node = amount.node,
-                            amount = amount.amount * fuel_usage
-                        })
-                        i = i + 1
-                    end
-                end
+                energy_source.apply_fuel_to_production(amounts, fuel_amounts, conf.fuel, options)
             end
 
             if (conf.selection) then
@@ -138,7 +114,7 @@ local function with_selection(conf, selection)
 end
 
 ---@param conf Rates.Configuration
----@param fuel Rates.Configuration.ItemFuel | Rates.Configuration.FluidFuel
+---@param fuel Rates.Configuration.Fuel
 local function with_fuel(conf, fuel)
     local result ---@type Rates.Configuration.Meta
     if (conf.type == "meta") then

@@ -99,6 +99,7 @@
 
 local registry = require("configuration-registry")
 local util = require("configuration-util")
+local energy_source = require("energy-source")
 
 ---@param type string
 ---@return string
@@ -421,80 +422,6 @@ local function get_basic_configurations(options)
     return result
 end
 
----@param burner LuaBurner?
----@return Rates.Configuration.ItemFuel?
-local function get_fuel_from_burner(burner)
-    if (not burner) then
-        return
-    end
-
-    local inventory = burner.inventory
-
-    local filter = inventory.get_filter(1)
-    if (filter) then
-        if (filter.comparator ~= "=") then
-            -- fuel value doesn't go up with quality, so this could theoretically be supported, but it isn't yet
-            return
-        end
-
-        for i = 2, #inventory do
-            local other_filter = inventory.get_filter(i)
-            if (not other_filter) then
-                return
-            end
-
-            if (filter.name ~= other_filter.name) then
-                return
-            end
-
-            if (filter.quality ~= other_filter.quality) then
-                return
-            end
-
-            if (filter.comparator ~= other_filter.comparator) then
-                return
-            end
-        end
-    else
-        for i = 2, #inventory do
-            if (inventory.get_filter(i)) then
-                return
-            end
-        end
-    end
-
-    if (filter) then
-        return {
-            type = "item-fuel",
-            item = prototypes.item[filter.name],
-            quality = prototypes.quality[filter.quality]
-        } --[[@as Rates.Configuration.ItemFuel]]
-    end
-
-    local item = burner.currently_burning --[[@as { name: LuaItemPrototype, quality: LuaQualityPrototype }?]]
-
-    for i = 1, #inventory do
-        local slot = inventory[i]
-        if (slot.valid_for_read) then
-            if (item) then
-                if (item.name.name ~= slot.name or item.quality.name ~= slot.quality.name) then
-                    return
-                end
-            else
-                item = { name = prototypes.item[slot.name], quality = slot.quality }
-            end
-        end
-    end
-
-    if (item) then
-        return {
-            type = "item-fuel",
-            item = item.name,
-            quality = item.quality
-        } --[[@as Rates.Configuration.ItemFuel]]
-    end
-end
-
 ---@param entity LuaEntity
 ---@param options Rates.Configuration.FromEntityOptions
 ---@return Rates.Configuration?
@@ -528,41 +455,14 @@ local function get_from_entity(entity, options)
         end
         if (result) then
             result.type = result.type or entry.type
-
-            if (result.entity) then
-                local fuel = nil
-                if (result.entity.burner_prototype) then
-                    fuel = get_fuel_from_burner(entity.burner)
-                elseif (result.entity.fluid_energy_source_prototype) then
-                    if (entity.type ~= "entity-ghost") then
-                        local fluidbox = entity.fluidbox
-                        for i = 1, #fluidbox do
-                            local proto = fluidbox.get_prototype(i)
-                            if (proto.index == 1) then
-                                local box = fluidbox[i]
-                                if (box) then
-                                    fuel = {
-                                        type = "fluid-fuel",
-                                        fluid = prototypes.fluid[box.name],
-                                        temperature = box.temperature
-                                    } --[[@as Rates.Configuration.FluidFuel]]
-                                end
-                            end
-                        end
-                    end
-                end
-
-                if (fuel) then
-                    ---@type Rates.Configuration.Meta
-                    local meta = {
-                        type = "meta",
-                        children = { result },
-                        fuel = fuel
-                    }
-                    return meta
-                end
+            local fuel = energy_source.get_from_entity(entity, result, options)
+            if (fuel) then
+                result = {
+                    type = "meta",
+                    children = { result },
+                    fuel = fuel
+                } --[[@as Rates.Configuration.Meta]]
             end
-
             return result
         end
     end

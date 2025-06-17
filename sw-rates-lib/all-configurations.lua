@@ -29,6 +29,10 @@ local registry = require("scripts.configuration-registry")
 --- | Rates.Configuration.SpaceLocation
 --- | Rates.Configuration.Thruster
 
+---@alias Rates.Configuration.Fuel
+--- | Rates.Configuration.ItemFuel
+--- | Rates.Configuration.FluidFuel
+
 ---@diagnostic enable: undefined-doc-name
 
 registry.register({
