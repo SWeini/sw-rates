@@ -71,7 +71,6 @@ logic.fill_basic_configurations = function(result, options)
     for _, item in pairs(items) do
         result[#result + 1] = {
             type = nil, ---@diagnostic disable-line: assign-type-mismatch
-            id = nil, ---@diagnostic disable-line: assign-type-mismatch
             item = item,
             quality = prototypes.quality.normal
         }

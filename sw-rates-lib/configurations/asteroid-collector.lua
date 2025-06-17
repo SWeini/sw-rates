@@ -126,7 +126,6 @@ logic.fill_basic_configurations = function(result, options)
         for _, asteroid in pairs(asteroid_chunks) do
             result[#result + 1] = {
                 type = nil, ---@diagnostic disable-line: assign-type-mismatch
-                id = nil, ---@diagnostic disable-line: assign-type-mismatch
                 entity = entity,
                 quality = prototypes.quality.normal,
                 asteroid = asteroid
@@ -145,7 +144,6 @@ logic.get_from_entity = function(entity, options)
         ---@type Rates.Configuration.AsteroidCollector
         return {
             type = nil, ---@diagnostic disable-line: assign-type-mismatch
-            id = nil, ---@diagnostic disable-line: assign-type-mismatch
             entity = options.entity,
             quality = options.quality,
             asteroid = prototypes.asteroid_chunk[filter.name]
@@ -161,12 +159,10 @@ logic.get_from_entity = function(entity, options)
             ---@type Rates.Configuration.AsteroidCollector
             local child = {
                 type = "asteroid-collector",
-                id = nil, ---@diagnostic disable-line: assign-type-mismatch
                 entity = options.entity,
                 quality = options.quality,
                 asteroid = prototypes.asteroid_chunk[name]
             }
-            child.id = configuration_api.get_id(child)
             children[#children + 1] = child
             children_ratio[#children_ratio + 1] = ratio
             sum_of_ratios = sum_of_ratios + ratio
@@ -184,7 +180,6 @@ logic.get_from_entity = function(entity, options)
     ---@type Rates.Configuration.Meta
     return {
         type = "meta",
-        id = nil, ---@diagnostic disable-line: assign-type-mismatch
         children = children,
         children_suggested_factors = children_ratio
     }

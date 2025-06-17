@@ -102,7 +102,6 @@ logic.fill_basic_configurations = function(result, options)
             -- TODO: loop over all input temperatures
             result[#result + 1] = {
                 type = nil, ---@diagnostic disable-line: assign-type-mismatch
-                id = nil, ---@diagnostic disable-line: assign-type-mismatch
                 entity = entity,
                 quality = prototypes.quality.normal,
                 temperature = fluid.input.default_temperature
@@ -130,7 +129,6 @@ logic.get_from_entity = function(entity, options)
     ---@type Rates.Configuration.Boiler
     return {
         type = nil, ---@diagnostic disable-line: assign-type-mismatch
-        id = nil, ---@diagnostic disable-line: assign-type-mismatch
         entity = options.entity,
         quality = options.quality,
         temperature = temperature

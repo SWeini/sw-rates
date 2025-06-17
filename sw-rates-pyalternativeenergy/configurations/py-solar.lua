@@ -52,7 +52,6 @@ logic.get_from_entity = function(entity, options)
             ---@type Rates.Configuration.SolarPanel
             return {
                 type = "solar-panel",
-                id = nil, ---@diagnostic disable-line: assign-type-mismatch
                 entity = prototypes.entity[hidden_solar_panel],
                 quality = options.quality
             }
@@ -67,7 +66,6 @@ logic.get_from_entity = function(entity, options)
         ---@type Rates.Configuration.PySolar
         return {
             type = nil, ---@diagnostic disable-line: assign-type-mismatch
-            id = nil, ---@diagnostic disable-line: assign-type-mismatch
             entity = options.entity,
             quality = options.quality
         }

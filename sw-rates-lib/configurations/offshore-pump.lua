@@ -131,7 +131,6 @@ logic.fill_basic_configurations = function(result, options)
         if (filter) then
             result[#result + 1] = {
                 type = nil, ---@diagnostic disable-line: assign-type-mismatch
-                id = nil, ---@diagnostic disable-line: assign-type-mismatch
                 entity = entity,
                 quality = prototypes.quality.normal,
                 fluid = filter
@@ -140,7 +139,6 @@ logic.fill_basic_configurations = function(result, options)
             for fluid_name, _ in pairs(fluid_tiles) do
                 result[#result + 1] = {
                     type = nil, ---@diagnostic disable-line: assign-type-mismatch
-                    id = nil, ---@diagnostic disable-line: assign-type-mismatch
                     entity = entity,
                     quality = prototypes.quality.normal,
                     fluid = prototypes.fluid[fluid_name]
@@ -163,7 +161,6 @@ logic.get_from_entity = function(entity, options)
     ---@type Rates.Configuration.OffshorePump
     return {
         type = nil, ---@diagnostic disable-line: assign-type-mismatch
-        id = nil, ---@diagnostic disable-line: assign-type-mismatch
         entity = options.entity,
         quality = options.quality,
         fluid = fluid

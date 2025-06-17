@@ -80,7 +80,7 @@ function process(a, b)
         error("failed to get something useful from the entities")
     end
 
-    if (configuration_a.id == configuration_b.id) then
+    if (api.configuration.get_id(configuration_a) == api.configuration.get_id(configuration_b)) then
         game.print("a and b are equal")
     else
         -- different entity or quality or recipe or modules or beacons or anything else that is relevant

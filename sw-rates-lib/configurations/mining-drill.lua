@@ -195,7 +195,6 @@ logic.fill_basic_configurations = function(result, options)
             if (can_mine(entity, resource)) then
                 result[#result + 1] = {
                     type = nil, ---@diagnostic disable-line: assign-type-mismatch
-                    id = nil, ---@diagnostic disable-line: assign-type-mismatch
                     entity = entity,
                     quality = prototypes.quality.normal,
                     module_effects = {},
@@ -237,7 +236,6 @@ logic.get_from_entity = function(entity, options)
     ---@type Rates.Configuration.MiningDrill
     return {
         type = nil, ---@diagnostic disable-line: assign-type-mismatch
-        id = nil, ---@diagnostic disable-line: assign-type-mismatch
         entity = options.entity,
         quality = options.quality,
         module_effects = module_effects,

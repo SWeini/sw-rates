@@ -16,16 +16,14 @@ local logic = { type = "meta" } ---@type Rates.Configuration.Type
 ---@param conf Rates.Configuration.Meta
 logic.get_id = function(conf)
     local result = "children=("
+    local child_ids = {} ---@type string[]
     for i, child in ipairs(conf.children) do
-        if (i > 1) then
-            result = result .. "|"
-        end
-        result = result .. child.id
+        child_ids[i] = configuration.get_id(child)
     end
-    result = result .. ")"
+    result = result .. table.concat(child_ids, "|") .. ")"
 
     if (conf.fuel) then
-        result = result .. ",fuel=" .. conf.fuel.id
+        result = result .. ",fuel=" .. configuration.get_id(conf.fuel)
     end
 
     for tag, id in pairs(conf.selection or {}) do
@@ -119,15 +117,10 @@ end
 ---@param selection table<string, string>
 ---@return Rates.Configuration.Meta
 local function with_selection(conf, selection)
-    if (not conf.id) then
-        conf.id = configuration.get_id(conf)
-    end
-
     local result ---@type Rates.Configuration.Meta
     if (conf.type == "meta") then
         result = {
             type = "meta",
-            id = nil, ---@diagnostic disable-line: assign-type-mismatch
             children = conf.children,
             fuel = conf.fuel,
             selection = selection,
@@ -136,28 +129,21 @@ local function with_selection(conf, selection)
     else
         result = {
             type = "meta",
-            id = nil, ---@diagnostic disable-line: assign-type-mismatch
             children = { conf },
             selection = selection
         }
     end
 
-    result.id = configuration.get_id(result)
     return result
 end
 
 ---@param conf Rates.Configuration
 ---@param fuel Rates.Configuration.ItemFuel | Rates.Configuration.FluidFuel
 local function with_fuel(conf, fuel)
-    if (not conf.id) then
-        conf.id = configuration.get_id(conf)
-    end
-
     local result ---@type Rates.Configuration.Meta
     if (conf.type == "meta") then
         result = {
             type = "meta",
-            id = nil, ---@diagnostic disable-line: assign-type-mismatch
             children = conf.children,
             fuel = fuel,
             selection = conf.selection,
@@ -166,13 +152,11 @@ local function with_fuel(conf, fuel)
     else
         result = {
             type = "meta",
-            id = nil, ---@diagnostic disable-line: assign-type-mismatch
             children = { conf },
             fuel = fuel
         }
     end
 
-    result.id = configuration.get_id(result)
     return result
 end
 

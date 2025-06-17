@@ -105,7 +105,6 @@ logic.get_from_entity = function(entity, options)
     ---@type Rates.Configuration.Thruster
     return {
         type = nil, ---@diagnostic disable-line: assign-type-mismatch
-        id = nil, ---@diagnostic disable-line: assign-type-mismatch
         entity = options.entity,
         quality = options.quality
     }

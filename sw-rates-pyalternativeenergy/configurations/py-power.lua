@@ -70,7 +70,6 @@ logic.fill_basic_configurations = function(result, options)
     for name, _ in pairs(turbines) do
         result[#result + 1] = {
             type = nil, ---@diagnostic disable-line: assign-type-mismatch
-            id = nil, ---@diagnostic disable-line: assign-type-mismatch
             entity = prototypes.entity[name],
             quality = prototypes.quality.normal
         }
@@ -96,7 +95,6 @@ logic.get_from_entity = function(entity, options)
         ---@type Rates.Configuration.PyPower
         return {
             type = nil, ---@diagnostic disable-line: assign-type-mismatch
-            id = nil, ---@diagnostic disable-line: assign-type-mismatch
             entity = prototype,
             quality = options.quality
         }

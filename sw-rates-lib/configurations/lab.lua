@@ -137,7 +137,6 @@ logic.fill_basic_configurations = function(result, options)
             if (can_research(entity, technology)) then
                 result[#result + 1] = {
                     type = nil, ---@diagnostic disable-line: assign-type-mismatch
-                    id = nil, ---@diagnostic disable-line: assign-type-mismatch
                     entity = entity,
                     quality = prototypes.quality.normal,
                     module_effects = {},
@@ -166,7 +165,6 @@ logic.get_from_entity = function(entity, options)
     ---@type Rates.Configuration.Lab
     return {
         type = nil, ---@diagnostic disable-line: assign-type-mismatch
-        id = nil, ---@diagnostic disable-line: assign-type-mismatch
         entity = options.entity,
         quality = options.quality,
         module_effects = module_effects,

@@ -105,7 +105,6 @@ logic.fill_basic_configurations = function(result, options)
     for _, recipe in pairs(prototypes.recipe) do
         result[#result + 1] = {
             type = nil, ---@diagnostic disable-line: assign-type-mismatch
-            id = nil, ---@diagnostic disable-line: assign-type-mismatch
             recipe = recipe
         }
     end

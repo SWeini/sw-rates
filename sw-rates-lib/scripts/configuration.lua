@@ -1,7 +1,7 @@
 ---A single entity or concept consuming and producing some nodes.
 ---@class Rates.Configuration.Base
 ---@field type string
----@field id string
+---@field id? string
 ---@field entity? LuaEntityPrototype
 ---@field quality? LuaQualityPrototype
 ---@field module_effects? Rates.Configuration.ModuleEffects
@@ -215,40 +215,51 @@ end
 ---@param conf Rates.Configuration
 ---@return string
 local function get_id(conf)
+    local id = conf.id
+    if (id) then
+        return id
+    end
+
     local logic = registry.get(conf.type)
-    local result = ""
     if (logic) then
         if (logic.get_id) then
-            result = logic.get_id(conf)
+            id = logic.get_id(conf)
         end
     else
         local interface = interface_name(conf.type)
         if (remote.interfaces[interface].get_id) then
-            result = remote.call(interface, "get_id", conf) --[[@as string]]
+            id = remote.call(interface, "get_id", conf) --[[@as string]]
         end
     end
 
+    if (not id) then
+        id = ""
+    end
+
     if (conf.entity and conf.quality) then
-        if (result ~= "") then
-            result = conf.entity.name .. "(" .. conf.quality.name .. ")/" .. result
+        if (id ~= "") then
+            id = conf.entity.name .. "(" .. conf.quality.name .. ")/" .. id
         else
-            result = conf.entity.name .. "(" .. conf.quality.name .. ")"
+            id = conf.entity.name .. "(" .. conf.quality.name .. ")"
         end
     end
 
     if (conf.module_effects) then
         for _, module in ipairs(conf.module_effects.modules or {}) do
-            result = result .. "/m=" .. module.module.name .. "(" .. module.quality.name .. ")x" .. module.count
+            id = id .. "/m=" .. module.module.name .. "(" .. module.quality.name .. ")x" .. module.count
         end
         for _, beacon in ipairs(conf.module_effects.beacons or {}) do
-            result = result .. "/b=" .. beacon.beacon.name .. "(" .. beacon.quality.name .. ")x" .. beacon.count
+            id = id .. "/b=" .. beacon.beacon.name .. "(" .. beacon.quality.name .. ")x" .. beacon.count
             for _, module in ipairs(beacon.per_beacon_modules) do
-                result = result .. "/bm=" .. module.module.name .. "(" .. module.quality.name .. ")x" .. module.count
+                id = id .. "/bm=" .. module.module.name .. "(" .. module.quality.name .. ")x" .. module.count
             end
         end
     end
 
-    return conf.type .. "/" .. result
+    id = conf.type .. "/" .. id
+
+    conf.id = id
+    return id
 end
 
 ---@param conf Rates.Configuration
@@ -455,7 +466,6 @@ local function get_fuel_from_burner(burner)
     if (filter) then
         return {
             type = "item-fuel",
-            id = nil, ---@diagnostic disable-line: assign-type-mismatch
             item = prototypes.item[filter.name],
             quality = prototypes.quality[filter.quality]
         } --[[@as Rates.Configuration.ItemFuel]]
@@ -479,7 +489,6 @@ local function get_fuel_from_burner(burner)
     if (item) then
         return {
             type = "item-fuel",
-            id = nil, ---@diagnostic disable-line: assign-type-mismatch
             item = item.name,
             quality = item.quality
         } --[[@as Rates.Configuration.ItemFuel]]
@@ -519,7 +528,6 @@ local function get_from_entity(entity, options)
         end
         if (result) then
             result.type = result.type or entry.type
-            result.id = result.id or get_id(result)
 
             if (result.entity) then
                 local fuel = nil
@@ -535,7 +543,6 @@ local function get_from_entity(entity, options)
                                 if (box) then
                                     fuel = {
                                         type = "fluid-fuel",
-                                        id = nil, ---@diagnostic disable-line: assign-type-mismatch
                                         fluid = prototypes.fluid[box.name],
                                         temperature = box.temperature
                                     } --[[@as Rates.Configuration.FluidFuel]]
@@ -546,15 +553,12 @@ local function get_from_entity(entity, options)
                 end
 
                 if (fuel) then
-                    fuel.id = get_id(fuel)
                     ---@type Rates.Configuration.Meta
                     local meta = {
                         type = "meta",
-                        id = nil, ---@diagnostic disable-line: assign-type-mismatch
                         children = { result },
                         fuel = fuel
                     }
-                    meta.id = get_id(meta)
                     return meta
                 end
             end

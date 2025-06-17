@@ -436,7 +436,6 @@ logic.get_from_entity = function(entity, options)
         ---@type Rates.Configuration.CraftingMachine
         local result = {
             type = "crafting-machine",
-            id = nil, ---@diagnostic disable-line: assign-type-mismatch
             entity = options.entity,
             quality = options.quality,
             module_effects = module_effects,

@@ -148,7 +148,6 @@ logic.fill_basic_configurations = function(result, options)
         for _, seed in pairs(accepted_seeds) do
             result[#result + 1] = {
                 type = nil, ---@diagnostic disable-line: assign-type-mismatch
-                id = nil, ---@diagnostic disable-line: assign-type-mismatch
                 entity = entity,
                 quality = prototypes.quality.normal,
                 seed = seed,
@@ -194,7 +193,6 @@ logic.get_from_entity = function(entity, options)
         ---@type Rates.Configuration.AgriculturalTower
         return {
             type = nil, ---@diagnostic disable-line: assign-type-mismatch
-            id = nil, ---@diagnostic disable-line: assign-type-mismatch
             entity = options.entity,
             quality = options.quality,
             seed = preferred_seeds[1],
@@ -207,20 +205,17 @@ logic.get_from_entity = function(entity, options)
         ---@type Rates.Configuration.AgriculturalTower
         local child = {
             type = "agricultural-tower",
-            id = nil, ---@diagnostic disable-line: assign-type-mismatch
             entity = options.entity,
             quality = options.quality,
             seed = seed,
             seed_quality = prototypes.quality.normal
         }
-        child.id = configuration_api.get_id(child)
         children[#children + 1] = child
     end
 
     ---@type Rates.Configuration.Meta
     return {
         type = "meta",
-        id = nil, ---@diagnostic disable-line: assign-type-mismatch
         children = children
     }
 end

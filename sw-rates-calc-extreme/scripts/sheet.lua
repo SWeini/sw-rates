@@ -69,7 +69,7 @@ local function build_from_entities(location, entities)
     for _, entity in ipairs(entities) do
         local conf = api.configuration.get_from_entity(entity, { use_ghosts = true })
         if (conf) then
-            local name = conf.id
+            local name = api.configuration.get_id(conf)
             local row = rows[name]
             if (row == nil) then
                 -- TODO: do this for all meta children separately
@@ -149,7 +149,7 @@ local function solve_sheet(sheet)
     local processed_any_nodes = {} ---@type table<string, Rates.Node.Any>
 
     for _, row in ipairs(sheet.block.rows) do
-        local name = row.configuration.id
+        local name = api.configuration.get_id(row.configuration)
         local v = s:make_variable(name, 0, row.count_max)
         variables[name] = v
         s.objective:set_coefficient(v, -1)

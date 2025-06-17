@@ -242,10 +242,11 @@ end
 ---@param entities EntityCounts
 ---@param conf Rates.Configuration
 local function add_entity(entities, conf)
-    local entry = entities[conf.id]
+    local conf_id = api.configuration.get_id(conf)
+    local entry = entities[conf_id]
     if (not entry) then
         entry = { configuration = conf, count = 0 }
-        entities[conf.id] = entry
+        entities[conf_id] = entry
     end
 
     entry.count = entry.count + 1
@@ -274,7 +275,7 @@ local function on_player_selected_area(e)
             elseif (conf.type == "fusion-generator") then
                 local input_fluid = fusion_generator.get_input_fluid(conf)
                 conf.temperature = input_fluid.default_temperature
-                conf.id = api.configuration.get_id(conf)
+                conf.id = nil
                 add_entity(fusion_generator_entities, conf)
             elseif (conf.type == "reactor") then
                 add_entity(reactor_entities, conf)

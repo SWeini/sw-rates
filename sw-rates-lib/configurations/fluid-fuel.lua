@@ -80,7 +80,6 @@ logic.fill_basic_configurations = function(result, options)
         for _, temp in ipairs(generated_temperatures.get_generated_fluid_temperatures(fluid)) do
             result[#result + 1] = {
                 type = nil, ---@diagnostic disable-line: assign-type-mismatch
-                id = nil, ---@diagnostic disable-line: assign-type-mismatch
                 fluid = fluid,
                 temperature = temp
             }

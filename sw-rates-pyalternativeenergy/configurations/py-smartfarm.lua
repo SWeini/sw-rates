@@ -134,7 +134,7 @@ logic.get_from_entity = function(entity, options)
     if (result.type == "meta") then
         local child = result.children[1]
         child.type = "py-smartfarm"
-        child.id = configuration.get_id(child)
+        child.id = nil
         result.id = nil
     else
         result.type = "py-smartfarm"
