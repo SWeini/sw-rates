@@ -14,6 +14,7 @@ local registry = require("scripts.configuration-registry")
 --- | Rates.Configuration.Boiler
 --- | Rates.Configuration.BurnerGenerator
 --- | Rates.Configuration.CraftingMachine
+--- | Rates.Configuration.FluidFuelHeat
 --- | Rates.Configuration.FluidFuel
 --- | Rates.Configuration.FusionGenerator
 --- | Rates.Configuration.FusionReactor
@@ -31,6 +32,7 @@ local registry = require("scripts.configuration-registry")
 
 ---@alias Rates.Configuration.Fuel
 --- | Rates.Configuration.ItemFuel
+--- | Rates.Configuration.FluidFuelHeat
 --- | Rates.Configuration.FluidFuel
 
 ---@diagnostic enable: undefined-doc-name
@@ -50,6 +52,7 @@ registry.register({
     require("configurations.crafting-machine"),
     require("configurations.entity-with-health"),
     require("configurations.entity"),
+    require("configurations.fluid-fuel-heat"),
     require("configurations.fluid-fuel"),
     require("configurations.fusion-generator"),
     require("configurations.fusion-reactor"),

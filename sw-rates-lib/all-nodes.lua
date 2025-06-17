@@ -11,6 +11,7 @@ local registry = require("scripts.node-registry")
 --- | Rates.Node.AgriculturalCell
 --- | Rates.Node.ElectricBuffer
 --- | Rates.Node.ElectricPower
+--- | Rates.Node.FluidFuelHeat
 --- | Rates.Node.FluidFuel
 --- | Rates.Node.Fluid
 --- | Rates.Node.Heat
@@ -37,6 +38,7 @@ registry.register({
     require("nodes.agricultural-cell"),
     require("nodes.electric-buffer"),
     require("nodes.electric-power"),
+    require("nodes.fluid-fuel-heat"),
     require("nodes.fluid-fuel"),
     require("nodes.fluid"),
     require("nodes.heat"),

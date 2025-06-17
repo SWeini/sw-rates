@@ -54,15 +54,29 @@ local function format_tag(tag, tag_extra)
     return tag
 end
 
+---@param conf Rates.Configuration
+---@return LuaEntityPrototype?
+local function get_entity(conf)
+    while (conf.type == "meta") do
+        conf = conf.children[1]
+    end
+
+    return conf.entity
+end
+
 ---@param conf Rates.Configuration.Meta
 logic.get_production = function(conf, result, options)
     for i, child in ipairs(conf.children) do
         local factor = conf.children_suggested_factors and conf.children_suggested_factors[i] or (1 / #conf.children)
         if (factor > 0) then
             local amounts = configuration.get_production(child, options)
-            if (conf.fuel) then
-                local fuel_amounts = configuration.get_production(conf.fuel, options)
-                energy_source.apply_fuel_to_production(amounts, fuel_amounts, conf.fuel, options)
+            local fuel = conf.fuel
+            if (fuel) then
+                local entity = get_entity(child)
+                if (entity) then
+                    local fuel_amounts = configuration.get_production(fuel, options)
+                    energy_source.apply_fuel_to_production(amounts, fuel_amounts, entity, fuel, options)
+                end
             end
 
             if (conf.selection) then

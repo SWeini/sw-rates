@@ -1,4 +1,5 @@
 local node = require("node")
+local generated_temperatures = require("generated-temperatures")
 
 ---@param burner LuaBurner?
 ---@return Rates.Configuration.ItemFuel?
@@ -91,28 +92,53 @@ end
 ---@param options Rates.Configuration.FromEntityOptions.Internal
 ---@return Rates.Configuration.Fuel?
 local function get_from_entity(entity, conf, options)
+    while (conf.type == "meta") do
+        conf = conf.children[1]
+    end
+
     local prototype = conf.entity
     if (not prototype) then
         return
     end
 
-    local fuel ---@type Rates.Configuration.Fuel?
-    if (prototype.burner_prototype) then
-        fuel = get_fuel_from_burner(entity.burner)
-    elseif (prototype.fluid_energy_source_prototype) then
-        if (entity.type ~= "entity-ghost") then
-            local fluid = get_fluid_with_index(entity.fluidbox, 1)
-            if (fluid) then
-                fuel = {
+    local burner = prototype.burner_prototype
+    if (burner) then
+        return get_fuel_from_burner(entity.burner)
+    end
+
+    local fluid_energy_source = prototype.fluid_energy_source_prototype
+    if (fluid_energy_source) then
+        if (entity.type == "entity-ghost") then
+            return
+        end
+
+        local fluidbox = get_fluid_with_index(entity.fluidbox, 1)
+        if (not fluidbox) then
+            return
+        end
+
+        local fluid = prototypes.fluid[fluidbox.name]
+        local temperature = fluidbox.temperature ---@cast temperature -nil
+        if (fluid_energy_source.burns_fluid) then
+            if (fluid.fuel_value > 0) then
+                ---@type Rates.Configuration.FluidFuel
+                return {
                     type = "fluid-fuel",
-                    fluid = prototypes.fluid[fluid.name],
-                    temperature = fluid.temperature
-                } --[[@as Rates.Configuration.FluidFuel]]
+                    fluid = fluid,
+                    temperature = temperature
+                }
+            end
+        else
+            if (temperature > fluid.default_temperature) then
+                ---@type Rates.Configuration.FluidFuelHeat
+                return {
+                    type = "fluid-fuel-heat",
+                    fluid = fluid,
+                    temperature = temperature
+                }
             end
         end
     end
-
-    return fuel
 end
 
 ---@param result Rates.Configuration.Amount[]
@@ -120,8 +146,8 @@ end
 ---@param energy_usage number
 local function get_production(result, entity, energy_usage)
     local burner = entity.burner_prototype
-    if (burner ~= nil) then
-        local amount = energy_usage * 60 / burner.effectivity
+    if (burner) then
+        local fuel_usage = energy_usage * 60 / burner.effectivity
 
         local categories = {} ---@type LuaFuelCategoryPrototype[]
         for category, _ in pairs(burner.fuel_categories) do
@@ -130,43 +156,69 @@ local function get_production(result, entity, energy_usage)
         result[#result + 1] = {
             tag = "energy-source-input",
             node = node.create.item_fuels(categories),
-            amount = -amount
+            amount = -fuel_usage,
+            fuel_usage = fuel_usage
         }
 
         return
     end
 
     local fluid = entity.fluid_energy_source_prototype
-    if (fluid ~= nil) then
+    if (fluid) then
         local filter = fluid.fluid_box.filter
-        if (filter == nil) then
-            local amount = energy_usage * 60 / fluid.effectivity
+        local fuel_usage = energy_usage * 60 / fluid.effectivity
 
-            result[#result + 1] = {
-                tag = "energy-source-input",
-                node = node.create.fluid_fuel(),
-                amount = -amount
-            }
-        elseif (fluid.burns_fluid) then
-            result[#result + 1] = {
-                tag = "energy-source-input",
-                node = node.create.fluid(filter, {}),
-                amount = -energy_usage * 60 / fluid.effectivity / filter.fuel_value
-            }
-        else
-            local fluid_usage_per_tick = entity.fluid_usage_per_tick
-            if (fluid_usage_per_tick ~= nil) then
+        if (fluid.burns_fluid) then
+            if (filter) then
                 result[#result + 1] = {
                     tag = "energy-source-input",
                     node = node.create.fluid(filter, {}),
-                    amount = -fluid_usage_per_tick * 60
+                    amount = -fuel_usage / filter.fuel_value,
+                    fuel_usage = fuel_usage
                 }
             else
                 result[#result + 1] = {
                     tag = "energy-source-input",
-                    node = node.create.fluid(filter, {}),
-                    amount = -1
+                    node = node.create.fluid_fuel(),
+                    amount = -fuel_usage,
+                    fuel_usage = fuel_usage
                 }
+            end
+        else
+            if (filter) then
+                if (fluid.fluid_usage_per_tick > 0 and not fluid.scale_fluid_usage) then
+                    result[#result + 1] = {
+                        tag = "energy-source-input",
+                        node = node.create.fluid(filter, {}),
+                        amount = -fluid.fluid_usage_per_tick * 60,
+                        fuel_usage = fuel_usage
+                    }
+                else
+                    local default_temperature = filter.default_temperature
+                    local temperatures = generated_temperatures.get_generated_fluid_temperatures(filter,
+                        function(temperature)
+                            return temperature > default_temperature
+                        end)
+                    if (#temperatures == 1) then
+                        local temperature = temperatures[1]
+                        local fuel_value = filter.heat_capacity * (temperature - default_temperature)
+                        result[#result + 1] = {
+                            tag = "energy-source-input",
+                            node = node.create.fluid(filter, temperature),
+                            amount = -fuel_usage / fuel_value,
+                            fuel_usage = fuel_usage
+                        }
+                    else
+                        result[#result + 1] = {
+                            tag = "energy-source-input",
+                            node = node.create.fluid_fuel_heat(filter),
+                            amount = -fuel_usage,
+                            fuel_usage = fuel_usage
+                        }
+                    end
+                end
+            else
+                -- TODO: fluid energy source from any heated fluid
             end
         end
 
@@ -174,11 +226,13 @@ local function get_production(result, entity, energy_usage)
     end
 
     local heat = entity.heat_energy_source_prototype
-    if (heat ~= nil) then
+    if (heat) then
+        local fuel_usage = energy_usage * 60
         result[#result + 1] = {
             tag = "energy-source-input",
             node = node.create.heat({ min = heat.min_working_temperature }),
-            amount = -energy_usage * 60
+            amount = -fuel_usage,
+            fuel_usage = fuel_usage
         }
 
         return
@@ -196,36 +250,97 @@ local function get_production(result, entity, energy_usage)
     end
 end
 
----@param result Rates.Configuration.Amount[]
----@param fuel_amounts Rates.Configuration.Amount[]
----@param fuel Rates.Configuration.ItemFuel | Rates.Configuration.FluidFuel
----@param options Rates.Configuration.ProductionOptions
-local function apply_fuel_to_production(result, fuel_amounts, fuel, options)
-    local i = 1
-    while (result[i].tag ~= "energy-source-input") do
-        i = i + 1
+---@param amounts Rates.Configuration.Amount[]
+---@param tag string
+---@return integer
+local function find_tag(amounts, tag)
+    for i, amount in ipairs(amounts) do
+        if (amount.tag == tag) then
+            return i
+        end
     end
 
-    local j = 1
-    while (fuel_amounts[j].tag ~= "product") do
-        j = j + 1
-    end
+    error("couldn't find production amount " .. tag)
+end
 
-    local energy_usage = result[i].amount
-    local fuel_usage = -energy_usage / fuel_amounts[j].amount
-
-    table.remove(result, i)
-
-    for k, amount in ipairs(fuel_amounts) do
-        if (k ~= j) then
-            table.insert(result, i, {
+---@param destination Rates.Configuration.Amount[]
+---@param destination_index integer
+---@param source Rates.Configuration.Amount[]
+---@param source_index integer
+---@param factor number
+local function replace_fuel_amounts(destination, destination_index, source, source_index, factor)
+    table.remove(destination, destination_index)
+    for k, amount in ipairs(source) do
+        if (k ~= source_index) then
+            table.insert(destination, destination_index, {
                 tag = amount.tag,
                 tag_extra = amount.tag_extra,
                 node = amount.node,
-                amount = amount.amount * fuel_usage
+                amount = amount.amount * factor
             } --[[@as Rates.Configuration.Amount]])
-            i = i + 1
+            destination_index = destination_index + 1
         end
+    end
+end
+
+---@param result Rates.Configuration.Amount[]
+---@param fuel_amounts Rates.Configuration.Amount[]
+---@param entity LuaEntityPrototype
+---@param fuel Rates.Configuration.Fuel
+---@param options Rates.Configuration.ProductionOptions
+local function apply_fuel_to_production(result, fuel_amounts, entity, fuel, options)
+    local burner = entity.burner_prototype
+    if (burner) then
+        if (fuel.type ~= "item-fuel") then
+            error("invalid type of fuel for burner: " .. fuel.type)
+        end
+
+        local destination_index = find_tag(result, "energy-source-input")
+        local source_index = find_tag(fuel_amounts, "product")
+        local factor = -result[destination_index].amount / fuel_amounts[source_index].amount
+        replace_fuel_amounts(result, destination_index, fuel_amounts, source_index, factor)
+        return
+    end
+
+    local fluid_energy_source = entity.fluid_energy_source_prototype
+    if (fluid_energy_source) then
+        if (fuel.type ~= "fluid-fuel" and fuel.type ~= "fluid-fuel-heat") then
+            error("invalid type of fuel for fluid energy source: " .. fuel.type)
+        end
+
+        local destination_index = find_tag(result, "energy-source-input")
+        local source_index = find_tag(fuel_amounts, "product")
+        local fluid_per_second = -result[destination_index].amount
+        if (result[destination_index].node.type ~= "fluid") then
+            fluid_per_second = fluid_per_second / fuel_amounts[source_index].amount
+        end
+
+        local max_fluid_per_tick = fluid_energy_source.fluid_usage_per_tick
+        if (max_fluid_per_tick > 0) then
+            if (fluid_energy_source.scale_fluid_usage) then
+                fluid_per_second = math.min(fluid_per_second, max_fluid_per_tick * 60)
+            else
+                fluid_per_second = max_fluid_per_tick * 60
+            end
+        end
+
+        local generated_energy = fuel_amounts[source_index].amount * fluid_per_second
+
+        -- this value is sneakily passed via energy-source-input, written in get_production
+        local fuel_usage = result[destination_index].fuel_usage --[[@as number]]
+
+        replace_fuel_amounts(result, destination_index, fuel_amounts, source_index, fluid_per_second)
+
+        if (generated_energy < fuel_usage) then
+            local factor = generated_energy / fuel_usage
+            for _, amount in ipairs(result) do
+                if (amount.tag ~= "energy-source-input") then
+                    amount.amount = amount.amount * factor
+                end
+            end
+        end
+
+        return
     end
 end
 

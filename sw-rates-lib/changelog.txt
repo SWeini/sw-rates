@@ -4,6 +4,7 @@ Date: ???
   Changes:
     - Improved accuracy of beacon effects
     - Improved fuel detection for burner energy sources: no fuel for non-standard filters, uses currently_burning and whole inventory if not ambiguous
+    - Improved fluid energy sources: various combinations of burns_fluid / scale_fluid_usage / fluid_usage_per_tick
   Bugfixes:
     - Fixed crash with offshore-pump entities that have a filtered fluidbox
 ---------------------------------------------------------------------------------------------------
