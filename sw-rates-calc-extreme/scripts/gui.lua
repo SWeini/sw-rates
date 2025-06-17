@@ -466,8 +466,8 @@ local function node_type(node)
     return 100
 end
 
----@param a {node: Rates.Node, amount: number}
----@param b {node: Rates.Node, amount: number}
+---@param a { node: Rates.Node, produced: number, consumed: number }
+---@param b { node: Rates.Node, produced: number, consumed: number }
 local function compare_nodes(a, b)
     local a_type = node_type(a.node)
     local b_type = node_type(b.node)
@@ -475,7 +475,7 @@ local function compare_nodes(a, b)
         return a_type < b_type
     end
 
-    return math.abs(a.amount) > math.abs(b.amount)
+    return math.abs(a.produced + a.consumed) > math.abs(b.produced + b.consumed)
 end
 
 ---@param row Rates.Row
@@ -553,6 +553,15 @@ local function cell_buildings_extra(row)
     }
 end
 
+---@param produced number
+---@param consumed number
+---@return boolean
+local function is_balanced(produced, consumed)
+    local delta = math.abs(produced + consumed)
+    local scale = math.max(1, math.max(produced, -consumed))
+    return delta < 1e-10 * scale
+end
+
 ---@param ui GuiElements
 ---@param sheet_data Rates.Sheet
 ---@param player LuaPlayer
@@ -572,9 +581,9 @@ function gui.add_table(ui, sheet_data, player)
         })
     end
 
-    local total_i = {} ---@type { node: Rates.Node, amount: number }[]
+    local total_i = {} ---@type { node: Rates.Node, produced: number, consumed: number }[]
     for _, subtotal in pairs(total) do
-        table.insert(total_i, subtotal)
+        total_i[#total_i + 1] = subtotal
     end
     table.sort(total_i, compare_nodes)
     local total_in = {} ---@type flib.GuiElemDef[]
@@ -582,11 +591,12 @@ function gui.add_table(ui, sheet_data, player)
     local zero = {} ---@type flib.GuiElemDef[]
     for _, subtotal in ipairs(total_i) do
         local ui = api.node.gui_default(subtotal.node)
-        if (math.abs(subtotal.amount) > 1e-10) then
-            local data = api.gui.gui_button_and_text(ui, math.abs(subtotal.amount))
+        if (not is_balanced(subtotal.produced, subtotal.consumed)) then
+            local amount_net = subtotal.produced + subtotal.consumed
+            local data = api.gui.gui_button_and_text(ui, math.abs(amount_net))
             local icon = create_node_icon_direct(data.button)
             local target ---@type flib.GuiElemDef[]
-            if (subtotal.amount > 0) then
+            if (amount_net > 0) then
                 target = total_out
             else
                 target = total_in

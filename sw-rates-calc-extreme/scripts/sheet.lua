@@ -10,7 +10,7 @@
 ---@field name? string
 ---@field location? LuaSurface
 ---@field rows Rates.Row[]
----@field any_amounts? { node: Rates.Node, amount: number }[]
+---@field any_amounts? { node: Rates.Node, produced: number, consumed: number }[]
 
 ---@class Rates.Constraint
 ---@field min? number
@@ -186,7 +186,7 @@ local function solve_sheet(sheet)
         row.count_effective = value
     end
 
-    local any_amounts_builder = {} ---@type table<string, { node: Rates.Node, amount: number }>
+    local any_amounts_builder = {} ---@type table<string, { node: Rates.Node, produced: number, consumed: number }>
 
     ---@param node Rates.Node
     ---@param amount number
@@ -194,11 +194,15 @@ local function solve_sheet(sheet)
         local node_id = api.node.get_id(node)
         local entry = any_amounts_builder[node_id]
         if (not entry) then
-            entry = { node = node, amount = 0 }
+            entry = { node = node, produced = 0, consumed = 0 }
             any_amounts_builder[node_id] = entry
         end
 
-        entry.amount = entry.amount + amount
+        if (amount > 0) then
+            entry.produced = entry.produced + amount
+        elseif (amount < 0) then
+            entry.consumed = entry.consumed + amount
+        end
     end
 
     for _, node in pairs(processed_any_nodes) do
@@ -215,7 +219,7 @@ local function solve_sheet(sheet)
         end
     end
 
-    local any_amounts = {} ---@type { node: Rates.Node, amount: number }[]
+    local any_amounts = {} ---@type { node: Rates.Node, produced: number, consumed: number }[]
     for _, amount in pairs(any_amounts_builder) do
         any_amounts[#any_amounts + 1] = amount
     end
@@ -226,19 +230,20 @@ end
 ---@param sheet Rates.Sheet
 ---@param surface LuaSurface
 ---@param force LuaForce
----@return table<string, { node: Rates.Node, amount: number }>
+---@return table<string, { node: Rates.Node, produced: number, consumed: number }>
 local function get_total_production(sheet, surface, force)
-    local result = {} ---@type table<string, { node: Rates.Node, amount: number }>
+    local result = {} ---@type table<string, { node: Rates.Node, produced: number, consumed: number }>
 
-    local function add(node, amount)
+    local function add(node, produced, consumed)
         local node_id = api.node.get_id(node)
         local entry = result[node_id]
         if (not entry) then
-            entry = { node = node, amount = 0 }
+            entry = { node = node, produced = 0, consumed = 0 }
             result[node_id] = entry
         end
 
-        entry.amount = entry.amount + amount
+        entry.produced = entry.produced + produced
+        entry.consumed = entry.consumed + consumed
     end
 
     for _, row in ipairs(sheet.block.rows) do
@@ -250,12 +255,16 @@ local function get_total_production(sheet, surface, force)
             load = load
         })
         for _, amount in ipairs(amounts) do
-            add(amount.node, amount.amount * row.count_effective)
+            if (amount.amount > 0) then
+                add(amount.node, amount.amount * row.count_effective, 0)
+            elseif (amount.amount < 0) then
+                add(amount.node, 0, amount.amount * row.count_effective)
+            end
         end
     end
 
     for _, amount in ipairs(sheet.block.any_amounts) do
-        add(amount.node, amount.amount)
+        add(amount.node, amount.produced, amount.consumed)
     end
 
     return result
