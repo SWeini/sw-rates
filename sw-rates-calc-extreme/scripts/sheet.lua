@@ -104,7 +104,7 @@ local function build_from_entities(location, entities)
     end
 
     for name, node in pairs(nodes) do
-        if (node.node.type == "electric-power") then
+        if (node.node.type == "electric-power" or node.node.type == "pollution") then
         elseif (node.has_positive and node.has_negative) then
             has_constraints[name] = true
         end
