@@ -30,9 +30,7 @@ creator.heat = function(temperature)
 
     local nodes = {} ---@type Rates.Node.Heat[]
     for _, temp in ipairs(generated_temperatures.get_generated_heat_temperatures(temperature)) do
-        local node = { type = "heat", temperature = temp }
-        node.id = "heat/" .. result.get_id(node)
-        nodes[#nodes + 1] = node
+        nodes[#nodes + 1] = { type = "heat", temperature = temp }
     end
 
     if (#nodes == 1) then
@@ -42,11 +40,9 @@ creator.heat = function(temperature)
     ---@type Rates.Node.Any.Details.Heat
     local details = {
         type = "any-heat",
-        id = nil, ---@diagnostic disable-line: assign-type-mismatch
         min_temperature = temperature.min,
         max_temperature = temperature.max
     }
-    details.id = "any-heat/" .. result_any.get_id(details)
 
     return {
         type = "any",
@@ -63,12 +59,15 @@ end
 ---@param node Rates.Node.Any.Details.Heat
 result_any.get_id = function(node)
     local result = ""
+
     if (node.min_temperature) then
         result = result .. "≥" .. node.min_temperature
     end
+
     if (node.max_temperature) then
         result = result .. "≤" .. node.max_temperature
     end
+    
     return result
 end
 

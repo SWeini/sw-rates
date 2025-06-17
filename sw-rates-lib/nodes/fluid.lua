@@ -43,9 +43,7 @@ creator.fluid = function(fluid, temperature)
 
     local nodes = {} ---@type Rates.Node.Fluid[]
     for _, temp in ipairs(generated_temperatures.get_generated_fluid_temperatures(fluid, temperature)) do
-        local node = { type = "fluid", fluid = fluid, temperature = temp }
-        node.id = "fluid/" .. result.get_id(node)
-        nodes[#nodes + 1] = node
+        nodes[#nodes + 1] = { type = "fluid", fluid = fluid, temperature = temp }
     end
 
     if (#nodes == 1) then
@@ -55,12 +53,10 @@ creator.fluid = function(fluid, temperature)
     ---@type Rates.Node.Any.Details.Fluid
     local details = {
         type = "any-fluid",
-        id = nil, ---@diagnostic disable-line: assign-type-mismatch
         fluid = fluid,
         min_temperature = temperature.min,
         max_temperature = temperature.max
     }
-    details.id = "any-fluid/" .. result_any.get_id(details)
 
     return {
         type = "any",
@@ -77,12 +73,15 @@ end
 ---@param node Rates.Node.Any.Details.Fluid
 result_any.get_id = function(node)
     local result = node.fluid.name
+    
     if (node.min_temperature) then
         result = result .. "≥" .. node.min_temperature
     end
+
     if (node.max_temperature) then
         result = result .. "≤" .. node.max_temperature
     end
+
     return result
 end
 

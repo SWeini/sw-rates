@@ -1,7 +1,7 @@
 ---A single thing that is used for rate calculation.
 ---@class Rates.Node.Base
 ---@field type string
----@field id string
+---@field id? string
 
 ---Description for a type of node.
 ---@class (exact) Rates.Node.Type
@@ -27,7 +27,8 @@ end
 ---@param type Rates.Node.Type
 local function register_one(type)
     remote.add_interface(interface_name(type.type), {
-        gui_default = type.gui_default
+        get_id = type.get_id,
+        gui_default = type.gui_default,
     })
 end
 
@@ -52,6 +53,36 @@ local function register(types)
 end
 
 ---@param node Rates.Node
+---@return string
+local function get_id(node)
+    local id = node.id
+    if (id) then
+        return id
+    end
+
+    local logic = registry.get(node.type)
+    if (logic) then
+        if (logic.get_id) then
+            id = logic.get_id(node)
+        end
+    else
+        local interface = interface_name(node.type)
+        if (remote.interfaces[interface].get_id) then
+            id = remote.call(interface, "get_id", node) --[[@as string]]
+        end
+    end
+
+    if (id) then
+        id = node.type .. "/" .. id
+    else
+        id = node.type
+    end
+
+    node.id = id
+    return id
+end
+
+---@param node Rates.Node
 ---@return Rates.Gui.NodeDescription
 local function gui_default(node)
     local logic = registry.get(node.type)
@@ -68,12 +99,13 @@ local function gui_default(node)
 
     ---@type Rates.Gui.NodeDescription
     return {
-        name = node.id
+        name = get_id(node)
     }
 end
 
 return {
     create = registry.create, ---@type Rates.Node.Creator
     register = register,
+    get_id = get_id,
     gui_default = gui_default,
 }

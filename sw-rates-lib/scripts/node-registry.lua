@@ -28,16 +28,6 @@ local function register(types)
                     if (result.type == nil) then
                         result.type = type.type
                     end
-                    if (result.id == nil) then
-                        local logic = registry[result.type]
-                        local id = logic.get_id and logic.get_id(result)
-                        if (id) then
-                            id = type.type .. "/" .. id
-                        else
-                            id = type.type
-                        end
-                        result.id = id
-                    end
 
                     return result
                 end

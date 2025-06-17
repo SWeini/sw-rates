@@ -29,15 +29,12 @@ result.get_id = function(node)
         return "-"
     end
 
-    local result = ""
+    local ids = {} ---@type string[]
     for i, child in ipairs(node.children) do
-        if (i > 1) then
-            result = result .. "|"
-        end
-        result = result .. child.id
+        ids[i] = util.get_id(child)
     end
 
-    return result
+    return table.concat(ids, "|")
 end
 
 ---@param node Rates.Node.Any
@@ -49,7 +46,7 @@ result.gui_default = function(node)
     ---@type Rates.Gui.NodeDescription
     return {
         icon = { sprite = "virtual-signal/signal-anything" },
-        name = node.id
+        name = util.get_id(node)
     }
 end
 

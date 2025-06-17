@@ -89,10 +89,11 @@ local function analyze_reactor(player, entities)
             force = player.force --[[@as LuaForce]]
         })
         for _, amount in ipairs(production) do
-            local am = amounts[amount.node.id]
+            local node_id = api.node.get_id(amount.node)
+            local am = amounts[node_id]
             if (not am) then
                 am = { node = amount.node, amount = 0 }
-                amounts[amount.node.id] = am
+                amounts[node_id] = am
             end
 
             am.amount = am.amount + amount.amount * entry.count
@@ -133,10 +134,11 @@ local function analyze_fusion_reactor(player, entities)
                 force = player.force --[[@as LuaForce]]
             })
             for _, amount in ipairs(production) do
-                local am = amounts[amount.node.id]
+                local node_id = api.node.get_id(amount.node)
+                local am = amounts[node_id]
                 if (not am) then
                     am = { node = amount.node, amount = 0 }
-                    amounts[amount.node.id] = am
+                    amounts[node_id] = am
                 end
 
                 am.amount = am.amount + amount.amount * entry.count
@@ -207,10 +209,11 @@ local function analyze_fusion_generator(player, entities, fluids)
                 force = player.force --[[@as LuaForce]]
             })
             for _, amount in ipairs(production) do
-                local am = amounts[amount.node.id]
+                local node_id = api.node.get_id(amount.node)
+                local am = amounts[node_id]
                 if (not am) then
                     am = { node = amount.node, amount = 0 }
-                    amounts[amount.node.id] = am
+                    amounts[node_id] = am
                 end
 
                 am.amount = am.amount + amount.amount * entry.count

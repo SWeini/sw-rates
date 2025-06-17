@@ -35,18 +35,14 @@ creator.item_fuels = function(categories)
 
     local nodes = {} ---@type Rates.Node.ItemFuel[]
     for _, category in ipairs(categories) do
-        local node = { type = "item-fuel", category = category }
-        node.id = "item-fuel/" .. result.get_id(node)
-        nodes[#nodes + 1] = node
+        nodes[#nodes + 1] = { type = "item-fuel", category = category }
     end
 
     ---@type Rates.Node.Any.Details.ItemFuel
     local details = {
         type = "any-item-fuel",
-        id = nil, ---@diagnostic disable-line: assign-type-mismatch
         categories = categories
     }
-    details.id = "any-item-fuel/" .. result_any.get_id(details)
 
     return {
         type = "any",

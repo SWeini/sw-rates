@@ -612,11 +612,12 @@ function gui.add_table(ui, sheet_data, player)
         else
             local icon = create_node_icon(ui)
             local button = icon[1] ---@type flib.GuiElemDef
-            if (sheet_data.constraints[subtotal.node.id]) then
+            local node_id = api.node.get_id(subtotal.node)
+            if (sheet_data.constraints[node_id]) then
                 button.style = "flib_slot_button_red"
                 button.ignored_by_interaction = false
                 button.handler = { [defines.events.on_gui_click] = on_constraint_button_click }
-                button.tags = { node_id = subtotal.node.id }
+                button.tags = { node_id = node_id }
             else
                 button.style = "slot_button"
             end

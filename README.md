@@ -113,7 +113,7 @@ function process(entity)
     local production = api.configuration.get_production(configuration, {})
 
     for _, amount in ipairs(production) do
-        game.print(amount.node.id .. ": " .. amount.amount .. "/s")
+        game.print(api.node.get_id(amount.node) .. ": " .. amount.amount .. "/s")
     end
 end
 ```

@@ -9,7 +9,7 @@ do
 end
 
 local configuration = require("scripts.configuration")
-local node = require("scripts.node")
+local node_util = require("scripts.node")
 
 local logic = { type = "meta" } ---@type Rates.Configuration.Type
 
@@ -98,7 +98,7 @@ logic.get_production = function(conf, result, options)
                         local selection = conf.selection[format_tag(amount.tag, amount.tag_extra)]
                         if (selection) then
                             for _, child in ipairs(node.children) do
-                                if (child.id == selection) then
+                                if (node_util.get_id(child) == selection) then
                                     amount.node = child
                                 end
                             end

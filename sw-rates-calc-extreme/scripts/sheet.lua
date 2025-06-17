@@ -28,10 +28,11 @@ local simplex = require("simplex")
 local function sum_amounts(amounts)
     local result = {} ---@type table<string, { node: Rates.Node, amount: number }>
     for _, amount in ipairs(amounts) do
-        local entry = result[amount.node.id]
+        local node_id = api.node.get_id(amount.node)
+        local entry = result[node_id]
         if (not entry) then
             entry = { node = amount.node, amount = 0 }
-            result[amount.node.id] = entry
+            result[node_id] = entry
         end
 
         entry.amount = entry.amount + amount.amount
@@ -93,7 +94,7 @@ local function build_from_entities(location, entities)
     for name, node in pairs(nodes) do
         if (node.node.type == "any") then
             for _, child in ipairs(node.node.children) do
-                local entry = nodes[child.id]
+                local entry = nodes[api.node.get_id(child)]
                 if (entry) then
                     entry.has_negative = true
                     node.has_positive = true
@@ -154,16 +155,18 @@ local function solve_sheet(sheet)
         s.objective:set_coefficient(v, -1)
         for _, amount in ipairs(row.amounts) do
             local node = amount.node
-            local c = constraints[node.id]
+            local node_id = api.node.get_id(node)
+            local c = constraints[node_id]
             if (c) then
                 c:set_coefficient(v, amount.amount + c:get_coefficient(v))
                 if (node.type == "any") then
-                    if (not processed_any_nodes[node.id]) then
-                        processed_any_nodes[node.id] = node
+                    if (not processed_any_nodes[node_id]) then
+                        processed_any_nodes[node_id] = node
                         for _, child in ipairs(node.children) do
-                            local any_c = constraints[child.id]
+                            local child_id = api.node.get_id(child)
+                            local any_c = constraints[child_id]
                             if (any_c) then
-                                local any_name = node.id .. " <-- " .. child.id
+                                local any_name = node_id .. " <-- " .. child_id
                                 local any_v = s:make_variable(any_name, 0, nil)
                                 variables[any_name] = any_v
                                 c:set_coefficient(any_v, 1)
@@ -184,21 +187,25 @@ local function solve_sheet(sheet)
     end
 
     local any_amounts_builder = {} ---@type table<string, { node: Rates.Node, amount: number }>
+
     ---@param node Rates.Node
     ---@param amount number
     local function add_amount(node, amount)
-        local entry = any_amounts_builder[node.id]
+        local node_id = api.node.get_id(node)
+        local entry = any_amounts_builder[node_id]
         if (not entry) then
             entry = { node = node, amount = 0 }
-            any_amounts_builder[node.id] = entry
+            any_amounts_builder[node_id] = entry
         end
 
         entry.amount = entry.amount + amount
     end
 
     for _, node in pairs(processed_any_nodes) do
+        local node_id = api.node.get_id(node)
         for _, child in ipairs(node.children) do
-            local any_name = node.id .. " <-- " .. child.id
+            local child_id = api.node.get_id(child)
+            local any_name = node_id .. " <-- " .. child_id
             local variable = variables[any_name]
             if (variable) then
                 local value = solution.variable_values[variable] or 0
@@ -224,10 +231,11 @@ local function get_total_production(sheet, surface, force)
     local result = {} ---@type table<string, { node: Rates.Node, amount: number }>
 
     local function add(node, amount)
-        local entry = result[node.id]
+        local node_id = api.node.get_id(node)
+        local entry = result[node_id]
         if (not entry) then
             entry = { node = node, amount = 0 }
-            result[node.id] = entry
+            result[node_id] = entry
         end
 
         entry.amount = entry.amount + amount
