@@ -11,6 +11,7 @@ local configuration = require("scripts.configuration-util")
 local configuration_api = require("scripts.configuration")
 local node = require("scripts.node")
 local progression = require("scripts.progression")
+local location = require("scripts.location")
 
 local logic = { type = "agricultural-tower" } ---@type Rates.Configuration.Type
 
@@ -139,6 +140,23 @@ logic.get_production = function(conf, result, options)
 
     configuration.calculate_products(result, prototypes.quality.normal, plant_result.mineable_properties.products or {},
         frequency, 0, nil)
+
+    if (options.use_pollution) then
+        local surface = options.surface
+        local pollutant = surface and location.get_pollutant_type(surface)
+        if (pollutant) then
+            local emissions = plant_result.harvest_emissions
+            local emission = emissions and emissions[pollutant.name]
+            if (emission and emission ~= 0) then
+                result[#result + 1] = {
+                    tag = "pollution",
+                    tag_extra = "harvest",
+                    node = node.create.pollution(pollutant),
+                    amount = frequency * emission
+                }
+            end
+        end
+    end
 end
 
 ---@param result Rates.Configuration.AgriculturalTower[]
