@@ -65,10 +65,15 @@ end
 ---@param result Rates.Configuration.Amount[]
 ---@param entity LuaEntityPrototype
 ---@param energy_usage number
----@param surface Rates.Location?
+---@param options Rates.Configuration.ProductionOptions
 ---@param pollution_multiplier number?
-function util.calculate_energy_source(result, entity, energy_usage, surface, pollution_multiplier)
-    local pollutant = surface and location.get_pollutant_type(surface)
+function util.calculate_energy_source(result, entity, energy_usage, options, pollution_multiplier)
+    local pollutant ---@type LuaAirbornePollutantPrototype?
+    if (options.use_pollution) then
+        local surface = options.surface
+        pollutant = surface and location.get_pollutant_type(surface)
+    end
+
     energy_source.get_production(result, entity, energy_usage, pollutant, pollution_multiplier or 1)
 end
 

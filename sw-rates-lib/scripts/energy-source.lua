@@ -378,10 +378,12 @@ local function apply_fuel_to_production(result, fuel_amounts, entity, fuel, opti
         local factor = -result[destination_index].amount / fuel_amounts[source_index].amount
         replace_fuel_amounts(result, destination_index, fuel_amounts, source_index, factor)
 
-        local pollution = find_tag(result, "pollution", "depends-on-fuel")
-        if (pollution) then
-            local amount = result[pollution]
-            amount.amount = amount.amount * fuel.item.fuel_emissions_multiplier
+        if (options.use_pollution) then
+            local pollution = find_tag(result, "pollution", "depends-on-fuel")
+            if (pollution) then
+                local amount = result[pollution]
+                amount.amount = amount.amount * fuel.item.fuel_emissions_multiplier
+            end
         end
 
         return
@@ -429,10 +431,12 @@ local function apply_fuel_to_production(result, fuel_amounts, entity, fuel, opti
             end
         end
 
-        local pollution = find_tag(result, "pollution", "depends-on-fuel")
-        if (pollution) then
-            local amount = result[pollution]
-            amount.amount = amount.amount * fuel.fluid.emissions_multiplier
+        if (options.use_pollution) then
+            local pollution = find_tag(result, "pollution", "depends-on-fuel")
+            if (pollution) then
+                local amount = result[pollution]
+                amount.amount = amount.amount * fuel.fluid.emissions_multiplier
+            end
         end
 
         return

@@ -161,7 +161,7 @@ logic.get_production = function(conf, result, options)
         output_temperature = fluids.output.max_temperature
     end
 
-    configuration.calculate_energy_source(result, conf.entity, burner_energy_usage)
+    configuration.calculate_energy_source(result, conf.entity, burner_energy_usage, options)
     result[#result + 1] = {
         tag = "energy-source-input",
         tag_extra = "fusion-reactor",

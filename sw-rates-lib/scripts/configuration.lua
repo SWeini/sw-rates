@@ -70,6 +70,7 @@
 ---@class (exact) Rates.Configuration.ProductionOptions
 ---@field load? number defaults to 1 (full load)
 ---@field apply_quality? boolean defaults to false (don't create higher quality items)
+---@field use_pollution? boolean defaults to false (no pollution)
 ---@field solar_panel_mode? "day-and-night" | "average-and-buffer" defaults to "average-and-buffer"
 ---@field force? LuaForce used to calculate force-specific boni
 ---@field surface? Rates.Location used to add global effects on that surface
@@ -327,7 +328,7 @@ local function get_production(conf, options)
         end
     end
 
-    if (conf.entity) then
+    if (options.use_pollution and conf.entity) then
         util.calculate_constant_pollution(result, conf.entity, options.surface)
     end
 

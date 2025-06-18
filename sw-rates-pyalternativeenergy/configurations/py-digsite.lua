@@ -58,7 +58,7 @@ end
 
 ---@param conf Rates.Configuration.PyDigsite
 logic.get_production = function(conf, result, options)
-    configuration.calculate_energy_source(result, conf.entity, conf.entity.energy_usage)
+    configuration.calculate_energy_source(result, conf.entity, conf.entity.energy_usage, options)
     local resource = 0
     local ore = 0
     local food = 0

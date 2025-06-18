@@ -129,7 +129,7 @@ logic.get_production = function(conf, result, options)
     local frequency = num_tiles / duration
 
     local energy_usage = conf.entity.get_max_energy_usage(conf.quality)
-    configuration.calculate_energy_source(result, conf.entity, energy_usage, options.surface)
+    configuration.calculate_energy_source(result, conf.entity, energy_usage, options)
 
     result[#result + 1] = {
         tag = "ingredient",
