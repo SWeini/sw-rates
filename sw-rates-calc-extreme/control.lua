@@ -60,3 +60,16 @@ script.on_event({
     defines.events.on_player_alt_selected_area,
     defines.events.on_player_alt_reverse_selected_area
 }, on_player_selected_area)
+
+---@param e ConfigurationChangedData
+local function on_configuration_changed(e)
+    if (e.mod_changes["sw-rates-calc-extreme"]) then
+        for _, player in pairs(game.players) do
+            gui.force_close(player)
+        end
+
+        storage.players = nil
+    end
+end
+
+script.on_configuration_changed(on_configuration_changed)

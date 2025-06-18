@@ -12,11 +12,14 @@ local main_window_name = "sw-rates-calc-extreme_wnd_main"
 
 ---@class PerPlayerStorage
 ---@field gui? GuiElements
+---@field is_pinned? true
 ---@field sheet? Rates.Sheet
 ---@field removed_constraints? table<string, true>
 
 ---@class GuiElements
 ---@field wnd_main LuaGuiElement
+---@field button_pin LuaGuiElement
+---@field button_close LuaGuiElement
 ---@field table_total LuaGuiElement
 ---@field table_buildings LuaGuiElement
 
@@ -44,10 +47,40 @@ local function close_main_window(player)
     gui.get_storage(player).gui = nil
 end
 
+---@param player LuaPlayer
+function gui.force_close(player)
+    close_main_window(player)
+end
+
 ---@param e EventData.on_gui_closed
 local function on_window_closed(e)
     local player = game.get_player(e.player_index) ---@cast player -nil
+    local storage = gui.get_storage(player)
+    if (storage.is_pinned) then
+        return
+    end
+
     close_main_window(player)
+end
+
+---@param e EventData.on_gui_click
+local function on_pin_button_click(e)
+    local player = game.get_player(e.player_index) ---@cast player -nil
+    local storage = gui.get_storage(player)
+    if (not storage.gui or not storage.gui.button_close) then
+        return
+    end
+
+    local is_pinned = not storage.is_pinned
+    storage.is_pinned = is_pinned or nil
+    e.element.toggled = is_pinned
+    if (is_pinned) then
+        player.opened = nil
+        storage.gui.button_close.tooltip = { "gui.close" }
+    else
+        player.opened = storage.gui.wnd_main
+        storage.gui.button_close.tooltip = { "gui.close-instruction" }
+    end
 end
 
 ---@param e EventData.on_gui_click
@@ -101,6 +134,7 @@ end
 
 flib_gui.add_handlers({
     on_window_closed = on_window_closed,
+    on_pin_button_click = on_pin_button_click,
     on_close_button_click = on_close_button_click,
     on_constraint_button_click = on_constraint_button_click
 })
@@ -255,7 +289,8 @@ function gui.build(player)
                 ignored_by_interaction = true
             },
             { type = "empty-widget", style = "flib_titlebar_drag_handle", ignored_by_interaction = true },
-            frame_action_button("close_button", "utility/close", { "gui.close-instruction" }, on_close_button_click)
+            frame_action_button("button_pin", "flib_pin_white", { "gui.flib-keep-open" }, on_pin_button_click),
+            frame_action_button("button_close", "utility/close", { "gui.close-instruction" }, on_close_button_click)
         },
         {
             type = "flow",
@@ -281,7 +316,12 @@ end
 function gui.show(player, ui)
     local storage = gui.get_storage(player)
     storage.gui = ui
-    player.opened = ui.wnd_main
+    if (storage.is_pinned) then
+        ui.button_pin.toggled = true
+        ui.button_close.tooltip = { "gui.close" }
+    else
+        player.opened = ui.wnd_main
+    end
     ui.wnd_main.bring_to_front()
 end
 
