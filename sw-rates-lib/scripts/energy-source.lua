@@ -1,24 +1,20 @@
 local node = require("node")
 local generated_temperatures = require("generated-temperatures")
 
----@param burner LuaBurner?
+---@param entity LuaEntity
+---@param prototype LuaEntityPrototype
 ---@return Rates.Configuration.ItemFuel?
-local function get_fuel_from_burner(burner)
-    if (not burner) then
-        return
-    end
-
-    local inventory = burner.inventory
-
-    local filter = inventory.get_filter(1)
+local function get_fuel_from_burner(entity, prototype)
+    local inventory_size = prototype.burner_prototype.fuel_inventory_size
+    local filter = entity.get_inventory_filter(defines.inventory.fuel, 1)
     if (filter) then
         if (filter.comparator ~= "=") then
             -- fuel value doesn't go up with quality, so this could theoretically be supported, but it isn't yet
             return
         end
 
-        for i = 2, #inventory do
-            local other_filter = inventory.get_filter(i)
+        for i = 2, inventory_size do
+            local other_filter = entity.get_inventory_filter(defines.inventory.fuel, i)
             if (not other_filter) then
                 return
             end
@@ -36,8 +32,8 @@ local function get_fuel_from_burner(burner)
             end
         end
     else
-        for i = 2, #inventory do
-            if (inventory.get_filter(i)) then
+        for i = 2, inventory_size do
+            if (entity.get_inventory_filter(defines.inventory.fuel, i)) then
                 return
             end
         end
@@ -51,6 +47,12 @@ local function get_fuel_from_burner(burner)
         } --[[@as Rates.Configuration.ItemFuel]]
     end
 
+    local burner = entity.burner
+    if (not burner) then
+        return
+    end
+
+    local inventory = burner.inventory
     local item = burner.currently_burning --[[@as { name: LuaItemPrototype, quality: LuaQualityPrototype }?]]
 
     for i = 1, #inventory do
@@ -103,7 +105,7 @@ local function get_from_entity(entity, conf, options)
 
     local burner = prototype.burner_prototype
     if (burner) then
-        return get_fuel_from_burner(entity.burner)
+        return get_fuel_from_burner(entity, options.entity)
     end
 
     local fluid_energy_source = prototype.fluid_energy_source_prototype
