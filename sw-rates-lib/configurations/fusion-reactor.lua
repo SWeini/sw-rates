@@ -151,7 +151,7 @@ logic.get_production = function(conf, result, options)
     local fluids = get_fluids(conf.entity)
     local target_temperature = conf.entity.target_temperature or fluids.output.default_temperature
     local energy_per_fluid = fluids.output.heat_capacity * target_temperature
-    local flow = extra_data.fusion_reactor_max_fluid_usage(conf.entity) * (1 + conf.quality.level * 0.3)
+    local flow = extra_data.fusion_reactor_max_fluid_usage(conf.entity) * conf.quality.default_multiplier
     local burner_energy_usage = flow * energy_per_fluid
     local energy_usage = conf.entity.get_max_energy_usage(conf.quality)
 

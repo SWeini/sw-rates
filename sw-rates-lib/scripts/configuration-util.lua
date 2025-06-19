@@ -841,11 +841,7 @@ local function get_effect_of_single_module(module, quality)
             if (value ~= 0) then
                 local percentage = to_integer_percentage(value)
                 if (is_positive_effect(name, value)) then
-                    -- negative effects are not increased by quality
-                    -- multiplier is 1 + 0.3 * quality.level
-                    -- just have to be careful because of rounding at the end
-                    local bonus = cast_to_integer((3 * quality.level * percentage) / 10)
-                    percentage = percentage + bonus
+                    percentage = cast_to_integer(percentage * quality.default_multiplier)
                 end
 
                 result[name] = percentage

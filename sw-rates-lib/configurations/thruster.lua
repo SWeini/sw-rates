@@ -56,7 +56,7 @@ logic.get_production = function(conf, result, options)
     local load = options.load or 1
     local fluids = get_fluids(conf.entity)
     local energy_usage = conf.entity.get_max_energy_usage(conf.quality)
-    local factor = 1 + conf.quality.level * 0.3
+    local factor = conf.quality.default_multiplier
     local performance = get_performance(conf.entity, load)
     configuration.calculate_energy_source(result, conf.entity, energy_usage, options)
     result[#result + 1] = {

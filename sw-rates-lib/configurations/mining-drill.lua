@@ -220,7 +220,8 @@ logic.get_from_entity = function(entity, options)
     end
 
     if (not resource) then
-        for _, target in ipairs(entity.surface.find_entities_filtered { type = "resource", position = entity.position, radius = options.entity.mining_drill_radius }) do
+        local radius = options.entity.get_mining_drill_radius(options.quality)
+        for _, target in ipairs(entity.surface.find_entities_filtered { type = "resource", position = entity.position, radius = radius }) do
             local category = target.prototype.resource_category
             if (options.entity.resource_categories[category]) then
                 resource = target.prototype

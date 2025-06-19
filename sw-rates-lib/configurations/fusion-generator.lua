@@ -43,7 +43,7 @@ logic.get_production = function(conf, result, options)
     local fluids = get_fluids(conf.entity)
     local input_temperature = conf.temperature
     local energy_per_fluid = fluids.input.heat_capacity * input_temperature
-    local flow = extra_data.fusion_generator_max_fluid_usage(conf.entity) * (1 + conf.quality.level * 0.3)
+    local flow = extra_data.fusion_generator_max_fluid_usage(conf.entity) * conf.quality.default_multiplier
     local max_energy = conf.entity.electric_energy_source_prototype.get_output_flow_limit(conf.quality)
     if (max_energy < energy_per_fluid * flow) then
         flow = max_energy / energy_per_fluid

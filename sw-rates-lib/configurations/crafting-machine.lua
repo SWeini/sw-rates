@@ -208,7 +208,7 @@ logic.get_production = function(conf, result, options)
             max_effect,
             is_module_allowed)
 
-        local energy_usage = conf.entity.energy_usage * effective_values.consumption
+        local energy_usage = conf.entity.get_max_energy_usage(conf.quality) * effective_values.consumption
         configuration.calculate_energy_source(result, conf.entity, energy_usage, options,
             effective_values.pollution * conf.recipe.emissions_multiplier)
     end
