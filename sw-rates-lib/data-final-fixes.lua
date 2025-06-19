@@ -1,7 +1,5 @@
 local bigpack = require("__big-data-string2__.pack")
 
-local utility_constants = data.raw["utility-constants"].default
-
 ---@class (exact) Rates.ExtraData.DyingEffect
 ---@field type "entity" | "asteroid-chunk"
 ---@field name string
@@ -10,57 +8,14 @@ local utility_constants = data.raw["utility-constants"].default
 ---@field count? integer
 
 ---@class (exact) Rates.ExtraData
----@field thruster table<data.EntityID, { min_performance: data.ThrusterPerformancePoint.struct, max_performance: data.ThrusterPerformancePoint.struct }>
----@field send_to_orbit_mode table<data.ItemID, data.SendToOrbitMode>
----@field space_platform_starter_pack table<data.ItemID, data.SurfaceID>
 ---@field asteroid_dying table<data.EntityID, Rates.ExtraData.DyingEffect[]>
----@field captured_spawner table<data.EntityID, data.EntityID>
----@field fusion_generator table<data.EntityID, { max_fluid_usage: data.FluidAmount }>
----@field fusion_reactor table<data.EntityID, { max_fluid_usage: data.FluidAmount, neighbour_bonus: float?, neighbour_connectable: data.NeighbourConnectable? }>
----@field ["utility-constants"] { rocket_lift_weight: data.Weight }
+---@field fusion_reactor table<data.EntityID, { max_fluid_usage: data.FluidAmount, neighbour_connectable: data.NeighbourConnectable? }>
 
 ---@type Rates.ExtraData
 local store = {
-    thruster = {},
-    send_to_orbit_mode = {},
-    space_platform_starter_pack = {},
     asteroid_dying = {},
-    captured_spawner = {},
-    fusion_generator = {},
     fusion_reactor = {},
-    ["utility-constants"] = {}
 }
-
-store["utility-constants"].rocket_lift_weight = utility_constants.rocket_lift_weight
-
-for type, _ in pairs(defines.prototypes.item) do
-    for _, item in pairs(data.raw[type] or {}) do
-        if (item.send_to_orbit_mode and item.send_to_orbit_mode ~= "not-sendable") then
-            store.send_to_orbit_mode[item.name] = item.send_to_orbit_mode
-        end
-    end
-end
-
-for _, item in pairs(data.raw["space-platform-starter-pack"] or {}) do
-    store.space_platform_starter_pack[item.name] = item.surface
-end
-
----@param x data.ThrusterPerformancePoint
----@return data.ThrusterPerformancePoint.struct
-local function thruster_performance(x)
-    return {
-        fluid_volume = x.fluid_volume or x[1],
-        fluid_usage = x.fluid_usage or x[2],
-        effectivity = x.effectivity or x[3]
-    }
-end
-
-for _, entity in pairs(data.raw["thruster"] or {}) do
-    store.thruster[entity.name] = {
-        min_performance = thruster_performance(entity.min_performance),
-        max_performance = thruster_performance(entity.max_performance)
-    }
-end
 
 ---@param effect data.TriggerEffect?
 ---@param result Rates.ExtraData.DyingEffect[]
@@ -112,20 +67,9 @@ for _, asteroid in pairs(data.raw["asteroid"] or {}) do
     store.asteroid_dying[asteroid.name] = effects
 end
 
-for _, spawner in pairs(data.raw["unit-spawner"] or {}) do
-    store.captured_spawner[spawner.name] = spawner.captured_spawner_entity
-end
-
-for _, entity in pairs(data.raw["fusion-generator"] or {}) do
-    store.fusion_generator[entity.name] = {
-        max_fluid_usage = entity.max_fluid_usage
-    }
-end
-
 for _, entity in pairs(data.raw["fusion-reactor"] or {}) do
     store.fusion_reactor[entity.name] = {
         max_fluid_usage = entity.max_fluid_usage,
-        neighbour_bonus = entity.neighbour_bonus,
         neighbour_connectable = entity.neighbour_connectable
     }
 end

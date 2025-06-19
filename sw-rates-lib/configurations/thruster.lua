@@ -8,7 +8,6 @@ end
 local configuration = require("scripts.configuration-util")
 local node = require("scripts.node")
 local progression = require("scripts.progression")
-local extra_data = require("scripts.extra-data")
 
 local logic = { type = "thruster" } ---@type Rates.Configuration.Type
 
@@ -25,8 +24,8 @@ end
 
 ---@return { fluid_usage: number, effectivity: number }
 local function get_performance(prototype, load)
-    local min = extra_data.thruster_min_performance(prototype)
-    local max = extra_data.thruster_max_performance(prototype)
+    local min = prototype.min_performance ---@cast min -nil
+    local max = prototype.max_performance ---@cast max -nil
     local fluid_usage = load * max.fluid_usage
     if (fluid_usage >= max.fluid_usage) then
         return { fluid_usage = max.fluid_usage, effectivity = max.effectivity }

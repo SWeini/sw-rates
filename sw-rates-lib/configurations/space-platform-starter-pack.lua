@@ -1,5 +1,4 @@
 local progression = require("scripts.progression")
-local extra_data = require("scripts.extra-data")
 
 local logic = { type = "space-platform-starter-pack" } ---@type Rates.Configuration.Type
 
@@ -14,7 +13,7 @@ local items = prototypes.get_item_filtered { { filter = "type", type = "space-pl
 
 logic.fill_progression_locations = function(result, options)
     for _, item in pairs(items) do
-        local surface = extra_data.space_platform_starter_pack_surface(item)
+        local surface = item.surface
         if (surface) then
             result[#result + 1] = "space-" .. surface.name
         end
@@ -25,7 +24,7 @@ logic.fill_progression = function(result, options)
     for _, planet in pairs(planets) do
         local loc1 = progression.location.planet(planet.name)
         for _, item in pairs(items) do
-            local surface = extra_data.space_platform_starter_pack_surface(item)
+            local surface = item.surface
             if (surface) then
                 local loc2 = progression.location.space(surface.name)
                 local id = "space-platform-starter-pack/" .. item.name .. "/" .. loc1

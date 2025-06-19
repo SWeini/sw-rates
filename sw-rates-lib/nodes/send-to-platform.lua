@@ -4,7 +4,6 @@ do
     ---@field type "send-to-platform"
 end
 
-local extra_data = require("scripts.extra-data")
 local gui = require("scripts.gui")
 
 local creator = {} ---@class Rates.Node.Creator
@@ -29,7 +28,7 @@ local function format_weight(weight)
     end
 end
 
-local rocket_lift_weight = format_weight(extra_data.rocket_lift_weight)
+local rocket_lift_weight = format_weight(prototypes.utility_constants["rocket_lift_weight"] --[[@as number]])
 
 ---@param node Rates.Node.SendToPlatform
 result.gui_default = function(node)

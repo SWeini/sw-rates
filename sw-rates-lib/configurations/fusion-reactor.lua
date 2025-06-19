@@ -155,7 +155,7 @@ logic.get_production = function(conf, result, options)
     local burner_energy_usage = flow * energy_per_fluid
     local energy_usage = conf.entity.get_max_energy_usage(conf.quality)
 
-    local neighbour_bonus = extra_data.fusion_reactor_neighbour_bonus(conf.entity)
+    local neighbour_bonus = conf.entity.neighbour_bonus
     local output_temperature = target_temperature * (1 + conf.neighbours * neighbour_bonus)
     if (output_temperature > fluids.output.max_temperature) then
         output_temperature = fluids.output.max_temperature
@@ -183,7 +183,7 @@ end
 
 logic.fill_generated_temperatures = function(result)
     for _, entity in pairs(entities) do
-        local neighbour_bonus = extra_data.fusion_reactor_neighbour_bonus(entity)
+        local neighbour_bonus = entity.neighbour_bonus
         local fluid = get_fluids(entity).output
         local max_neighbours = #extra_data.fusion_reactor_neighbour_connectable(entity).connections
         local target_temperature = entity.target_temperature or fluid.default_temperature

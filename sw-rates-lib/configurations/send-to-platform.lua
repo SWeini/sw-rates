@@ -1,5 +1,4 @@
 local progression = require("scripts.progression")
-local extra_data = require("scripts.extra-data")
 
 local logic = { type = "send-to-platform" } ---@type Rates.Configuration.Type
 
@@ -19,7 +18,7 @@ end
 
 local characters = prototypes.get_entity_filtered { { filter = "type", type = "character" } }
 
-local rocket_lift_weight = extra_data.rocket_lift_weight
+local rocket_lift_weight = prototypes.utility_constants["rocket_lift_weight"] --[[@as number]]
 
 logic.fill_progression = function(result, options)
     local space_platforms = {} ---@type string[]

@@ -10,7 +10,6 @@ local configuration = require("scripts.configuration-util")
 local node = require("scripts.node")
 local progression = require("scripts.progression")
 local generated_temperatures = require("scripts.generated-temperatures")
-local extra_data = require("scripts.extra-data")
 
 local logic = { type = "fusion-generator" } ---@type Rates.Configuration.Type
 
@@ -43,7 +42,7 @@ logic.get_production = function(conf, result, options)
     local fluids = get_fluids(conf.entity)
     local input_temperature = conf.temperature
     local energy_per_fluid = fluids.input.heat_capacity * input_temperature
-    local flow = extra_data.fusion_generator_max_fluid_usage(conf.entity) * conf.quality.default_multiplier
+    local flow = conf.entity.get_fluid_usage_per_tick(conf.quality)
     local max_energy = conf.entity.electric_energy_source_prototype.get_output_flow_limit(conf.quality)
     if (max_energy < energy_per_fluid * flow) then
         flow = max_energy / energy_per_fluid
