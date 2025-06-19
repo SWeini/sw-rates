@@ -224,16 +224,22 @@ local function generate_tableau(s)
     end
 
     for _, con in ipairs(s.constraints) do
-        if (con.lower_bound == nil or con.upper_bound ~= con.lower_bound) then
-            error("inequalities not supported")
+        local negate = false
+        if (con.upper_bound) then
+            if (con.upper_bound < 0) then
+                negate = true
+            end
+        elseif (con.lower_bound < 0) then
+            negate = true
         end
 
-        if (con.lower_bound < 0) then
+        if (negate) then
             for k, v in con.coeffs do
                 con.coeffs[k] = -v
             end
-            con.lower_bound = -con.lower_bound
-            con.upper_bound = -con.upper_bound
+            local upper_bound = con.upper_bound
+            con.upper_bound = con.lower_bound and -con.lower_bound
+            con.lower_bound = upper_bound and -upper_bound
         end
     end
 
@@ -269,10 +275,50 @@ local function generate_tableau(s)
     end
 
     for i, con in ipairs(s.constraints) do
-        local val = con.lower_bound
-        b[i] = val
-        obj = obj + val
-        var_basic[i] = -i
+        local lower = con.lower_bound
+        local upper = con.upper_bound
+        if (upper) then
+            b[i] = upper
+            obj = obj + upper
+            var_basic[i] = -i
+
+            if (lower == upper) then
+            else
+                local col = {}
+                for j = 1, n_rows do
+                    col[j] = 0
+                end
+                col[i] = 1
+                n_cols = n_cols + 1
+                a[n_cols] = col
+                c[n_cols] = 1
+                c2[n_cols] = 0
+                var_free[n_cols] = n_cols
+                if (lower) then
+                    upper_bound[n_cols] = { u = upper - lower, swapped = false }
+                    if (lower > 0) then
+                        obj = obj + lower
+                    end
+                end
+            end
+        elseif (lower) then
+            b[i] = lower
+            obj = obj + lower
+            var_basic[i] = -i
+
+            do
+                local col = {}
+                for j = 1, n_rows do
+                    col[j] = 0
+                end
+                col[i] = -1
+                n_cols = n_cols + 1
+                a[n_cols] = col
+                c[n_cols] = -1
+                c2[n_cols] = 0
+                var_free[n_cols] = n_cols
+            end
+        end
     end
 
     local result = {
@@ -532,12 +578,14 @@ function Simplex:solve()
     for i = 1, tableau.n_rows do
         local var = tableau.var_basic[i]
         if (var > 0) then
-            local variable = self.variables[var]
-            local u = tableau.upper_bound[var]
-            if (u and u.swapped) then
-                result[variable] = u.u - tableau.b[i]
-            else
-                result[variable] = tableau.b[i]
+            if (var <= self.n_variables) then
+                local variable = self.variables[var]
+                local u = tableau.upper_bound[var]
+                if (u and u.swapped) then
+                    result[variable] = u.u - tableau.b[i]
+                else
+                    result[variable] = tableau.b[i]
+                end
             end
         elseif (tableau.b[i] ~= 0) then
             local constraint = self.constraints[-var]
@@ -546,7 +594,7 @@ function Simplex:solve()
     end
     for j = 1, tableau.n_cols do
         local var = tableau.var_free[j]
-        if (var > 0) then
+        if (var > 0 and var <= self.n_variables) then
             local variable = self.variables[var]
             local u = tableau.upper_bound[var]
             if (u and u.swapped) then

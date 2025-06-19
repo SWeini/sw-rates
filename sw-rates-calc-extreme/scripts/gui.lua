@@ -535,10 +535,15 @@ end
 ---@return flib.GuiElemDef
 local function cell_buildings_entity(row)
     local ui = api.configuration.gui_entity(row.configuration)
+    local count = row.count_max
+    for _, group_count in pairs(row.count_groups or {}) do
+        count = count + group_count
+    end
+
     local flow = {
         type = "flow",
         style = "packed_horizontal_flow",
-        create_node_icon(ui, tostring(row.count_max))
+        create_node_icon(ui, tostring(count))
     }
 
     local conf = row.configuration ---@type Rates.Configuration

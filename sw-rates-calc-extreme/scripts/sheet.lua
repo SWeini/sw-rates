@@ -1,6 +1,7 @@
 ---@class Rates.Row
 ---@field block? Rates.Block
 ---@field configuration? Rates.Configuration
+---@field count_groups? table<string, number>
 ---@field count_max? integer
 ---@field count_effective? number
 ---@field entity_ids integer[]
@@ -66,27 +67,46 @@ local function build_from_entities(location, entities)
         end
     end
 
+    ---@param conf Rates.Configuration
+    ---@param force LuaForce
+    ---@return Rates.Row
+    local function add_row(conf, force)
+        local name = api.configuration.get_id(conf)
+        local row = rows[name]
+        if (row == nil) then
+            local amounts = api.configuration.get_production(conf, {
+                force = force,
+                surface = location,
+                apply_quality = true
+            })
+
+            record_positive_negative(amounts)
+
+            row = { entity_ids = {}, configuration = conf, count_max = 0, amounts = amounts }
+            rows[name] = row
+        end
+
+        return row
+    end
+
     for _, entity in ipairs(entities) do
         local conf = api.configuration.get_from_entity(entity, { use_ghosts = true })
         if (conf) then
-            local name = api.configuration.get_id(conf)
-            local row = rows[name]
-            if (row == nil) then
-                -- TODO: do this for all meta children separately
-                local amounts = api.configuration.get_production(conf, {
-                    force = entity.force --[[@as LuaForce]],
-                    surface = location,
-                    apply_quality = true
-                })
-
-                record_positive_negative(amounts)
-
-                row = { entity_ids = {}, configuration = conf, count_max = 0, amounts = amounts }
-                rows[name] = row
+            local force = entity.force --[[@as LuaForce]]
+            if (conf.type == "meta" and #conf.children > 1) then
+                local meta_id = api.configuration.get_id(conf)
+                for _, child in ipairs(conf.children) do
+                    -- TODO: apply fuel/selection of meta to child
+                    local row = add_row(child, force)
+                    row.count_groups = row.count_groups or {}
+                    row.count_groups[meta_id] = (row.count_groups[meta_id] or 0) + 1
+                    row.entity_ids[#row.entity_ids + 1] = entity.unit_number
+                end
+            else
+                local row = add_row(conf, force)
+                row.count_max = row.count_max + 1
+                row.entity_ids[#row.entity_ids + 1] = entity.unit_number
             end
-
-            row.count_max = row.count_max + 1
-            row.entity_ids[#row.entity_ids + 1] = entity.unit_number
         end
     end
 
@@ -148,9 +168,34 @@ local function solve_sheet(sheet)
     local variables = {} ---@type table<string, Simplex.Variable>
     local processed_any_nodes = {} ---@type table<string, Rates.Node.Any>
 
+    local group_constraints = {} ---@type table<string, Simplex.Constraint>
     for _, row in ipairs(sheet.block.rows) do
         local name = api.configuration.get_id(row.configuration)
         local v = s:make_variable(name, 0, row.count_max)
+        if (row.count_groups) then
+            v:set_bounds(0, nil)
+            local con = s:make_constraint(name, 0, 0)
+            con:set_coefficient(v, -1)
+
+            if (row.count_max > 0) then
+                local v_normal = s:make_variable(name .. "@explicit", 0, row.count_max)
+                con:set_coefficient(v_normal, 1)
+            end
+
+            for group_name, group_count_max in pairs(row.count_groups) do
+                local v_part = s:make_variable(name .. "@" .. group_name, 0, nil)
+                con:set_coefficient(v_part, 1)
+
+                local group_constraint = group_constraints[group_name]
+                if (not group_constraint) then
+                    group_constraint = s:make_constraint(group_name, 0, group_count_max)
+                    group_constraints[group_name] = group_constraint
+                end
+
+                group_constraint:set_coefficient(v_part, 1)
+            end
+        end
+
         variables[name] = v
         s.objective:set_coefficient(v, -1)
         for _, amount in ipairs(row.amounts) do
