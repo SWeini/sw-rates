@@ -73,7 +73,7 @@ end
 ---@param node Rates.Node.Any.Details.Fluid
 result_any.get_id = function(node)
     local result = node.fluid.name
-    
+
     if (node.min_temperature) then
         result = result .. "≥" .. node.min_temperature
     end
