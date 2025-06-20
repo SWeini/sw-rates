@@ -125,7 +125,7 @@ end
 ---@param entities { configuration: Rates.Configuration, count: integer }[]
 local function analyze_entities(player, surface, entities)
     table.sort(entities, function(a, b)
-        return a.configuration.id < b.configuration.id
+        return api.configuration.get_id(a.configuration) < api.configuration.get_id(b.configuration)
     end)
 
     ---@type Rates.Configuration.ProductionOptions
@@ -150,10 +150,11 @@ end
 ---@param entities table<string, { configuration: Rates.Configuration, count: integer }>
 ---@param conf Rates.Configuration
 local function add_entity(entities, conf)
-    local entry = entities[conf.id]
+    local conf_id = api.configuration.get_id(conf)
+    local entry = entities[conf_id]
     if (not entry) then
         entry = { configuration = conf, count = 0 }
-        entities[conf.id] = entry
+        entities[conf_id] = entry
     end
 
     entry.count = entry.count + 1
