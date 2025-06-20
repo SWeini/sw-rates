@@ -68,7 +68,7 @@ local function get_id(node)
     else
         local interface = interface_name(node.type)
         if (remote.interfaces[interface].get_id) then
-            id = remote.call(interface, "get_id", node) --[[@as string]]
+            id = remote.call(interface, "get_id", node) --[[@as string?]]
         end
     end
 

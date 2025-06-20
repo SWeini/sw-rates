@@ -1,8 +1,13 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.0
-Date: ???
+Date: 2025-06-20
+  Features:
+    - Update to sw-rates-lib 0.3.0
+    - True one-drag experience for asteroid collectors
+    - Pin button
   Bugfixes:
     - Fixed crash when shift-selecting after deconstructing previously selected entities
+    - Fixed GUI style for title bar
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.0
 Date: 2025-06-13

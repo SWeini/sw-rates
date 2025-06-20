@@ -219,7 +219,7 @@ logic.get_production = function(conf, result, options)
     result[#result + 1] = {
         tag = "product",
         node = api.node.create.electric_power(),
-        amount = 5
+        amount = 5000000
     }
 end
 
