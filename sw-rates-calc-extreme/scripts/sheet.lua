@@ -48,6 +48,7 @@ end
 local function build_from_entities(location, entities)
     local rows = {} ---@type table<string, Rates.Row>
     local nodes = {} ---@type table<string, { node: Rates.Node, has_positive: true?, has_negative: true? }>
+    local use_pollution = game.map_settings.pollution.enabled
 
     ---@param amounts Rates.Configuration.Amount[]
     local function record_positive_negative(amounts)
@@ -77,7 +78,8 @@ local function build_from_entities(location, entities)
             local amounts = api.configuration.get_production(conf, {
                 force = force,
                 surface = location,
-                apply_quality = true
+                apply_quality = true,
+                use_pollution = use_pollution,
             })
 
             record_positive_negative(amounts)
@@ -278,6 +280,7 @@ end
 ---@return table<string, { node: Rates.Node, produced: number, consumed: number }>
 local function get_total_production(sheet, surface, force)
     local result = {} ---@type table<string, { node: Rates.Node, produced: number, consumed: number }>
+    local use_pollution = game.map_settings.pollution.enabled
 
     local function add(node, produced, consumed)
         local node_id = api.node.get_id(node)
@@ -297,6 +300,7 @@ local function get_total_production(sheet, surface, force)
             force = force --[[@as LuaForce]],
             surface = surface,
             apply_quality = true,
+            use_pollution = use_pollution,
             load = load
         })
         for _, amount in ipairs(amounts) do
