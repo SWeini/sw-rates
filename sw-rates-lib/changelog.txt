@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.2
+Date: ???
+  Changes:
+    - Improved filters for asteroid-collector: read all filters, ignore if controlled by circuit
+---------------------------------------------------------------------------------------------------
+Version: 0.3.1
+Date: 2025-06-21
+  Bugfixes:
+    - Fixed waste of performance when looking for beacons
+---------------------------------------------------------------------------------------------------
 Version: 0.3.0
 Date: 2025-06-20
   Features:

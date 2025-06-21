@@ -631,7 +631,7 @@ end
 ---@return Rates.Configuration.Beacon[]
 function util.collect_beacons(entity, use_ghosts)
     local bbox = entity.bounding_box
-    local max_distance = prototypes.max_beacon_supply_area_distance + 64
+    local max_distance = prototypes.max_beacon_supply_area_distance + 1
     local diagonal = { x = max_distance, y = max_distance }
     local search_box = {
         left_top = math2d.position.subtract(bbox.left_top, diagonal),

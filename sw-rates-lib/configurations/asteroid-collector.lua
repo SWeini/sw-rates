@@ -139,15 +139,33 @@ logic.get_from_entity = function(entity, options)
         return
     end
 
-    local filter = entity.get_filter(1)
-    if (filter) then
-        ---@type Rates.Configuration.AsteroidCollector
-        return {
-            type = nil, ---@diagnostic disable-line: assign-type-mismatch
-            entity = options.entity,
-            quality = options.quality,
-            asteroid = prototypes.asteroid_chunk[filter.name]
-        }
+    local is_controlled_by_circuits = false
+    local behavior = entity.get_control_behavior() --[[@as LuaAsteroidCollectorControlBehavior?]]
+    if (behavior) then
+        if (behavior.set_filter) then
+            for wire, connector in pairs(entity.get_wire_connectors(false)) do
+                if (wire == defines.wire_connector_id.circuit_red or wire == defines.wire_connector_id.circuit_green) then
+                    if (connector.connection_count > 0) then
+                        is_controlled_by_circuits = true
+                    end
+                end
+            end
+        end
+    end
+
+    local filters_map = {} ---@type table<string, true>
+    local unfiltered = true
+    if (not is_controlled_by_circuits) then
+        for i = 1, entity.filter_slot_count do
+            local filter = entity.get_filter(i) --[[@as AsteroidChunkID?]]
+            if (filter) then
+                local name = filter.name
+                if (not filters_map[name]) then
+                    filters_map[name] = true
+                    unfiltered = false
+                end
+            end
+        end
     end
 
     local asteroid_ratio = get_surface_asteroid_ratio(entity.surface)
@@ -155,7 +173,7 @@ logic.get_from_entity = function(entity, options)
     local children = {} ---@type Rates.Configuration[]
     local children_ratio = {} ---@type number[]
     for name, ratio in pairs(asteroid_ratio or {}) do
-        if (ratio > 0) then
+        if (ratio > 0 and (unfiltered or filters_map[name])) then
             ---@type Rates.Configuration.AsteroidCollector
             local child = {
                 type = "asteroid-collector",
@@ -171,6 +189,10 @@ logic.get_from_entity = function(entity, options)
 
     if (#children == 0 or sum_of_ratios == 0) then
         return
+    end
+
+    if (#children == 1) then
+        return children[1]
     end
 
     for i = 1, #children_ratio do
