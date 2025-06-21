@@ -85,6 +85,34 @@ local function get_surface_asteroid_ratio(surface)
     end
 end
 
+---@param entity LuaEntityPrototype
+---@param quality LuaQualityPrototype
+---@return { ticks: number, amount: number }
+local function get_speed(entity, quality)
+    local num_arms = entity.arm_count_base + quality.level * entity.arm_count_quality_scaling
+    local arm_inventory_size = entity.get_inventory_size(defines.inventory.asteroid_collector_arm, quality)
+    local arm_speed = entity.arm_speed_base + quality.level * entity.arm_speed_quality_scaling -- in tiles/tick
+    local collection_radius = entity.radius_visualisation_specification.distance + quality.level
+    -- let's assume that the arm doesn't travel to the max distance every time, but then it sometimes goes into the corners
+    local average_distance_ratio = 0.7
+    local average_distance = collection_radius * average_distance_ratio
+        -- the collection area is not centered on the asteroid collector
+        + entity.collection_box_offset
+        -- the arm does not start/end at the center of the asteroid collector
+        - entity.deposit_radius
+    local ticks_for_full_movement = 2 * average_distance / arm_speed
+    local extra_distance = entity.minimal_arm_swing_segment_retraction * entity.tether_size
+        -- always moving just the minimum is not realistic, 2x minimum on average is more likely
+        * 2
+    local ticks_for_one_extra_movement = 2 * extra_distance / arm_speed
+    local ticks_for_all_extra_movements = ticks_for_one_extra_movement * (arm_inventory_size - 1)
+    local ticks_for_collecting_max_chunks = ticks_for_full_movement + ticks_for_all_extra_movements
+    return {
+        ticks = ticks_for_collecting_max_chunks,
+        amount = num_arms * arm_inventory_size
+    }
+end
+
 ---@param conf Rates.Configuration.AsteroidCollector
 logic.get_id = function(conf)
     return conf.asteroid.name
@@ -100,8 +128,11 @@ end
 
 ---@param conf Rates.Configuration.AsteroidCollector
 logic.get_production = function(conf, result, options)
+    local speed = get_speed(conf.entity, conf.quality)
+    local frequency = speed.amount / speed.ticks * 60
     configuration.calculate_energy_source(result, conf.entity, conf.entity.get_max_energy_usage(conf.quality), options)
-    configuration.calculate_products(result, prototypes.quality.normal, conf.asteroid.mineable_properties.products, 1, 0)
+    configuration.calculate_products(result, prototypes.quality.normal, conf.asteroid.mineable_properties.products,
+        frequency, 0)
 end
 
 logic.fill_progression = function(result, options)
