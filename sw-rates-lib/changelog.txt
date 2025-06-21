@@ -3,6 +3,7 @@ Version: 0.4.0
 Date: ???
   Changes:
     - Improved speed calculation for asteroid-collector using all the new exposed properties
+    - Improved energy consumption of asteroid-collector (arms only consume energy for a single tick)
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.2
 Date: ???

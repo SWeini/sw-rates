@@ -130,7 +130,19 @@ end
 logic.get_production = function(conf, result, options)
     local speed = get_speed(conf.entity, conf.quality)
     local frequency = speed.amount / speed.ticks * 60
-    configuration.calculate_energy_source(result, conf.entity, conf.entity.get_max_energy_usage(conf.quality), options)
+    local energy_usage_multiplier = 1 + (conf.entity.energy_usage_quality_scaling * conf.quality.level)
+    local energy_usage_per_movement = conf.entity.arm_energy_usage * energy_usage_multiplier
+    local energy_usage = speed.amount / speed.ticks * energy_usage_per_movement
+    local drain_energy_usage = conf.entity.passive_energy_usage * energy_usage_multiplier
+    configuration.calculate_energy_source(result, conf.entity, energy_usage, options)
+    if (conf.entity.electric_energy_source_prototype) then
+        result[#result + 1] = {
+            tag = "energy-source-input",
+            tag_extra = "drain",
+            node = node.create.electric_power(),
+            amount = -drain_energy_usage * 60
+        }
+    end
     configuration.calculate_products(result, prototypes.quality.normal, conf.asteroid.mineable_properties.products,
         frequency, 0)
 end
