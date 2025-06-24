@@ -15,14 +15,7 @@ local function fusion_reactor_max_fluid_usage(entity)
     return store.fusion_reactor[entity.name].max_fluid_usage
 end
 
----@param entity LuaEntityPrototype
----@return data.NeighbourConnectable
-local function fusion_reactor_neighbour_connectable(entity)
-    return store.fusion_reactor[entity.name].neighbour_connectable or { connections = {} }
-end
-
 return {
     store = store,
     fusion_reactor_max_fluid_usage = fusion_reactor_max_fluid_usage,
-    fusion_reactor_neighbour_connectable = fusion_reactor_neighbour_connectable,
 }

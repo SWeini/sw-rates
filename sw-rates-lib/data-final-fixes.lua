@@ -1,7 +1,7 @@
 local bigpack = require("__big-data-string2__.pack")
 
 ---@class (exact) Rates.ExtraData
----@field fusion_reactor table<data.EntityID, { max_fluid_usage: data.FluidAmount, neighbour_connectable: data.NeighbourConnectable? }>
+---@field fusion_reactor table<data.EntityID, { max_fluid_usage: data.FluidAmount }>
 
 ---@type Rates.ExtraData
 local store = {
@@ -11,7 +11,6 @@ local store = {
 for _, entity in pairs(data.raw["fusion-reactor"] or {}) do
     store.fusion_reactor[entity.name] = {
         max_fluid_usage = entity.max_fluid_usage,
-        neighbour_connectable = entity.neighbour_connectable
     }
 end
 

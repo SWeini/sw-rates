@@ -27,12 +27,12 @@ local function get_fluids(prototype)
 end
 
 ---@param entity LuaEntity
----@param connectable data.NeighbourConnectable
+---@param connectable NeighbourConnectable
 ---@param i integer
 ---@param search boolean
 ---@return { x: number, y: number, direction: defines.direction }, data.MapPosition.struct?
 local function get_connection_point(entity, connectable, i, search)
-    local search_distance = connectable.neighbour_search_distance or 0.7
+    local search_distance = connectable.neighbour_search_distance
     local affected_by_direction = connectable.affected_by_direction ~= false
     local connection = connectable.connections[i]
     local direction = affected_by_direction and entity.direction or defines.direction.north
@@ -50,7 +50,7 @@ local function get_connection_point(entity, connectable, i, search)
 end
 
 ---@param entity LuaEntity
----@param connectable data.NeighbourConnectable
+---@param connectable NeighbourConnectable
 ---@param pos { x: number, y: number, direction: defines.direction }
 ---@return integer?
 local function get_connection_at(entity, connectable, pos)
@@ -63,8 +63,8 @@ local function get_connection_at(entity, connectable, pos)
     end
 end
 
----@param category data.NeighbourConnectableConnectionCategory
----@param categories data.NeighbourConnectableConnectionCategory[]
+---@param category string
+---@param categories string[]
 ---@return boolean
 local function is_category_compatible(category, categories)
     for _, cat in ipairs(categories) do
@@ -76,8 +76,8 @@ local function is_category_compatible(category, categories)
     return false
 end
 
----@param a data.NeighbourConnectableConnectionDefinition
----@param b data.NeighbourConnectableConnectionDefinition
+---@param a NeighbourConnectableConnectionDefinition
+---@param b NeighbourConnectableConnectionDefinition
 ---@return boolean
 local function is_connection_compatible(a, b)
     if (not is_category_compatible(a.category, b.neighbour_category)) then
@@ -99,7 +99,7 @@ local function count_neighbours(entity, use_ghosts)
     local prototype = data.entity
 
     local neighbours = {}
-    local connectable = extra_data.fusion_reactor_neighbour_connectable(prototype)
+    local connectable = prototype.neighbour_connectable ---@cast connectable -nil
     for i, connection in ipairs(connectable.connections) do
         local connection_pos, search_pos = get_connection_point(entity, connectable, i, true)
         local candidates = entity.surface.find_entities_filtered({ position = search_pos })
@@ -185,7 +185,7 @@ logic.fill_generated_temperatures = function(result)
     for _, entity in pairs(entities) do
         local neighbour_bonus = entity.neighbour_bonus
         local fluid = get_fluids(entity).output
-        local max_neighbours = #extra_data.fusion_reactor_neighbour_connectable(entity).connections
+        local max_neighbours = #entity.neighbour_connectable.connections
         local target_temperature = entity.target_temperature or fluid.default_temperature
         for i = 0, max_neighbours do
             local temperature = target_temperature * (1 + neighbour_bonus * i)

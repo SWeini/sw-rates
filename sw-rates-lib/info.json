@@ -7,7 +7,7 @@
   "homepage": "https://github.com/SWeini/sw-rates",
   "description": "Calculating production rates was never easier.",
   "dependencies": [
-    "base >= 2.0.57",
+    "base >= 2.0.58",
     "flib",
     "big-data-string2"
   ]
