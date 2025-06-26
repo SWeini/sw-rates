@@ -364,7 +364,7 @@ local function compare_beacon(a, b)
     end
 
     if (a.beacon.hidden ~= b.beacon.hidden) then
-        return a.beacon.hidden < b.beacon.hidden
+        return b.beacon.hidden
     end
 
     if (a.beacon.name ~= b.beacon.name) then
