@@ -9,7 +9,6 @@ end
 local configuration = require("scripts.configuration-util")
 local node = require("scripts.node")
 local progression = require("scripts.progression")
-local extra_data = require("scripts.extra-data")
 local flib_direction = require("__flib__.direction")
 local math2d = require("math2d")
 
@@ -151,7 +150,7 @@ logic.get_production = function(conf, result, options)
     local fluids = get_fluids(conf.entity)
     local target_temperature = conf.entity.target_temperature or fluids.output.default_temperature
     local energy_per_fluid = fluids.output.heat_capacity * target_temperature
-    local flow = extra_data.fusion_reactor_max_fluid_usage(conf.entity) * conf.quality.default_multiplier
+    local flow = conf.entity.get_fluid_usage_per_tick(conf.quality)
     local burner_energy_usage = flow * energy_per_fluid
     local energy_usage = conf.entity.get_max_energy_usage(conf.quality)
 
