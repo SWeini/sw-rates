@@ -6,9 +6,11 @@ Date: ???
     - Improved energy consumption of asteroid-collector (arms only consume energy for a single tick)
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.2
-Date: ???
+Date: 2025-06-26
   Changes:
     - Improved filters for asteroid-collector: read all filters, ignore if controlled by circuit
+  Bugfixes:
+    - Fixed crash when entity is in range of both hidden and normal beacons
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.1
 Date: 2025-06-21
