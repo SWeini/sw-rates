@@ -5,6 +5,7 @@ Date: ????
     - Use LuaForce::beacon_distribution_modifier
   Bugfixes:
     - Fixed edge case when beacon supply area exactly touches the receiver's bounding box
+    - Fixed incorrect calculation when ignored_by_productivity is combined with amount_min/amount_max or extra_count_fraction
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.2
 Date: 2025-06-26

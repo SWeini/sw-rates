@@ -136,11 +136,35 @@ end
 ---@param quality_distribution? { quality: LuaQualityPrototype, multiplier: number }[]
 function util.calculate_products(result, quality, products, frequency, productivity_bonus, quality_distribution)
     for i, product in ipairs(products) do
-        local amount = (product.amount or (product.amount_min + product.amount_max) / 2) * product.probability +
-            (product.extra_count_fraction or 0)
-        local with_productivity = math.max(0, amount - (product.ignored_by_productivity or 0))
-        amount = amount + with_productivity * productivity_bonus
         if (product.type == "item") then
+            local amount_min = product.amount or product.amount_min
+            local amount_max = product.amount or product.amount_max
+            local amount_extra = product.extra_count_fraction or 0
+            local base_amount = (amount_min + amount_max) / 2 + amount_extra
+
+            local amount_with_prod
+            if (productivity_bonus > 0) then
+                local amount_per_prod
+                local ignored_by_productivity = product.ignored_by_productivity or 0
+                if (ignored_by_productivity <= amount_min) then
+                    amount_per_prod = base_amount - ignored_by_productivity
+                elseif (ignored_by_productivity <= amount_max) then
+                    -- amount_min < ignored_by_productivity <= amount_max
+                    local num_buckets = amount_max - amount_min + 1
+                    local prod_max = amount_max - ignored_by_productivity
+                    local prod_average = prod_max * (prod_max + 1) / 2 / num_buckets
+                    local extra_average = (prod_max + 1) / num_buckets * amount_extra
+                    amount_per_prod = prod_average + extra_average
+                else
+                    amount_per_prod = 0
+                end
+
+                amount_with_prod = base_amount + amount_per_prod * productivity_bonus
+            else
+                amount_with_prod = base_amount
+            end
+
+            local amount = amount_with_prod * product.probability
             if (quality_distribution) then
                 for j, q in ipairs(quality_distribution) do
                     result[#result + 1] = {
@@ -159,6 +183,32 @@ function util.calculate_products(result, quality, products, frequency, productiv
                 }
             end
         elseif (product.type == "fluid") then
+            local amount_min = product.amount or product.amount_min
+            local amount_max = product.amount or product.amount_max
+            local base_amount = (amount_min + amount_max) / 2
+
+            local amount_with_prod
+            if (productivity_bonus > 0) then
+                local amount_per_prod
+                local ignored_by_productivity = product.ignored_by_productivity or 0
+                if (ignored_by_productivity <= amount_min) then
+                    amount_per_prod = base_amount - ignored_by_productivity
+                elseif (ignored_by_productivity < amount_max) then
+                    -- amount_min < ignored_by_productivity < amount_max
+                    local width_full = amount_max - amount_min
+                    local prod_max = amount_max - ignored_by_productivity
+                    local prod_average = prod_max / 2 * (prod_max / width_full)
+                    amount_per_prod = prod_average
+                else
+                    amount_per_prod = 0
+                end
+
+                amount_with_prod = base_amount + amount_per_prod * productivity_bonus
+            else
+                amount_with_prod = base_amount
+            end
+
+            local amount = amount_with_prod * product.probability
             local fluid = prototypes.fluid[product.name]
             result[#result + 1] = {
                 tag = "product",
