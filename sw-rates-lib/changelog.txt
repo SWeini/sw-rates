@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.3
-Date: ????
+Date: 2025-06-29
   Changes:
     - Use LuaForce::beacon_distribution_modifier
   Bugfixes:
