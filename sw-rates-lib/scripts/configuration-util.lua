@@ -589,6 +589,16 @@ function util.sum_modules(modules)
     return result
 end
 
+---@param box1 BoundingBox.0
+---@param box2 BoundingBox.0
+local function collides_with(box1, box2)
+    -- separate implementation because C++ and math2d.lua do not agree on edge case (bounding boxes touch exactly)
+    return box1.left_top.x <= box2.right_bottom.x and
+        box2.left_top.x <= box1.right_bottom.x and
+        box1.left_top.y <= box2.right_bottom.y and
+        box2.left_top.y <= box1.right_bottom.y
+end
+
 ---@param entity LuaEntity
 ---@param beacon LuaEntity
 ---@param beacon_prototype LuaEntityPrototype
@@ -599,13 +609,13 @@ local function is_beacon_in_range(entity, beacon, beacon_prototype, beacon_quali
     local beacon_box = beacon.bounding_box
     local supply_distance = beacon_prototype.get_supply_area_distance(beacon_quality)
     local diagonal = { x = supply_distance, y = supply_distance }
-    ---@type BoundingBox
+    ---@type BoundingBox.0
     local supply_box = {
         left_top = math2d.position.subtract(beacon_box.left_top, diagonal),
         right_bottom = math2d.position.add(beacon_box.right_bottom, diagonal)
     }
 
-    return math2d.bounding_box.collides_with(supply_box, entity_box)
+    return collides_with(supply_box, entity_box)
 end
 
 ---@param map table<string, Rates.Configuration.Module>
