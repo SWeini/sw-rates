@@ -73,6 +73,7 @@ logic.get_production = function(conf, result, options)
         surface_effect,
         additional_effects,
         nil,
+        options.force,
         is_module_allowed)
 
     local energy_usage = conf.entity.energy_usage * effective_values.consumption

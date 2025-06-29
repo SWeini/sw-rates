@@ -96,6 +96,7 @@ logic.get_production = function(conf, result, options)
             surface_effect,
             additional_effects,
             nil,
+            options.force,
             is_module_allowed)
 
         drain = conf.entity.resource_drain_rate_percent / 100 * conf.quality.mining_drill_resource_drain_multiplier

@@ -1,6 +1,4 @@
 local flib_gui = require("__flib__.gui")
-local flib_format = require("__flib__.format")
-local flib_math = require("__flib__.math")
 local api = require("__sw-rates-lib__.api-usage")
 local sheet = require("sheet")
 

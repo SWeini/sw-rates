@@ -136,11 +136,35 @@ end
 ---@param quality_distribution? { quality: LuaQualityPrototype, multiplier: number }[]
 function util.calculate_products(result, quality, products, frequency, productivity_bonus, quality_distribution)
     for i, product in ipairs(products) do
-        local amount = (product.amount or (product.amount_min + product.amount_max) / 2) * product.probability +
-            (product.extra_count_fraction or 0)
-        local with_productivity = math.max(0, amount - (product.ignored_by_productivity or 0))
-        amount = amount + with_productivity * productivity_bonus
         if (product.type == "item") then
+            local amount_min = product.amount or product.amount_min
+            local amount_max = product.amount or product.amount_max
+            local amount_extra = product.extra_count_fraction or 0
+            local base_amount = (amount_min + amount_max) / 2 + amount_extra
+
+            local amount_with_prod
+            if (productivity_bonus > 0) then
+                local amount_per_prod
+                local ignored_by_productivity = product.ignored_by_productivity or 0
+                if (ignored_by_productivity <= amount_min) then
+                    amount_per_prod = base_amount - ignored_by_productivity
+                elseif (ignored_by_productivity <= amount_max) then
+                    -- amount_min < ignored_by_productivity <= amount_max
+                    local num_buckets = amount_max - amount_min + 1
+                    local prod_max = amount_max - ignored_by_productivity
+                    local prod_average = prod_max * (prod_max + 1) / 2 / num_buckets
+                    local extra_average = (prod_max + 1) / num_buckets * amount_extra
+                    amount_per_prod = prod_average + extra_average
+                else
+                    amount_per_prod = 0
+                end
+
+                amount_with_prod = base_amount + amount_per_prod * productivity_bonus
+            else
+                amount_with_prod = base_amount
+            end
+
+            local amount = amount_with_prod * product.probability
             if (quality_distribution) then
                 for j, q in ipairs(quality_distribution) do
                     result[#result + 1] = {
@@ -159,6 +183,32 @@ function util.calculate_products(result, quality, products, frequency, productiv
                 }
             end
         elseif (product.type == "fluid") then
+            local amount_min = product.amount or product.amount_min
+            local amount_max = product.amount or product.amount_max
+            local base_amount = (amount_min + amount_max) / 2
+
+            local amount_with_prod
+            if (productivity_bonus > 0) then
+                local amount_per_prod
+                local ignored_by_productivity = product.ignored_by_productivity or 0
+                if (ignored_by_productivity <= amount_min) then
+                    amount_per_prod = base_amount - ignored_by_productivity
+                elseif (ignored_by_productivity < amount_max) then
+                    -- amount_min < ignored_by_productivity < amount_max
+                    local width_full = amount_max - amount_min
+                    local prod_max = amount_max - ignored_by_productivity
+                    local prod_average = prod_max / 2 * (prod_max / width_full)
+                    amount_per_prod = prod_average
+                else
+                    amount_per_prod = 0
+                end
+
+                amount_with_prod = base_amount + amount_per_prod * productivity_bonus
+            else
+                amount_with_prod = base_amount
+            end
+
+            local amount = amount_with_prod * product.probability
             local fluid = prototypes.fluid[product.name]
             result[#result + 1] = {
                 tag = "product",
@@ -589,6 +639,16 @@ function util.sum_modules(modules)
     return result
 end
 
+---@param box1 BoundingBox.0
+---@param box2 BoundingBox.0
+local function collides_with(box1, box2)
+    -- separate implementation because C++ and math2d.lua do not agree on edge case (bounding boxes touch exactly)
+    return box1.left_top.x <= box2.right_bottom.x and
+        box2.left_top.x <= box1.right_bottom.x and
+        box1.left_top.y <= box2.right_bottom.y and
+        box2.left_top.y <= box1.right_bottom.y
+end
+
 ---@param entity LuaEntity
 ---@param beacon LuaEntity
 ---@param beacon_prototype LuaEntityPrototype
@@ -599,13 +659,13 @@ local function is_beacon_in_range(entity, beacon, beacon_prototype, beacon_quali
     local beacon_box = beacon.bounding_box
     local supply_distance = beacon_prototype.get_supply_area_distance(beacon_quality)
     local diagonal = { x = supply_distance, y = supply_distance }
-    ---@type BoundingBox
+    ---@type BoundingBox.0
     local supply_box = {
         left_top = math2d.position.subtract(beacon_box.left_top, diagonal),
         right_bottom = math2d.position.add(beacon_box.right_bottom, diagonal)
     }
 
-    return math2d.bounding_box.collides_with(supply_box, entity_box)
+    return collides_with(supply_box, entity_box)
 end
 
 ---@param map table<string, Rates.Configuration.Module>
@@ -878,9 +938,10 @@ local default_effect_receiver = {
 ---@param surface_effect Rates.Internal.FloatModuleEffects?
 ---@param additional_effects Rates.Internal.FloatModuleEffects[]?
 ---@param max_effect Rates.Internal.FloatModuleEffects?
+---@param force LuaForce?
 ---@param module_check fun(module: LuaItemPrototype): boolean)
 ---@return Rates.Internal.FloatModuleEffects
-function util.calculate_effects(receiver, effects, surface_effect, additional_effects, max_effect, module_check)
+function util.calculate_effects(receiver, effects, surface_effect, additional_effects, max_effect, force, module_check)
     local result = {} ---@type Rates.Internal.ModuleEffects
 
     if (not receiver) then
@@ -910,6 +971,7 @@ function util.calculate_effects(receiver, effects, surface_effect, additional_ef
 
         local beacon_count = 0
         local beacons_by_prototype = {} ---@type table<string, { beacon: LuaEntityPrototype, count: integer, effects: Rates.Internal.ModuleEffects } >
+        local force_modifier = 1 + (force and force.beacon_distribution_modifier or 0)
         for _, beacon in ipairs(beacons) do
             local name = beacon.beacon.name
             local entry = beacons_by_prototype[name]
@@ -924,7 +986,8 @@ function util.calculate_effects(receiver, effects, surface_effect, additional_ef
             local effectivity = to_integer_percentage(beacon.beacon.distribution_effectivity)
             local effectivity_per_level = to_integer_percentage(beacon.beacon
                 .distribution_effectivity_bonus_per_quality_level or 0)
-            local total_effectivity = effectivity + beacon.quality.level * effectivity_per_level
+            local beacon_effectivity = effectivity + beacon.quality.level * effectivity_per_level
+            local total_effectivity = beacon_effectivity * force_modifier
             local single_beacon_inserted_effects = {} ---@type Rates.Internal.ModuleEffects
             for _, module in ipairs(beacon.per_beacon_modules) do
                 if (module_check(module.module)) then
