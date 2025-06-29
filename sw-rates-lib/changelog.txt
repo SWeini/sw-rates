@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.3
+Date: ????
+  Changes:
+    - Use LuaForce::beacon_distribution_modifier
+  Bugfixes:
+    - Fixed edge case when beacon supply area exactly touches the receiver's bounding box
+---------------------------------------------------------------------------------------------------
 Version: 0.3.2
 Date: 2025-06-26
   Changes:
