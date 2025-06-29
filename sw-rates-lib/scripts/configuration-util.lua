@@ -892,9 +892,10 @@ local default_effect_receiver = {
 ---@param surface_effect Rates.Internal.FloatModuleEffects?
 ---@param additional_effects Rates.Internal.FloatModuleEffects[]?
 ---@param max_effect Rates.Internal.FloatModuleEffects?
+---@param force LuaForce?
 ---@param module_check fun(module: LuaItemPrototype): boolean)
 ---@return Rates.Internal.FloatModuleEffects
-function util.calculate_effects(receiver, effects, surface_effect, additional_effects, max_effect, module_check)
+function util.calculate_effects(receiver, effects, surface_effect, additional_effects, max_effect, force, module_check)
     local result = {} ---@type Rates.Internal.ModuleEffects
 
     if (not receiver) then
@@ -924,6 +925,7 @@ function util.calculate_effects(receiver, effects, surface_effect, additional_ef
 
         local beacon_count = 0
         local beacons_by_prototype = {} ---@type table<string, { beacon: LuaEntityPrototype, count: integer, effects: Rates.Internal.ModuleEffects } >
+        local force_modifier = 1 + (force and force.beacon_distribution_modifier or 0)
         for _, beacon in ipairs(beacons) do
             local name = beacon.beacon.name
             local entry = beacons_by_prototype[name]
@@ -938,7 +940,8 @@ function util.calculate_effects(receiver, effects, surface_effect, additional_ef
             local effectivity = to_integer_percentage(beacon.beacon.distribution_effectivity)
             local effectivity_per_level = to_integer_percentage(beacon.beacon
                 .distribution_effectivity_bonus_per_quality_level or 0)
-            local total_effectivity = effectivity + beacon.quality.level * effectivity_per_level
+            local beacon_effectivity = effectivity + beacon.quality.level * effectivity_per_level
+            local total_effectivity = beacon_effectivity * force_modifier
             local single_beacon_inserted_effects = {} ---@type Rates.Internal.ModuleEffects
             for _, module in ipairs(beacon.per_beacon_modules) do
                 if (module_check(module.module)) then
