@@ -2,12 +2,14 @@
 The purpose of this mod is to provide a common framework that brings together content mods and tool mods.
 
 Tools using this framework:
-- none so far, but maybe soon (I'm working on something)
+- [Production Rates Calculator](https://mods.factorio.com/mod/sw-rates-calc)
+- [Production Rates Calculator Extreme](https://mods.factorio.com/mod/sw-rates-calc-extreme)
+- [Reactor Layout](https://mods.factorio.com/mod/sw-rates-reactor-layout)
 
 Content supporting this framework:
 - Vanilla (built-in)
 - Space Age (built-in)
-- Py Alternative Energy (via sw-rates-pyalternativeenergy compatibility mod)
+- Py Alternative Energy (via [Production Rates for Pyanodons Alternative Energy](https://mods.factorio.com/mod/sw-rates-pyalternativeenergy))
 
 If you are a tool mod author and want to calculate something, look [here](#how-to-use).
 \
@@ -30,7 +32,7 @@ The API is already many iterations old, so I hope it is stable and extensible no
 ## Supported entity types
 - `accumulator` (100%)
 - `agricultural-tower` (95%; hardcoded grid size)
-- `asteroid-collector` (80%; speed is a constant 1/s which is obviously wrong)
+- `asteroid-collector` (100%; speed is just a good approximation)
 - `beacon` (not as separate entity, but providing effects to other buildings)
 - `boiler` (95%; uses default temperature if the fluidbox is empty, or ghost; does not work with `boiler_mode="heat-fluid-inside"`)
 - `burner-generator` (100%)

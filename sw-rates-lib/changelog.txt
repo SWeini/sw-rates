@@ -4,6 +4,8 @@ Date: ???
   Changes:
     - Improved speed calculation for asteroid-collector using all the new exposed properties
     - Improved energy consumption of asteroid-collector (arms only consume energy for a single tick)
+    - Removed big-data-string2 dependency, instead uses new API methods
+    - Added support for the new quality modding capabilities
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.3
 Date: 2025-06-29
