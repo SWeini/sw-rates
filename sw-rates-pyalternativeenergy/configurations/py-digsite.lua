@@ -22,6 +22,10 @@ local dig_creatures = {
     ["work-o-dile"] = { amount = 3, ticks = 8 * 49 * 2 },
 }
 
+dig_creatures["digosaurus-turd"] = dig_creatures["digosaurus"]
+dig_creatures["thikat-turd"] = dig_creatures["thikat"]
+dig_creatures["work-o-dile-turd"] = dig_creatures["work-o-dile"]
+
 ---@type { [string]: number }
 local food_types = {
     ["dried-meat"] = 1,
