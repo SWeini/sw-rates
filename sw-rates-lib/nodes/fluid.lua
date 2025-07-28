@@ -16,6 +16,7 @@ do
 end
 
 local generated_temperatures = require("scripts.generated-temperatures")
+local util = require("scripts.configuration-util")
 
 local creator = {} ---@class Rates.Node.Creator
 local result = { type = "fluid", creator = creator } ---@type Rates.Node.Type
@@ -87,12 +88,12 @@ end
 
 ---@param node Rates.Node.Fluid
 result.gui_default = function(node)
-    local qualifier ---@type LocalisedString
+    local qualifier ---@type Rates.Gui.NodeQualifier.Temperature?
     local temps = generated_temperatures.get_generated_fluid_temperatures(node.fluid)
     if (#temps == 1 and temps[1] == node.temperature) then
         qualifier = nil
     else
-        qualifier = { "", node.temperature, { "si-unit-degree-celsius" } }
+        qualifier = util.create_qualifier_temperature(node.temperature)
     end
 
     ---@type Rates.Gui.NodeDescription
@@ -102,25 +103,12 @@ result.gui_default = function(node)
     }
 end
 
----@param min number?
----@param max number?
----@return LocalisedString
-local function format_any_temperature(min, max)
-    if (min and max) then
-        return { "", min, { "si-unit-degree-celsius" }, "-", max, { "si-unit-degree-celsius" } }
-    elseif (min) then
-        return { "", "≥", min, { "si-unit-degree-celsius" } }
-    elseif (max) then
-        return { "", "≤", max, { "si-unit-degree-celsius" } }
-    end
-end
-
 ---@param node Rates.Node.Any.Details.Fluid
 result_any.gui_default = function(node)
     ---@type Rates.Gui.NodeDescription
     return {
         element = { type = "fluid", name = node.fluid.name },
-        qualifier = format_any_temperature(node.min_temperature, node.max_temperature)
+        qualifier = util.create_qualifier_temperature_range(node.min_temperature, node.max_temperature)
     }
 end
 

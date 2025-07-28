@@ -394,7 +394,7 @@ local function create_node_icon_direct(button)
     end
 
     if (button.qualifier) then
-        flow[#flow + 1] = create_count_qualifier(button.qualifier)
+        flow[#flow + 1] = create_count_qualifier(button.qualifier.text)
     end
 
     return flow
@@ -436,7 +436,7 @@ local function create_node_icon(ui, count)
     end
 
     if (button.qualifier) then
-        flow[#flow + 1] = create_count_qualifier(button.qualifier)
+        flow[#flow + 1] = create_count_qualifier(button.qualifier.text)
     end
 
     return flow

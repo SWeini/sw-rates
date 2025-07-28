@@ -142,7 +142,7 @@ logic.gui_entity = function(conf)
     ---@type Rates.Gui.NodeDescription
     return {
         element = { type = "entity-with-quality", name = conf.entity.name, quality = conf.quality.name },
-        qualifier = "+" .. conf.neighbours
+        qualifier = configuration.create_qualifier_neighbours(conf.neighbours)
     }
 end
 
