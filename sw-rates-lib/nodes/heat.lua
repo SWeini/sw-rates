@@ -14,6 +14,7 @@ do
 end
 
 local generated_temperatures = require("scripts.generated-temperatures")
+local util = require("scripts.configuration-util")
 
 local creator = {} ---@class Rates.Node.Creator
 local result = { type = "heat", creator = creator } ---@type Rates.Node.Type
@@ -77,22 +78,9 @@ result.gui_default = function(node)
     return {
         icon = { sprite = "tooltip-category-heat" },
         name = { "sw-rates-node.heat" },
-        qualifier = { "", node.temperature, { "si-unit-degree-celsius" } },
+        qualifier = util.create_qualifier_temperature(node.temperature),
         number_format = { factor = 1, unit = "W" },
     }
-end
-
----@param min number?
----@param max number?
----@return LocalisedString
-local function format_any_temperature(min, max)
-    if (min and max) then
-        return { "", min, { "si-unit-degree-celsius" }, "-", max, { "si-unit-degree-celsius" } }
-    elseif (min) then
-        return { "", "≥", min, { "si-unit-degree-celsius" } }
-    elseif (max) then
-        return { "", "≤", max, { "si-unit-degree-celsius" } }
-    end
 end
 
 ---@param node Rates.Node.Any.Details.Heat
@@ -101,7 +89,7 @@ result_any.gui_default = function(node)
     return {
         icon = { sprite = "tooltip-category-heat" },
         name = { "sw-rates-node.heat" },
-        qualifier = format_any_temperature(node.min_temperature, node.max_temperature),
+        qualifier = util.create_qualifier_temperature_range(node.min_temperature, node.max_temperature),
         number_format = { factor = 1, unit = "W" },
     }
 end

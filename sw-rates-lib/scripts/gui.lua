@@ -3,7 +3,7 @@
 ---@field element? ElemID
 ---@field icon? { sprite: SpritePath, quality: LuaQualityPrototype? }
 ---@field name? LocalisedString
----@field qualifier? LocalisedString
+---@field qualifier? Rates.Gui.NodeQualifier
 ---@field tooltip? LocalisedString
 ---@field number_format? Rates.Node.NumberFormat
 
@@ -18,7 +18,7 @@
 ---@field quality? LuaQualityPrototype
 ---@field tooltip? LocalisedString
 ---@field elem_tooltip? ElemID
----@field qualifier? LocalisedString
+---@field qualifier? Rates.Gui.NodeQualifier
 
 ---Data extracted from an ElemID
 ---@class DecomposedElemId
@@ -26,6 +26,31 @@
 ---@field rich_text? LocalisedString
 ---@field sprite? SpritePath
 ---@field quality? LuaQualityPrototype
+
+---@alias Rates.Gui.NodeQualifier
+--- | Rates.Gui.NodeQualifier.Base
+---
+--- | Rates.Gui.NodeQualifier.Temperature
+--- | Rates.Gui.NodeQualifier.TemperatureRange
+--- | Rates.Gui.NodeQualifier.Neighbours
+
+---Qualifier for nodes.
+---@class Rates.Gui.NodeQualifier.Base
+---@field type string
+---@field text LocalisedString
+
+---@class Rates.Gui.NodeQualifier.Temperature : Rates.Gui.NodeQualifier.Base
+---@field type "temperature"
+---@field temperature number
+
+---@class Rates.Gui.NodeQualifier.TemperatureRange : Rates.Gui.NodeQualifier.Base
+---@field type "temperature-range"
+---@field min_temperature? number
+---@field max_temperature? number
+
+---@class Rates.Gui.NodeQualifier.Neighbours : Rates.Gui.NodeQualifier.Base
+---@field type "neighbours"
+---@field neighbours integer
 
 ---@param color Color
 ---@return string
@@ -220,7 +245,7 @@ local function gui_message(gui, amount)
     end
 
     if (gui.qualifier) then
-        data.rich_text = { "", data.rich_text, " (", gui.qualifier, ")" }
+        data.rich_text = { "", data.rich_text, " (", gui.qualifier.text, ")" }
     end
 
     if (not amount) then
@@ -286,7 +311,7 @@ local function gui_button_and_text(gui, amount)
 
     local name = gui.name or data.name
     if (gui.qualifier) then
-        name = { "", name, " (", gui.qualifier, ")" }
+        name = { "", name, " (", gui.qualifier.text, ")" }
     end
 
     if (not amount) then

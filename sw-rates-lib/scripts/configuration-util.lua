@@ -62,6 +62,59 @@ function util.get_all_entities(type)
     return result
 end
 
+---@param temperature number
+---@return Rates.Gui.NodeQualifier.Temperature
+function util.create_qualifier_temperature(temperature)
+    ---@type Rates.Gui.NodeQualifier.Temperature
+    return {
+        type = "temperature",
+        temperature = temperature,
+        text = { "", temperature, { "si-unit-degree-celsius" } }
+    }
+end
+
+---@param min number?
+---@param max number?
+---@return LocalisedString?
+local function format_temperature_range(min, max)
+    if (min and max) then
+        return { "", min, { "si-unit-degree-celsius" }, "-", max, { "si-unit-degree-celsius" } }
+    elseif (min) then
+        return { "", "≥", min, { "si-unit-degree-celsius" } }
+    elseif (max) then
+        return { "", "≤", max, { "si-unit-degree-celsius" } }
+    end
+end
+
+---@param min_temperature number?
+---@param max_temperature number?
+---@return Rates.Gui.NodeQualifier.TemperatureRange?
+function util.create_qualifier_temperature_range(min_temperature, max_temperature)
+    local text = format_temperature_range(min_temperature, max_temperature)
+    if (text) then
+        ---@type Rates.Gui.NodeQualifier.TemperatureRange
+        return {
+            type = "temperature-range",
+            min_temperature = min_temperature,
+            max_temperature = max_temperature,
+            text = text
+        }
+    else
+        return nil
+    end
+end
+
+---@param neighbours integer
+---@return Rates.Gui.NodeQualifier.Neighbours
+function util.create_qualifier_neighbours(neighbours)
+    ---@type Rates.Gui.NodeQualifier.Neighbours
+    return {
+        type = "neighbours",
+        neighbours = neighbours,
+        text = "+" .. neighbours
+    }
+end
+
 ---@param result Rates.Configuration.Amount[]
 ---@param entity LuaEntityPrototype
 ---@param energy_usage number
