@@ -1,8 +1,10 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.1
 Date: ????
-  Changes:
+  Features:
     - Update to sw-rates-lib 0.4.2
+    - Show throughput of intermediates
+    - Allow constraining after unconstraining
   Bugfixes:
     - Fixed automatically added constraints being nonsense when mixing variable/fixed fluid temperatures
 ---------------------------------------------------------------------------------------------------

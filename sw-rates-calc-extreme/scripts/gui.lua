@@ -97,8 +97,14 @@ local function on_constraint_button_click(e)
         return
     end
 
-    storage.removed_constraints[node_id] = true
-    sheet_data.constraints[node_id] = nil
+    if (storage.removed_constraints[node_id]) then
+        storage.removed_constraints[node_id] = nil
+        sheet_data.constraints[node_id] = { min = 0, max = 0 }
+    else
+        storage.removed_constraints[node_id] = true
+        sheet_data.constraints[node_id] = nil
+    end
+
     sheet.solve_sheet(sheet_data)
     gui.add_table(storage.gui, sheet_data, player)
 end
@@ -490,6 +496,15 @@ local function node_type(node)
     return 100
 end
 
+---@param produced number
+---@param consumed number
+---@return boolean
+local function is_balanced(produced, consumed)
+    local delta = math.abs(produced + consumed)
+    local scale = math.max(1, math.max(produced, -consumed))
+    return delta < 1e-10 * scale
+end
+
 ---@param a { node: Rates.Node, produced: number, consumed: number }
 ---@param b { node: Rates.Node, produced: number, consumed: number }
 local function compare_nodes(a, b)
@@ -497,6 +512,10 @@ local function compare_nodes(a, b)
     local b_type = node_type(b.node)
     if (a_type ~= b_type) then
         return a_type < b_type
+    end
+
+    if (is_balanced(a.produced, a.consumed) and is_balanced(b.produced, b.consumed)) then
+        return a.produced > b.produced
     end
 
     return math.abs(a.produced + a.consumed) > math.abs(b.produced + b.consumed)
@@ -582,15 +601,6 @@ local function cell_buildings_extra(row)
     }
 end
 
----@param produced number
----@param consumed number
----@return boolean
-local function is_balanced(produced, consumed)
-    local delta = math.abs(produced + consumed)
-    local scale = math.max(1, math.max(produced, -consumed))
-    return delta < 1e-10 * scale
-end
-
 ---@param ui GuiElements
 ---@param sheet_data Rates.Sheet
 ---@param player LuaPlayer
@@ -620,47 +630,65 @@ function gui.add_table(ui, sheet_data, player)
     local zero = {} ---@type flib.GuiElemDef[]
     for _, subtotal in ipairs(total_i) do
         local ui = api.node.gui_default(subtotal.node)
-        if (not is_balanced(subtotal.produced, subtotal.consumed)) then
-            local amount_net = subtotal.produced + subtotal.consumed
-            local data = api.gui.gui_button_and_text(ui, math.abs(amount_net))
-            local icon = create_node_icon_direct(data.button)
-            local target ---@type flib.GuiElemDef[]
-            if (amount_net > 0) then
-                target = total_out
-            else
-                target = total_in
-            end
+        local node_id = api.node.get_id(subtotal.node)
+        local balanced = is_balanced(subtotal.produced, subtotal.consumed)
+        local in_and_out = subtotal.produced > 0 and subtotal.consumed < 0
 
-            ---@type flib.GuiElemDef
-            local label = {
-                type = "label",
-                caption = data.text,
-                style_mods = {
-                    vertical_align = "center",
-                    height = 32,
-                    left_margin = 8
-                }
-            }
-
-            target[#target + 1] = {
-                type = "flow",
-                style = "packed_horizontal_flow",
-                icon,
-                label
-            }
+        local amount_net = subtotal.produced + subtotal.consumed
+        local amount_balanced = math.min(subtotal.produced, -subtotal.consumed)
+        local data = api.gui.gui_button_and_text(ui, math.abs(amount_net))
+        local text_balanced = api.gui.gui_amount_text(ui, amount_balanced)
+        local icon = create_node_icon_direct(data.button)
+        local target ---@type flib.GuiElemDef[]
+        if (balanced) then
+            target = zero
+        elseif (amount_net > 0) then
+            target = total_out
         else
-            local icon = create_node_icon(ui)
-            local button = icon[1] ---@type flib.GuiElemDef
-            local node_id = api.node.get_id(subtotal.node)
-            if (sheet_data.constraints[node_id]) then
-                button.style = "flib_slot_button_red"
+            target = total_in
+        end
+        ---@type flib.GuiElemDef
+        local label = {
+            type = "label",
+            caption = data.text,
+            style_mods = {
+                vertical_align = "center",
+                height = 40,
+                left_margin = 8
+            }
+        }
+
+        if (in_and_out) then
+            if (balanced) then
+                label.caption[2] = { "", "[virtual-signal=signal-rightwards-leftwards-arrow]", text_balanced }
+            else
+                table.insert(label.caption, 3,
+                    { "", " ([virtual-signal=signal-rightwards-leftwards-arrow]", text_balanced, ")" })
+            end
+        end
+
+        target[#target + 1] = {
+            type = "flow",
+            style = "packed_horizontal_flow",
+            icon,
+            label
+        }
+
+        local button = icon[1] ---@type flib.GuiElemDef
+        if (button) then
+            local is_constrained = sheet_data.constraints[node_id]
+            if (in_and_out or is_constrained) then
+                button.style = is_constrained and "flib_slot_button_red" or "flib_slot_button_grey"
                 button.ignored_by_interaction = false
                 button.handler = { [defines.events.on_gui_click] = on_constraint_button_click }
                 button.tags = { node_id = node_id }
+                button.tooltip = data.button.tooltip
+                button.elem_tooltip = data.button.elem_tooltip
             else
-                button.style = "slot_button"
+                button.style_mods = {
+                    margin = 4
+                }
             end
-            zero[#zero + 1] = icon
         end
     end
 
@@ -708,26 +736,12 @@ function gui.add_table(ui, sheet_data, player)
         add_line()
         flib_gui.add(ui.table_total, {
             type = "label",
-            caption = { "gui.sw-rates-calc-extreme-constraints" },
+            caption = { "gui.sw-rates-calc-extreme-intermediates" },
             style = "caption_label"
         })
-        ---@type flib.GuiElemDef
-        local row
-        for i, icon in ipairs(zero) do
-            if ((i - 1) % 8 == 0) then
-                if (row) then
-                    flib_gui.add(ui.table_total, row)
-                end
-                row = {
-                    type = "flow",
-                    style = "packed_horizontal_flow"
-                }
-            end
-
-            row[#row + 1] = icon
+        for _, icon in ipairs(zero) do
+            flib_gui.add(ui.table_total, icon)
         end
-
-        flib_gui.add(ui.table_total, row)
     end
 end
 

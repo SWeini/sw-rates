@@ -259,6 +259,18 @@ local function gui_message(gui, amount)
 end
 
 ---@param gui Rates.Gui.NodeDescription
+---@param amount number
+---@return LocalisedString
+local function gui_amount_text(gui, amount)
+    local number_format = gui.number_format or { factor = 1, unit = "/s" }
+    local scaled = scale_number(amount, number_format)
+    return { "",
+        "[font=item-count]",
+        format_number(scaled.amount), scaled.unit,
+        "[/font]" }
+end
+
+---@param gui Rates.Gui.NodeDescription
 ---@return Rates.Gui.ButtonDescription
 local function gui_button(gui)
     local data ---@type DecomposedElemId
@@ -318,13 +330,7 @@ local function gui_button_and_text(gui, amount)
         return { button = button, text = name }
     end
 
-    local number_format = gui.number_format or { factor = 1, unit = "/s" }
-    local scaled = scale_number(amount, number_format)
-    local amount_text = { "",
-        "[font=item-count]",
-        format_number(scaled.amount), scaled.unit,
-        "[/font]" }
-    local text = { "", amount_text, "  ", name }
+    local text = { "", gui_amount_text(gui, amount), " ", name }
     return { button = button, text = text }
 end
 
@@ -333,6 +339,7 @@ return {
     format_number = format_number,
     compress_string = compress_string,
     gui_message = gui_message,
+    gui_amount_text = gui_amount_text,
     gui_button = gui_button,
     gui_button_and_text = gui_button_and_text,
 }
