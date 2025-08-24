@@ -117,7 +117,7 @@ local function build_from_entities(location, entities)
         if (node.node.type == "any") then
             for _, child in ipairs(node.node.children) do
                 local entry = nodes[api.node.get_id(child)]
-                if (entry) then
+                if (entry and entry.has_positive) then
                     entry.has_negative = true
                     node.has_positive = true
                 end

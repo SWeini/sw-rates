@@ -3,6 +3,8 @@ Version: 0.3.1
 Date: ????
   Changes:
     - Update to sw-rates-lib 0.4.2
+  Bugfixes:
+    - Fixed automatically added constraints being nonsense when mixing variable/fixed fluid temperatures
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.0
 Date: 2025-06-20
