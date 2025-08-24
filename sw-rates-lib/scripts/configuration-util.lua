@@ -75,7 +75,7 @@ end
 
 ---@param min number?
 ---@param max number?
----@return LocalisedString
+---@return LocalisedString?
 local function format_temperature_range(min, max)
     if (min and max) then
         return { "", min, { "si-unit-degree-celsius" }, "-", max, { "si-unit-degree-celsius" } }
@@ -88,15 +88,20 @@ end
 
 ---@param min_temperature number?
 ---@param max_temperature number?
----@return Rates.Gui.NodeQualifier.TemperatureRange
+---@return Rates.Gui.NodeQualifier.TemperatureRange?
 function util.create_qualifier_temperature_range(min_temperature, max_temperature)
-    ---@type Rates.Gui.NodeQualifier.TemperatureRange
-    return {
-        type = "temperature-range",
-        min_temperature = min_temperature,
-        max_temperature = max_temperature,
-        text = format_temperature_range(min_temperature, max_temperature)
-    }
+    local text = format_temperature_range(min_temperature, max_temperature)
+    if (text) then
+        ---@type Rates.Gui.NodeQualifier.TemperatureRange
+        return {
+            type = "temperature-range",
+            min_temperature = min_temperature,
+            max_temperature = max_temperature,
+            text = text
+        }
+    else
+        return nil
+    end
 end
 
 ---@param neighbours integer
