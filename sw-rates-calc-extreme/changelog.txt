@@ -2,7 +2,7 @@
 Version: 0.3.1
 Date: ????
   Features:
-    - Update to sw-rates-lib 0.4.2
+    - Update to sw-rates-lib 0.4.3
     - Show throughput of intermediates
     - Allow constraining after unconstraining
   Bugfixes:

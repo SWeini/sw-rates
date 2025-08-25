@@ -23,6 +23,19 @@ local function get_fluids(prototype)
     return { input = input_fluid, output = output_fluid }
 end
 
+---@param prototype LuaEntityPrototype
+---@return boolean
+local function is_supported(prototype)
+    if (prototype.boiler_mode == "output-to-separate-pipe") then
+        local fluids = get_fluids(prototype)
+        if (fluids.input and fluids.output) then
+            return true
+        end
+    end
+
+    return false
+end
+
 ---@param conf Rates.Configuration.Boiler
 logic.get_id = function(conf)
     return tostring(conf.temperature)
@@ -70,7 +83,7 @@ end
 
 logic.fill_generated_temperatures = function(result)
     for _, entity in pairs(entities) do
-        if (entity.boiler_mode == "output-to-separate-pipe") then
+        if (is_supported(entity)) then
             local fluid = get_fluids(entity)
             configuration.add_fluid_temperature(result.fluids, fluid.output, entity.target_temperature)
         end
@@ -79,7 +92,7 @@ end
 
 logic.fill_progression = function(result, options)
     for _, entity in pairs(entities) do
-        if (entity.boiler_mode == "output-to-separate-pipe") then
+        if (is_supported(entity)) then
             local fluid = get_fluids(entity)
             local id = "boiler/" .. entity.name .. "/*"
             result[id] = {
@@ -104,7 +117,7 @@ end
 ---@param result Rates.Configuration.Boiler[]
 logic.fill_basic_configurations = function(result, options)
     for _, entity in pairs(entities) do
-        if (entity.boiler_mode == "output-to-separate-pipe") then
+        if (is_supported(entity)) then
             local fluid = get_fluids(entity)
             -- TODO: loop over all input temperatures
             result[#result + 1] = {
@@ -122,7 +135,7 @@ logic.get_from_entity = function(entity, options)
         return
     end
 
-    if (options.entity.boiler_mode ~= "output-to-separate-pipe") then
+    if (not is_supported(options.entity)) then
         return
     end
 
