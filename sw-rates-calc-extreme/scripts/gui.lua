@@ -199,7 +199,8 @@ local function build_pane_total()
                 name = "table_total",
                 column_count = 1,
                 style_mods = {
-                    minimal_width = 300
+                    minimal_width = 300,
+                    vertical_spacing = 0
                 },
                 {
                 }
