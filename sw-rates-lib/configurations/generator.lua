@@ -41,7 +41,7 @@ end
 logic.get_production = function(conf, result, options)
     local fluid = get_fluids(conf.entity).input
 
-    if (fluid == nil or conf.entity.scale_fluid_usage or conf.entity.burns_fluid) then
+    if (fluid == nil or conf.entity.scale_fluid_usage) then
         return
     end
 
@@ -58,7 +58,18 @@ logic.get_production = function(conf, result, options)
         temperature = conf.entity.maximum_temperature
     end
 
-    local energy = amount * (temperature - fluid.default_temperature) * fluid.heat_capacity
+    local energy_per_fluid ---@type number
+    if (conf.entity.burns_fluid) then
+        energy_per_fluid = fluid.fuel_value
+    else
+        energy_per_fluid = (temperature - fluid.default_temperature) * fluid.heat_capacity
+    end
+
+    if (energy_per_fluid <= 0) then
+        return
+    end
+
+    local energy = amount * energy_per_fluid
 
     result[#result + 1] = {
         tag = "product",
