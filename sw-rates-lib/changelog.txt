@@ -4,6 +4,7 @@ Date: ????
   Changes:
     - Use LuaItemPrototype::get_module_effects
     - Support generator with burns_fluid=true
+    - Support fusion-generator with burns_fluid and effectivity
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.3
 Date: 2025-09-06

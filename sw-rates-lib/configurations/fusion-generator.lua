@@ -15,6 +15,8 @@ local logic = { type = "fusion-generator" } ---@type Rates.Configuration.Type
 
 local entities = configuration.get_all_entities("fusion-generator")
 
+local support_effectivity = helpers.compare_versions(helpers.game_version, "2.0.67") >= 0
+
 ---@param prototype LuaEntityPrototype
 ---@return { input: LuaFluidPrototype, output: LuaFluidPrototype }
 local function get_fluids(prototype)
@@ -38,10 +40,36 @@ logic.gui_recipe = function(conf)
     }
 end
 
+---@param conf Rates.Configuration.FusionGenerator
 logic.get_production = function(conf, result, options)
     local fluids = get_fluids(conf.entity)
+
+    if (fluids.input == nil or fluids.output == nil) then
+        return
+    end
+
+    local burns_fluid ---@type boolean
+    local effectivity ---@type number
+    if (support_effectivity) then
+        burns_fluid = conf.entity.burns_fluid
+        effectivity = conf.entity.effectivity
+    else
+        burns_fluid = false
+        effectivity = 1.0
+    end
+
     local input_temperature = conf.temperature
-    local energy_per_fluid = fluids.input.heat_capacity * input_temperature
+    local energy_per_fluid ---@type number
+    if (burns_fluid) then
+        energy_per_fluid = fluids.input.fuel_value * effectivity
+    else
+        energy_per_fluid = fluids.input.heat_capacity * input_temperature * effectivity
+    end
+
+    if (energy_per_fluid <= 0) then
+        return
+    end
+
     local flow = conf.entity.get_fluid_usage_per_tick(conf.quality)
     local max_energy = conf.entity.electric_energy_source_prototype.get_output_flow_limit(conf.quality)
     if (max_energy < energy_per_fluid * flow) then
