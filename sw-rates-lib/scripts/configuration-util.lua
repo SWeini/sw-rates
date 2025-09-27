@@ -942,18 +942,26 @@ local function clamp_to_16_bit(x)
     end
 end
 
+local support_get_module_effects = helpers.compare_versions(helpers.game_version, "2.0.67") >= 0
+
 ---@param module LuaItemPrototype
 ---@param quality LuaQualityPrototype
 ---@return Rates.Internal.ModuleEffects
 local function get_effect_of_single_module(module, quality)
     local result = {} ---@type Rates.Internal.ModuleEffects
 
-    local effects = module.module_effects ---@type Rates.Internal.FloatModuleEffects
+    local effects
+    if (support_get_module_effects) then
+        effects = module.get_module_effects(quality)
+    else
+        effects = module.module_effects
+    end
     if (effects) then
+        ---@cast effects Rates.Internal.FloatModuleEffects
         for name, value in pairs(effects) do
             if (value ~= 0) then
                 local percentage = to_integer_percentage(value)
-                if (is_positive_effect(name, value)) then
+                if (not support_get_module_effects and is_positive_effect(name, value)) then
                     percentage = cast_to_integer(percentage * quality.default_multiplier)
                 end
 
