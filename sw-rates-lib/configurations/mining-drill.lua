@@ -17,6 +17,8 @@ local logic = { type = "mining-drill" } ---@type Rates.Configuration.Type
 local entities = configuration.get_all_entities("mining-drill")
 local resources = prototypes.get_entity_filtered { { filter = "type", type = "resource" }, { filter = "minable" } }
 
+local support_mining_area = helpers.compare_versions(helpers.game_version, "2.0.69") >= 0
+
 ---@param entity LuaEntityPrototype
 ---@param resource LuaEntityPrototype
 ---@return boolean
@@ -221,8 +223,14 @@ logic.get_from_entity = function(entity, options)
     end
 
     if (not resource) then
-        local radius = options.entity.get_mining_drill_radius(options.quality)
-        for _, target in ipairs(entity.surface.find_entities_filtered { type = "resource", position = entity.position, radius = radius }) do
+        local resources_in_range ---@type LuaEntity[]
+        if (support_mining_area) then
+            resources_in_range = entity.surface.find_entities_filtered { type = "resource", area = entity.mining_area }
+        else
+            local radius = options.entity.get_mining_drill_radius(options.quality)
+            resources_in_range = entity.surface.find_entities_filtered { type = "resource", position = entity.position, radius = radius }
+        end
+        for _, target in ipairs(resources_in_range) do
             local category = target.prototype.resource_category
             if (options.entity.resource_categories[category]) then
                 resource = target.prototype
