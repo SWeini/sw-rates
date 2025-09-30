@@ -273,6 +273,10 @@ function util.calculate_products(result, quality, products, frequency, productiv
     end
 end
 
+local maximum_quality_jump = helpers.compare_versions(helpers.game_version, "2.0.69") >= 0
+    and prototypes.utility_constants["maximum_quality_jump"] --[[@as integer]]
+    or 255
+
 ---@param quality LuaQualityPrototype
 ---@param bonus number
 ---@param force LuaForce?
@@ -284,11 +288,12 @@ function util.calculate_quality_distribution(quality, bonus, force)
 
     local result = {} ---@type { quality: LuaQualityPrototype, multiplier: number }[]
 
+    local jumps = 0
     local left = 1
     while (left > 0) do
         local quality_next = quality.next
         local prob_next = quality_next and (force == nil or force.is_quality_unlocked(quality_next)) and
-            quality.next_probability or 0
+            jumps < maximum_quality_jump and quality.next_probability or 0
         local bonus_next = prob_next * bonus
         if (bonus_next < 1) then
             local stay_probability = left - bonus_next
@@ -298,6 +303,7 @@ function util.calculate_quality_distribution(quality, bonus, force)
 
         bonus = bonus_next
         quality = quality_next
+        jumps = jumps + 1
     end
 
     return result

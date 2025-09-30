@@ -6,6 +6,7 @@ Date: ????
     - Support generator with burns_fluid=true
     - Support fusion-generator with burns_fluid and effectivity
     - Support mining_drill with resource_searching_offset
+    - Support maximum_quality_jump utility constant
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.3
 Date: 2025-09-06
