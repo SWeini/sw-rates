@@ -225,7 +225,15 @@ logic.get_from_entity = function(entity, options)
     if (not resource) then
         local resources_in_range ---@type LuaEntity[]
         if (support_mining_area) then
-            resources_in_range = entity.surface.find_entities_filtered { type = "resource", area = entity.mining_area }
+            local mining_area = entity.mining_area
+            local left_top, right_bottom = mining_area.left_top, mining_area.right_bottom
+            local center = {
+                x = (left_top.x + right_bottom.x) / 2,
+                y = (left_top.y + right_bottom.y) / 2
+            }
+            local radius = (right_bottom.x - left_top.x) / 2
+            -- Center of resource must be inside mining area. Therefore must use position/radius instead of area.
+            resources_in_range = entity.surface.find_entities_filtered { type = "resource", position = center, radius = radius }
         else
             local radius = options.entity.get_mining_drill_radius(options.quality)
             resources_in_range = entity.surface.find_entities_filtered { type = "resource", position = entity.position, radius = radius }
