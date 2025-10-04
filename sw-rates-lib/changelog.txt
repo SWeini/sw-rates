@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.4
-Date: ????
+Date: 2025-10-04
   Changes:
     - Use LuaItemPrototype::get_module_effects
     - Support generator with burns_fluid=true
