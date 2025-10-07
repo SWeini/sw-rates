@@ -223,25 +223,31 @@ logic.get_from_entity = function(entity, options)
     end
 
     if (not resource) then
-        local resources_in_range ---@type LuaEntity[]
+        local mining_area ---@type BoundingBox.0
         if (support_mining_area) then
-            local mining_area = entity.mining_area
-            local left_top, right_bottom = mining_area.left_top, mining_area.right_bottom
-            local center = {
-                x = (left_top.x + right_bottom.x) / 2,
-                y = (left_top.y + right_bottom.y) / 2
-            }
-            local radius = (right_bottom.x - left_top.x) / 2
-            -- Center of resource must be inside mining area. Therefore must use position/radius instead of area.
-            resources_in_range = entity.surface.find_entities_filtered { type = "resource", position = center, radius = radius }
+            mining_area = entity.mining_area
         else
             local radius = options.entity.get_mining_drill_radius(options.quality)
-            resources_in_range = entity.surface.find_entities_filtered { type = "resource", position = entity.position, radius = radius }
+            local center = entity.position
+            mining_area = {
+                left_top = {
+                    x = center.x - radius,
+                    y = center.y - radius
+                },
+                right_bottom = {
+                    x = center.x + radius,
+                    y = center.y + radius
+                }
+            }
         end
+        local resources_in_range = entity.surface.find_entities_filtered { type = "resource", area = mining_area }
         for _, target in ipairs(resources_in_range) do
-            local category = target.prototype.resource_category
-            if (options.entity.resource_categories[category]) then
-                resource = target.prototype
+            -- find_entities_filtered returns all colliding resources, but for mining drills the resource center needs to be inside the mining area
+            if (configuration.bbox_position_inside(target.position, mining_area)) then
+                local category = target.prototype.resource_category
+                if (options.entity.resource_categories[category]) then
+                    resource = target.prototype
+                end
             end
         end
     end

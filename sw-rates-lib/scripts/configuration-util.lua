@@ -698,6 +698,15 @@ function util.sum_modules(modules)
     return result
 end
 
+---@param pos MapPosition.0
+---@param box BoundingBox.0
+function util.bbox_position_inside(pos, box)
+    return pos.x >= box.left_top.x and
+        pos.x <= box.right_bottom.x and
+        pos.y >= box.left_top.y and
+        pos.y <= box.right_bottom.y
+end
+
 ---@param box1 BoundingBox.0
 ---@param box2 BoundingBox.0
 local function collides_with(box1, box2)
