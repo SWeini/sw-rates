@@ -65,4 +65,13 @@ local shortcut = {
     small_icon_size = 24,
 }
 
-data:extend({ tool, shortcut })
+---@type data.CustomInputPrototype
+local custom_input = {
+    type = "custom-input",
+    name = "sw-rates-calc-extreme-custom-input",
+    action = "spawn-item",
+    item_to_spawn = "sw-rates-calc-extreme-tool",
+    key_sequence = "ALT + X"
+}
+
+data:extend({ tool, shortcut, custom_input })
