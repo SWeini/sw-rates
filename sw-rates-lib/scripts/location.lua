@@ -55,6 +55,8 @@ local function get_solar_power(location, property)
                 return (from.solar_power_in_space + to.solar_power_in_space) / 2 * location.solar_power_multiplier
             end
         end
+
+        return location.get_property(property) * location.solar_power_multiplier
     end
 
     error("invalid location")

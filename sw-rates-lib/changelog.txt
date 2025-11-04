@@ -1,7 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.6
+Date: ????
+  Bugfixes:
+    - Fixed crash with solar panels on certain script-generated surfaces
+---------------------------------------------------------------------------------------------------
 Version: 0.4.5
 Date: 2025-10-23
-  Changes:
+  Bugfixes:
     - Fixed incorrect resource detection for mining drill ghosts
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.4
