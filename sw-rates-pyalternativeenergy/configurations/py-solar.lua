@@ -24,6 +24,11 @@ local hidden_solar_panels = {
     ["tidal-mk04"] = "tidal-mk04-solar",
 }
 
+local ignored_solar_panels = {}
+for _, value in pairs(hidden_solar_panels) do
+    ignored_solar_panels[value] = true
+end
+
 ---@param conf Rates.Configuration.PySolar
 logic.gui_recipe = function(conf)
     ---@type Rates.Gui.NodeDescription
@@ -54,6 +59,14 @@ logic.get_from_entity = function(entity, options)
                 type = "solar-panel",
                 entity = prototypes.entity[hidden_solar_panel],
                 quality = options.quality
+            }
+        end
+    end
+
+    if (options.type == "solar-panel") then
+        if (ignored_solar_panels[options.entity.name]) then
+            return {
+                type = "ignore"
             }
         end
     end

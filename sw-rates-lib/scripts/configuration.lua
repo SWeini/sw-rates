@@ -459,6 +459,10 @@ local function get_from_entity(entity, options)
                 remote.call(interface, "get_from_entity", entity, options) --[[@as Rates.Configuration?]]
         end
         if (result) then
+            if (result.type == "ignore") then
+                return
+            end
+
             result.type = result.type or entry.type
             local fuel = energy_source.get_from_entity(entity, result, options)
             if (fuel) then
