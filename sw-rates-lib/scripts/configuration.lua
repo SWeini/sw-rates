@@ -30,6 +30,8 @@
 ---@field fill_basic_configurations? fun(result: Rates.Configurations, options: Rates.Configuration.FillBasicOptions)
 ---Used to give the best possible description of an existing entity
 ---@field get_from_entity? fun(entity: LuaEntity, options: Rates.Configuration.FromEntityOptions.Internal): Rates.Configuration?
+---Used to modify the result of get_from_entity
+---@field modify_from_entity? fun(entity: LuaEntity, conf: Rates.Configuration, options: Rates.Configuration.FromEntityOptions.Internal): Rates.Configuration?
 
 ---@class (exact) Rates.Configuration.Type.Stats
 ---@field priority? number defaults to 0
@@ -135,6 +137,7 @@ local function register_one(type)
             return result
         end,
         get_from_entity = type.get_from_entity,
+        modify_from_entity = type.modify_from_entity,
         get_id = type.get_id,
         gui_recipe = type.gui_recipe,
         gui_entity = type.gui_entity,
@@ -428,6 +431,33 @@ local function get_basic_configurations(options)
 end
 
 ---@param entity LuaEntity
+---@param conf Rates.Configuration
+---@param options Rates.Configuration.FromEntityOptions.Internal
+---@return Rates.Configuration
+local function modify_from_entity(entity, conf, options)
+    local types = registry.get_all_types()
+    for i = #types, 1, -1 do
+        local entry = types[i]
+        local result
+        if (entry.logic) then
+            result = entry.logic.modify_from_entity and
+                entry.logic.modify_from_entity(entity, conf, options)
+        else
+            local interface = interface_name(entry.type)
+            result = remote.interfaces[interface].modify_from_entity and
+                remote.call(interface, "modify_from_entity", entity, conf, options) --[[@as Rates.Configuration?]]
+        end
+
+        if (result) then
+            result.id = nil
+            conf = result
+        end
+    end
+
+    return conf
+end
+
+---@param entity LuaEntity
 ---@param options Rates.Configuration.FromEntityOptions
 ---@return Rates.Configuration?
 local function get_from_entity(entity, options)
@@ -449,8 +479,8 @@ local function get_from_entity(entity, options)
     options.entity = data.entity
     options.quality = data.quality
 
+    local result = nil
     for _, entry in ipairs(registry.get_all_types()) do
-        local result
         if (entry.logic) then
             result = entry.logic.get_from_entity and entry.logic.get_from_entity(entity, options)
         else
@@ -458,11 +488,8 @@ local function get_from_entity(entity, options)
             result = remote.interfaces[interface].get_from_entity and
                 remote.call(interface, "get_from_entity", entity, options) --[[@as Rates.Configuration?]]
         end
-        if (result) then
-            if (result.type == "ignore") then
-                return
-            end
 
+        if (result) then
             result.type = result.type or entry.type
             local fuel = energy_source.get_from_entity(entity, result, options)
             if (fuel) then
@@ -473,9 +500,53 @@ local function get_from_entity(entity, options)
                 } --[[@as Rates.Configuration.Meta]]
             end
 
-            return result
+            break
         end
     end
+
+    if (result) then
+        result = modify_from_entity(entity, result, options)
+
+        if (result.type == "meta") then
+            for i = 1, #result.children do
+                result.children[i] = modify_from_entity(entity, result.children[i], options)
+            end
+
+            local scale_suggested_factors = false
+            for i = #result.children, 1, -1 do
+                if (result.children[i].type == "ignore") then
+                    table.remove(result.children, i)
+                    if (result.children_suggested_factors) then
+                        table.remove(result.children_suggested_factors, i)
+                        scale_suggested_factors = true
+                    end
+                end
+            end
+
+            if (#result.children == 0) then
+                return
+            end
+
+            if (scale_suggested_factors) then
+                local sum_of_ratios = 0
+                for i = 1, #result.children_suggested_factors do
+                    sum_of_ratios = sum_of_ratios + result.children_suggested_factors[i]
+                end
+                if (sum_of_ratios == 0) then
+                    result.children_suggested_factors = nil
+                end
+                for i = 1, #result.children_suggested_factors do
+                    result.children_suggested_factors[i] = result.children_suggested_factors[i] / sum_of_ratios
+                end
+            end
+        end
+    end
+
+    if (result and result.type == "ignore") then
+        return
+    end
+
+    return result
 end
 
 return {
