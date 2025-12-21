@@ -252,7 +252,7 @@ local function build_pane_buildings()
             {
                 type = "table",
                 name = "table_buildings",
-                column_count = 4,
+                column_count = 5,
                 style_mods = {
                     minimal_width = 300
                 },
@@ -544,6 +544,50 @@ end
 
 ---@param row Rates.Row
 ---@return flib.GuiElemDef
+local function cell_buildings_annotations(row)
+    local annotations = api.configuration.get_annotations(row.configuration)
+    if (#annotations == 0) then
+        return { type = "label", caption = "" }
+    end
+
+    local severity = 0
+    local tips = { "" } ---@type LocalisedString
+    for _, annotation in ipairs(annotations) do
+        local gui = api.configuration.gui_annotation(annotation, row.configuration)
+        if (gui.severity == "error") then
+            severity = math.max(severity, 3)
+        elseif (gui.severity == "warning") then
+            severity = math.max(severity, 2)
+        elseif (gui.severity == "information") then
+            severity = math.max(severity, 1)
+        end
+        if (gui.icon) then
+            tips[#tips + 1] = "[img=" .. gui.icon.sprite .. "] "
+        end
+        tips[#tips + 1] = gui.text
+    end
+
+    local sprite
+    if (severity == 3) then
+        sprite = "virtual-signal.signal-no-entry"
+    elseif (severity == 2) then
+        sprite = "virtual-signal.signal-alert"
+    else
+        sprite = "virtual-signal.signal-info"
+    end
+
+    ---@type flib.GuiElemDef
+    local result = {
+        type = "sprite",
+        sprite = sprite,
+        tooltip = tips
+    }
+
+    return result
+end
+
+---@param row Rates.Row
+---@return flib.GuiElemDef
 local function cell_buildings_recipe(row)
     local ui = api.configuration.gui_recipe(row.configuration)
     return create_node_icon(ui)
@@ -615,6 +659,7 @@ function gui.add_table(ui, sheet_data, player)
     for i, row in ipairs(sheet_data.block.rows) do
         flib_gui.add(ui.table_buildings, {
             cell_buildings_count(row),
+            cell_buildings_annotations(row),
             cell_buildings_recipe(row),
             cell_buildings_entity(row),
             cell_buildings_extra(row)
