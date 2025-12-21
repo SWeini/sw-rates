@@ -5,6 +5,7 @@
 ---@field entity? LuaEntityPrototype
 ---@field quality? LuaQualityPrototype
 ---@field module_effects? Rates.Configuration.ModuleEffects
+---@field annotations? Rates.Configuration.Annotation[]
 
 ---Description for a type of configuration.
 ---@class (exact) Rates.Configuration.Type
@@ -19,6 +20,10 @@
 ---@field gui_entity? fun(conf: Rates.Configuration): Rates.Gui.NodeDescription
 ---Calculates the production rates of a configuration
 ---@field get_production? fun(conf: Rates.Configuration, result: Rates.Configuration.Amount[], options: Rates.Configuration.ProductionOptions)
+---Get annotations about configuration
+---@field get_annotations? fun(conf: Rates.Configuration): Rates.Configuration.Annotation[]?
+---Used to provide GUI of annotations
+---@field gui_annotation? fun(annotation: Rates.Configuration.Annotation, conf: Rates.Configuration) : Rates.Gui.AnnotationDescription?
 ---
 ---Used to divide fluids and heat into different temperatures
 ---@field fill_generated_temperatures? fun(result: Rates.GeneratedTemperatures)
@@ -100,6 +105,9 @@
 ---@field count integer
 ---@field per_beacon_modules Rates.Configuration.Module[]
 
+---@class Rates.Configuration.Annotation.Base
+---@field type string
+
 local registry = require("configuration-registry")
 local util = require("configuration-util")
 local energy_source = require("energy-source")
@@ -146,6 +154,8 @@ local function register_one(type)
             type.get_production(conf, result, options)
             return result
         end,
+        get_annotations = type.get_annotations,
+        gui_annotation = type.gui_annotation
     }
     remote.add_interface(interface_name(type.type), functions)
     remote.call("sw-rates/configuration", "register_type", type.type, type.stats and type.stats.priority)
@@ -336,6 +346,67 @@ local function get_production(conf, options)
     end
 
     return result
+end
+
+---@param conf Rates.Configuration
+---@return Rates.Configuration.Annotation[]
+local function get_annotations(conf)
+    local result = {} ---@type Rates.Configuration.Annotation[]
+
+    if (conf.annotations) then
+        for _, annotation in ipairs(conf.annotations or {}) do
+            result[#result + 1] = annotation
+        end
+    end
+
+    for _, entry in ipairs(registry.get_all_types()) do
+        local new_annotations = nil ---@type Rates.Configuration.Annotation[]?
+        if (entry.logic) then
+            if (entry.logic.get_annotations) then
+                new_annotations = entry.logic.get_annotations(conf)
+            end
+        else
+            if (remote.interfaces[interface_name(entry.type)].get_annotations) then
+                new_annotations = remote.call(interface_name(entry.type), "get_annotations", conf) --[[@as Rates.Configuration.Annotation[]? ]]
+            end
+        end
+
+        if (new_annotations) then
+            for _, annotation in ipairs(new_annotations) do
+                result[#result + 1] = annotation
+            end
+        end
+    end
+
+    return result
+end
+
+---@param annotation Rates.Configuration.Annotation
+---@param conf Rates.Configuration
+---@return Rates.Gui.AnnotationDescription
+local function gui_annotation(annotation, conf)
+    local result = nil
+    local _, _, type, _ = string.find(annotation.type, "^([^/]+)/([^/]+)$")
+    local logic = registry.get(type)
+    if (logic) then
+        if (logic.gui_annotation) then
+            result = logic.gui_annotation(annotation, conf)
+        end
+    else
+        if (remote.interfaces[interface_name(type)].gui_annotation) then
+            result = remote.call(interface_name(type), "gui_annotation", annotation, conf) --[[@as Rates.Gui.AnnotationDescription? ]]
+        end
+    end
+
+    if (result) then
+        return result
+    end
+
+    ---@type Rates.Gui.AnnotationDescription
+    return {
+        text = annotation.type,
+        severity = "information"
+    }
 end
 
 ---@param options Rates.Progression.Options
@@ -555,6 +626,8 @@ return {
     gui_recipe = gui_recipe,
     gui_entity = gui_entity,
     get_production = get_production,
+    get_annotations = get_annotations,
+    gui_annotation = gui_annotation,
     get_progression_locations = get_progression_locations,
     get_progression = get_progression,
     get_basic_configurations = get_basic_configurations,

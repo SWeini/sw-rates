@@ -6,6 +6,11 @@ do
     ---@field temperature number
 end
 
+do
+    ---@class (exact) Rates.Configuration.Annotations.GeneratorInputFluidTemperatureUnknown : Rates.Configuration.Annotation.Base
+    ---@field type "generator/input-fluid-temperature-unknown"
+end
+
 local configuration = require("scripts.configuration-util")
 local node = require("scripts.node")
 local progression = require("scripts.progression")
@@ -78,6 +83,17 @@ logic.get_production = function(conf, result, options)
     }
 end
 
+logic.gui_annotation = function(annotation, conf)
+    if (annotation.type == "generator/input-fluid-temperature-unknown") then
+        local fluids = get_fluids(conf.entity)
+        ---@type Rates.Gui.AnnotationDescription
+        return {
+            text = { "sw-rates-annotation.generator-input-fluid-temperature-unknown", "[fluid=" .. fluids.input.name .. "]", { "", conf.temperature, " ", { "si-unit-degree-celsius" } } },
+            severity = "information"
+        }
+    end
+end
+
 logic.fill_progression = function(result, options)
     for _, entity in pairs(entities) do
         local fluids = get_fluids(entity)
@@ -118,11 +134,18 @@ logic.get_from_entity = function(entity, options)
 
     local fluids = get_fluids(options.entity)
     local temperature = options.entity.maximum_temperature or fluids.input.default_temperature
+    local temperature_set = false
     if (entity.type ~= "entity-ghost") then
         local fluid = entity.fluidbox[1]
         if (fluid) then
             temperature = fluid.temperature --[[@as number]]
+            temperature_set = true
         end
+    end
+
+    local annotations = nil ---@type Rates.Configuration.Annotation[]?
+    if (not temperature_set and not options.entity.burns_fluid) then
+        annotations = { { type = "generator/input-fluid-temperature-unknown" } }
     end
 
     -- TODO: return all possible temperatures
@@ -132,7 +155,8 @@ logic.get_from_entity = function(entity, options)
         type = nil, ---@diagnostic disable-line: assign-type-mismatch
         entity = options.entity,
         quality = options.quality,
-        temperature = temperature
+        temperature = temperature,
+        annotations = annotations
     }
 end
 
