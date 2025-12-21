@@ -5,7 +5,6 @@ do
     ---@field children_suggested_factors? number[]
     ---@field fuel? Rates.Configuration.Fuel
     ---@field selection? table<string, string>
-    ---@field suggested? Rates.Configuration[]
 end
 
 local configuration = require("scripts.configuration")
@@ -114,7 +113,6 @@ local function with_selection(conf, selection)
             children = conf.children,
             fuel = conf.fuel,
             selection = selection,
-            suggested = conf.suggested
         }
     else
         result = {
@@ -137,7 +135,6 @@ local function with_fuel(conf, fuel)
             children = conf.children,
             fuel = fuel,
             selection = conf.selection,
-            suggested = conf.suggested
         }
     else
         result = {
