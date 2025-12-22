@@ -45,6 +45,7 @@ end
 
 logic.gui_annotation = function(annotation, conf)
     if (annotation.type == "py-farming/no-modules") then
+        ---@cast annotation Rates.Configuration.Annotation.PyFarmingNoModules
         if (annotation.default_module) then
             ---@type Rates.Gui.AnnotationDescription
             return {
