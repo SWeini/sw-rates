@@ -561,8 +561,11 @@ local function cell_buildings_annotations(row)
         elseif (gui.severity == "information") then
             severity = math.max(severity, 1)
         end
+        if (#tips > 1) then
+            tips[#tips + 1] = "\n\n"
+        end
         if (gui.icon) then
-            tips[#tips + 1] = "[img=" .. gui.icon.sprite .. "] "
+            tips[#tips + 1] = "[img=" .. gui.icon.sprite .. "]  "
         end
         tips[#tips + 1] = gui.text
     end
