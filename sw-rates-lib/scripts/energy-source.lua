@@ -431,6 +431,10 @@ local function apply_fuel_to_production(result, fuel_amounts, entity, fuel, opti
                     amount.amount = amount.amount * factor
                 end
             end
+
+            if (options.annotations) then
+                options.annotations[#options.annotations + 1] = { type = "meta/speed-limited-by-fluid-fuel" }
+            end
         end
 
         if (options.use_pollution) then

@@ -545,8 +545,8 @@ end
 ---@param row Rates.Row
 ---@return flib.GuiElemDef
 local function cell_buildings_annotations(row)
-    local annotations = api.configuration.get_annotations(row.configuration)
-    if (#annotations == 0) then
+    local annotations = row.annotations
+    if (annotations == nil or #annotations == 0) then
         return { type = "label", caption = "" }
     end
 

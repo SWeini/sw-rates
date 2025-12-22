@@ -81,6 +81,7 @@
 ---@field solar_panel_mode? "day-and-night" | "average-and-buffer" defaults to "average-and-buffer"
 ---@field force? LuaForce used to calculate force-specific boni
 ---@field surface? Rates.Location used to add global effects on that surface
+---@field annotations? Rates.Configuration.Annotation[] used to collect annotations related to production rates
 
 ---@class (exact) Rates.Configuration.Amount
 ---@field tag "energy-source-input" | "energy-source-output" | "pollution" | "resource" | "mining-fluid" | "ingredient" | "product" | "infrastructure"
@@ -152,7 +153,7 @@ local function register_one(type)
         get_production = type.get_production and function(conf, options)
             local result = {} ---@type Rates.Configuration.Amount[]
             type.get_production(conf, result, options)
-            return result
+            return result, options.annotations
         end,
         get_annotations = type.get_annotations,
         gui_annotation = type.gui_annotation
@@ -337,7 +338,18 @@ local function get_production(conf, options)
         end
     else
         if (remote.interfaces[interface_name(conf.type)].get_production) then
-            result = remote.call(interface_name(conf.type), "get_production", conf, options) --[[@as Rates.Configuration.Amount[] ]]
+            local original_annotations = options.annotations
+            if (original_annotations) then
+                options.annotations = {}
+                local amounts, annotations = remote.call(interface_name(conf.type), "get_production", conf, options)
+                result = amounts --[[@as Rates.Configuration.Amount[] ]]
+                options.annotations = original_annotations
+                for _, annotation in ipairs(annotations --[[@as Rates.Configuration.Annotation[] ]]) do
+                    original_annotations[#original_annotations + 1] = annotation
+                end
+            else
+                result = remote.call(interface_name(conf.type), "get_production", conf, options) --[[@as Rates.Configuration.Amount[] ]]
+            end
         end
     end
 

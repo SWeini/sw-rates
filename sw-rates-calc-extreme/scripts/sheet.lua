@@ -6,6 +6,7 @@
 ---@field count_effective? number
 ---@field entity_ids integer[]
 ---@field amounts? Rates.Configuration.Amount[]
+---@field annotations? Rates.Configuration.Annotation[]
 
 ---@class Rates.Block
 ---@field name? string
@@ -75,16 +76,18 @@ local function build_from_entities(location, entities)
         local name = api.configuration.get_id(conf)
         local row = rows[name]
         if (row == nil) then
+            local annotations = api.configuration.get_annotations(conf)
             local amounts = api.configuration.get_production(conf, {
                 force = force,
                 surface = location,
                 apply_quality = true,
                 use_pollution = use_pollution,
+                annotations = annotations
             })
 
             record_positive_negative(amounts)
 
-            row = { entity_ids = {}, configuration = conf, count_max = 0, amounts = amounts }
+            row = { entity_ids = {}, configuration = conf, count_max = 0, amounts = amounts, annotations = annotations }
             rows[name] = row
         end
 

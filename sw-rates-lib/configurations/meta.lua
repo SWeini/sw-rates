@@ -7,6 +7,11 @@ do
     ---@field selection? table<string, string>
 end
 
+do
+    ---@class Rates.Configuration.Annotation.MetaSpeedLimitedByFluidFuel : Rates.Configuration.Annotation.Base
+    ---@field type "meta/speed-limited-by-fluid-fuel"
+end
+
 local configuration = require("scripts.configuration")
 local node_util = require("scripts.node")
 local energy_source = require("scripts.energy-source")
@@ -99,6 +104,16 @@ logic.get_production = function(conf, result, options)
                 result[#result + 1] = amount
             end
         end
+    end
+end
+
+logic.gui_annotation = function(annotation, conf)
+    if (annotation.type == "meta/speed-limited-by-fluid-fuel") then
+        ---@type Rates.Gui.AnnotationDescription
+        return {
+            severity = "warning",
+            text = { "sw-rates-annotation.meta-speed-limited-by-fluid-fuel" }
+        }
     end
 end
 
