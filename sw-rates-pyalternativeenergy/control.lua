@@ -6,6 +6,7 @@ local configurations = {
     require("configurations.py-biofluid"),
     require("configurations.py-bitumenseep"),
     require("configurations.py-digsite"),
+    require("configurations.py-farming"),
     require("configurations.py-power"),
     require("configurations.py-smartfarm"),
     require("configurations.py-solar"),
