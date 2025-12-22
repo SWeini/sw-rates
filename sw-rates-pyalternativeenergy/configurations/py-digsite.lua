@@ -4,8 +4,8 @@ do
     ---@field entity LuaEntityPrototype
     ---@field quality LuaQualityPrototype
     ---@field module_effects Rates.Configuration.ModuleEffects
-    ---@field food LuaItemPrototype
-    ---@field food_quality LuaQualityPrototype
+    ---@field food? LuaItemPrototype
+    ---@field food_quality? LuaQualityPrototype
 end
 
 do
@@ -80,7 +80,9 @@ end
 
 ---@param conf Rates.Configuration.PyDigsite
 logic.get_id = function(conf)
-    return conf.food.name .. "(" .. conf.food_quality.name .. ")"
+    local food = conf.food and conf.food.name or "?"
+    local food_quality = conf.food_quality and conf.food_quality.name or "?"
+    return food .. "(" .. food_quality .. ")"
 end
 
 ---@param conf Rates.Configuration.PyDigsite
@@ -94,6 +96,18 @@ end
 ---@param conf Rates.Configuration.PyDigsite
 logic.get_production = function(conf, result, options)
     configuration.calculate_energy_source(result, conf.entity, conf.entity.energy_usage, options)
+
+    if (conf.food == nil or conf.food_quality == nil) then
+        if (options.annotations) then
+            options.annotations[#options.annotations + 1] = { type = "py-digsite/food-unknown" }
+        end
+        return
+    end
+
+    if (options.annotations) then
+        options.annotations[#options.annotations + 1] = { type = "py-digsite/speed-inaccurate" }
+    end
+
     local resource = 0
     local ore = 0
     local food = 0
@@ -123,16 +137,6 @@ logic.get_production = function(conf, result, options)
         node = node.create.item(prototypes.item["nexelit-ore"], prototypes.quality["normal"]),
         amount = ore
     }
-end
-
-logic.get_annotations = function(conf)
-    if (conf.type == "py-digsite") then
-        return { { type = "py-digsite/speed-inaccurate" } }
-    end
-
-    if (conf.type == "crafting-machine" and conf.entity.name == "dino-dig-site") then
-        return { { type = "py-digsite/food-unknown" } }
-    end
 end
 
 logic.gui_annotation = function(annotation, conf)
@@ -206,17 +210,16 @@ logic.modify_from_entity = function(entity, conf, options)
     end
 
     local food = get_food_from_entity(entity)
-    if (not food) then
-        return
-    end
 
     conf.recipe = nil
     conf.recipe_quality = nil
     ---@cast conf Rates.Configuration.PyDigsite
     conf.type = "py-digsite"
     conf.module_effects.beacons = nil
-    conf.food = food.food
-    conf.food_quality = food.quality
+    if (food) then
+        conf.food = food.food
+        conf.food_quality = food.quality
+    end
     return conf
 end
 
