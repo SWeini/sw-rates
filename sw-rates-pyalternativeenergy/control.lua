@@ -11,8 +11,16 @@ local configurations = {
     require("configurations.py-solar"),
 }
 
+local configuration_turd = require("configurations.py-turd")
+
 handler.add_libraries({ {
     add_remote_interface = function()
         configuration.register(configurations)
+
+        if (helpers.compare_versions(script.active_mods["pyalienlife"], "3.0.61") >= 0) then
+            configuration.register({
+                configuration_turd
+            })
+        end
     end
 } })
