@@ -11,6 +11,14 @@ do
     ---@field type "boiler/input-fluid-temperature-unknown"
 end
 
+do
+    ---@class (exact) Rates.Configuration.Annotations.BoilerInputFluidTemperatureTooHigh : Rates.Configuration.Annotation.Base
+    ---@field type "boiler/input-fluid-temperature-too-high"
+    ---@field fluid LuaFluidPrototype
+    ---@field temperature number
+    ---@field max_temperature number
+end
+
 local configuration = require("scripts.configuration-util")
 local node = require("scripts.node")
 local progression = require("scripts.progression")
@@ -59,12 +67,25 @@ local use_legacy_boiler_mechanics = helpers.compare_versions(helpers.game_versio
 
 ---@param conf Rates.Configuration.Boiler
 logic.get_production = function(conf, result, options)
-    local energy_usage = conf.entity.get_max_energy_usage(conf.quality)
-    configuration.calculate_energy_source(result, conf.entity, energy_usage, options)
-
     local fluids = get_fluids(conf.entity)
     local input_temperature = conf.temperature
     local output_temperature = conf.entity.target_temperature --[[@as number]]
+
+    if (input_temperature >= output_temperature) then
+        if (options.annotations) then
+            options.annotations[#options.annotations + 1] = {
+                type = "boiler/input-fluid-temperature-too-high",
+                fluid = fluids.input,
+                temperature = input_temperature,
+                max_temperature = output_temperature
+            } --[[@as Rates.Configuration.Annotations.BoilerInputFluidTemperatureTooHigh]]
+        end
+        return
+    end
+
+    local energy_usage = conf.entity.get_max_energy_usage(conf.quality)
+    configuration.calculate_energy_source(result, conf.entity, energy_usage, options)
+
     local energy_value_in = (output_temperature - input_temperature) * fluids.input.heat_capacity
     local amount_in = energy_usage * 60 / energy_value_in
     local amount_out
@@ -91,8 +112,22 @@ logic.gui_annotation = function(annotation, conf)
         local fluids = get_fluids(conf.entity)
         ---@type Rates.Gui.AnnotationDescription
         return {
-            text = { "sw-rates-annotation.boiler-input-fluid-temperature-unknown", "[fluid=" .. fluids.input.name .. "]", { "", conf.temperature, " ", { "si-unit-degree-celsius" } } },
+            text = { "sw-rates-annotation.boiler-input-fluid-temperature-unknown",
+                "[fluid=" .. fluids.input.name .. "]",
+                { "", conf.temperature, " ", { "si-unit-degree-celsius" } }
+            },
             severity = "information"
+        }
+    elseif (annotation.type == "boiler/input-fluid-temperature-too-high") then
+        ---@cast annotation Rates.Configuration.Annotations.BoilerInputFluidTemperatureTooHigh
+        ---@type Rates.Gui.AnnotationDescription
+        return {
+            text = { "sw-rates-annotation.boiler-input-fluid-temperature-too-high",
+                "[fluid=" .. annotation.fluid.name .. "]",
+                { "", annotation.temperature,     " ", { "si-unit-degree-celsius" } },
+                { "", annotation.max_temperature, " ", { "si-unit-degree-celsius" } }
+            },
+            severity = "error"
         }
     end
 end
@@ -162,7 +197,9 @@ logic.get_from_entity = function(entity, options)
     if (fluidbox) then
         temperature = fluidbox.temperature --[[@as number]]
     else
-        annotations = { { type = "boiler/input-fluid-temperature-unknown" } }
+        annotations = {
+            { type = "boiler/input-fluid-temperature-unknown" } --[[@as Rates.Configuration.Annotations.BoilerInputFluidTemperatureUnknown]]
+        }
     end
 
     ---@type Rates.Configuration.Boiler

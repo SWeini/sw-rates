@@ -4,6 +4,8 @@ Date: ????
   Changes:
     - Allow post-processing of get_from_entity via modify_from_entity
     - Added annotations
+  Bugfixes:
+    - Fixed boiler with too high input fluid temperature swapping input/output fluids
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.7
 Date: 2025-12-09
