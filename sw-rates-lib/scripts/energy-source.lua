@@ -408,27 +408,25 @@ local function apply_fuel_to_production(result, fuel_amounts, entity, fuel, opti
             fluid_per_second = fluid_per_second / fuel_amounts[source_index].amount
         end
 
-        local max_fluid_per_tick = fluid_energy_source.fluid_usage_per_tick
-        if (max_fluid_per_tick > 0) then
+        local max_fluid_per_second = fluid_energy_source.fluid_usage_per_tick * 60
+        local percentage = 1
+        if (max_fluid_per_second > 0) then
             if (fluid_energy_source.scale_fluid_usage) then
-                fluid_per_second = math.min(fluid_per_second, max_fluid_per_tick * 60)
+                if (fluid_per_second > max_fluid_per_second) then
+                    percentage = max_fluid_per_second / fluid_per_second
+                    fluid_per_second = max_fluid_per_second
+                end
             else
-                fluid_per_second = max_fluid_per_tick * 60
+                fluid_per_second = max_fluid_per_second
             end
         end
 
-        local generated_energy = fuel_amounts[source_index].amount * fluid_per_second
-
-        -- this value is sneakily passed via energy-source-input, written in get_production
-        local fuel_usage = result[destination_index].fuel_usage --[[@as number]]
-
         replace_fuel_amounts(result, destination_index, fuel_amounts, source_index, fluid_per_second)
 
-        if (generated_energy < fuel_usage) then
-            local factor = generated_energy / fuel_usage
+        if (percentage ~= 1) then
             for _, amount in ipairs(result) do
                 if (amount.tag ~= "energy-source-input" and amount.tag_extra ~= "drain") then
-                    amount.amount = amount.amount * factor
+                    amount.amount = amount.amount * percentage
                 end
             end
 
