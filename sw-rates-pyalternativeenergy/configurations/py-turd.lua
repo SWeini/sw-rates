@@ -26,16 +26,27 @@ logic.modify_from_entity = function(entity, conf, options)
             beacons = {}
         end
 
-        beacons[#beacons + 1] = {
-            beacon = prototypes.entity["hidden-beacon-turd"],
-            quality = prototypes.quality.normal,
-            count = 1,
-            per_beacon_modules = { {
-                module = prototypes.item[turd_module],
+        local module = prototypes.item[turd_module]
+        if (not module) then
+            local entity_name = options.entity.name
+            local mk = entity_name:match("-mk0%d")
+            if (mk) then
+                module = prototypes.item[turd_module .. mk]
+            end
+        end
+
+        if (module) then
+            beacons[#beacons + 1] = {
+                beacon = prototypes.entity["hidden-beacon-turd"],
                 quality = prototypes.quality.normal,
-                count = 1
-            } }
-        }
+                count = 1,
+                per_beacon_modules = { {
+                    module = module,
+                    quality = prototypes.quality.normal,
+                    count = 1
+                } }
+            }
+        end
     end
 
     if (beacons and #beacons == 0) then
