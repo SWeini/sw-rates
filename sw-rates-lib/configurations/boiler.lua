@@ -54,12 +54,17 @@ local use_legacy_boiler_mechanics = helpers.compare_versions(helpers.game_versio
 
 ---@param conf Rates.Configuration.Boiler
 logic.get_production = function(conf, result, options)
-    local energy_usage = conf.entity.get_max_energy_usage(conf.quality)
-    configuration.calculate_energy_source(result, conf.entity, energy_usage, options)
-
     local fluids = get_fluids(conf.entity)
     local input_temperature = conf.temperature
     local output_temperature = conf.entity.target_temperature --[[@as number]]
+
+    if (input_temperature >= output_temperature) then
+        return
+    end
+
+    local energy_usage = conf.entity.get_max_energy_usage(conf.quality)
+    configuration.calculate_energy_source(result, conf.entity, energy_usage, options)
+
     local energy_value_in = (output_temperature - input_temperature) * fluids.input.heat_capacity
     local amount_in = energy_usage * 60 / energy_value_in
     local amount_out
