@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.3
-Date: ????
+Date: 2026-05-09
   Features:
     - Added annotations for various scripted mechanics
     - Automatically add T.U.R.D. beacons for ghosts

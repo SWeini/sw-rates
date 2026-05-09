@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.8
-Date: ????
+Date: 2026-05-09
   Changes:
     - Allow post-processing of get_from_entity via modify_from_entity
     - Added annotations
