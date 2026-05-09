@@ -4,8 +4,18 @@ do
     ---@field entity LuaEntityPrototype
     ---@field quality LuaQualityPrototype
     ---@field module_effects Rates.Configuration.ModuleEffects
-    ---@field food LuaItemPrototype
-    ---@field food_quality LuaQualityPrototype
+    ---@field food? LuaItemPrototype
+    ---@field food_quality? LuaQualityPrototype
+end
+
+do
+    ---@class Rates.Configuration.Annotation.PyDigsiteSpeedInaccurate : Rates.Configuration.Annotation.Base
+    ---@field type "py-digsite/speed-inaccurate"
+end
+
+do
+    ---@class Rates.Configuration.Annotation.PyDigsiteFoodUnknown : Rates.Configuration.Annotation.Base
+    ---@field type "py-digsite/food-unknown"
 end
 
 local api = require("__sw-rates-lib__.api-configuration")
@@ -47,9 +57,32 @@ local function get_food_from_inventory(inventory)
     end
 end
 
+---@param entity LuaEntity
+---@return { food: LuaItemPrototype, quality: LuaQualityPrototype}?
+local function get_food_from_entity(entity)
+    local food_input = entity.surface.find_entities_filtered { name = "dino-dig-site-food-input", position = entity.position }
+    if (#food_input ~= 1) then
+        return
+    end
+
+    local food_inventory = food_input[1].get_inventory(defines.inventory.chest)
+    if (not food_inventory) then
+        return
+    end
+
+    local food, food_quality = get_food_from_inventory(food_inventory)
+    if (not food or not food_quality) then
+        return
+    end
+
+    return { food = food, quality = food_quality }
+end
+
 ---@param conf Rates.Configuration.PyDigsite
 logic.get_id = function(conf)
-    return conf.food.name .. "(" .. conf.food_quality.name .. ")"
+    local food = conf.food and conf.food.name or "?"
+    local food_quality = conf.food_quality and conf.food_quality.name or "?"
+    return food .. "(" .. food_quality .. ")"
 end
 
 ---@param conf Rates.Configuration.PyDigsite
@@ -63,6 +96,18 @@ end
 ---@param conf Rates.Configuration.PyDigsite
 logic.get_production = function(conf, result, options)
     configuration.calculate_energy_source(result, conf.entity, conf.entity.energy_usage, options)
+
+    if (conf.food == nil or conf.food_quality == nil) then
+        if (options.annotations) then
+            options.annotations[#options.annotations + 1] = { type = "py-digsite/food-unknown" }
+        end
+        return
+    end
+
+    if (options.annotations) then
+        options.annotations[#options.annotations + 1] = { type = "py-digsite/speed-inaccurate" }
+    end
+
     local resource = 0
     local ore = 0
     local food = 0
@@ -92,6 +137,20 @@ logic.get_production = function(conf, result, options)
         node = node.create.item(prototypes.item["nexelit-ore"], prototypes.quality["normal"]),
         amount = ore
     }
+end
+
+logic.gui_annotation = function(annotation, conf)
+    if (annotation.type == "py-digsite/speed-inaccurate") then
+        return {
+            severity = "note",
+            text = { "sw-rates-annotation.py-digsite-speed-inaccurate" }
+        }
+    elseif (annotation.type == "py-digsite/food-unknown") then
+        return {
+            severity = "error",
+            text = { "sw-rates-annotation.py-digsite-food-unknown" }
+        }
+    end
 end
 
 logic.fill_progression = function(result, options)
@@ -145,38 +204,23 @@ logic.fill_basic_configurations = function(result, options)
     end
 end
 
-logic.get_from_entity = function(entity, options)
-    if (options.type ~= "assembling-machine" or options.entity.name ~= "dino-dig-site") then
+logic.modify_from_entity = function(entity, conf, options)
+    if (conf.type ~= "crafting-machine" or conf.entity.name ~= "dino-dig-site") then
         return
     end
 
-    local module_effects = configuration.get_useful_module_effects(entity, options.use_ghosts)
-    module_effects.beacons = nil
+    local food = get_food_from_entity(entity)
 
-    local food_input = entity.surface.find_entities_filtered { name = "dino-dig-site-food-input", position = entity.position }
-    if (#food_input ~= 1) then
-        return
+    conf.recipe = nil
+    conf.recipe_quality = nil
+    ---@cast conf Rates.Configuration.PyDigsite
+    conf.type = "py-digsite"
+    conf.module_effects.beacons = nil
+    if (food) then
+        conf.food = food.food
+        conf.food_quality = food.quality
     end
-
-    local food_inventory = food_input[1].get_inventory(defines.inventory.chest)
-    if (not food_inventory) then
-        return
-    end
-
-    local food, food_quality = get_food_from_inventory(food_inventory)
-    if (not food or not food_quality) then
-        return
-    end
-
-    ---@type Rates.Configuration.PyDigsite
-    return {
-        type = nil, ---@diagnostic disable-line: assign-type-mismatch
-        entity = options.entity,
-        quality = options.quality,
-        module_effects = module_effects,
-        food = food,
-        food_quality = food_quality
-    }
+    return conf
 end
 
 return logic

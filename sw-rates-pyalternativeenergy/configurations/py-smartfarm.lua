@@ -125,23 +125,12 @@ logic.fill_progression = function(result, options)
     end
 end
 
-logic.get_from_entity = function(entity, options)
-    if (options.type ~= "rocket-silo" or options.entity.name ~= "mega-farm") then
-        return
+logic.modify_from_entity = function(entity, conf, options)
+    if (conf.type == "crafting-machine" and conf.entity.name == "mega-farm") then
+        ---@cast conf Rates.Configuration.PySmartFarm
+        conf.type = "py-smartfarm"
+        return conf
     end
-
-    local result = crafting.get_from_entity(entity, options)
-    if (result.type == "meta") then
-        local child = result.children[1]
-        child.type = "py-smartfarm"
-        child.id = nil
-        result.id = nil
-    else
-        result.type = "py-smartfarm"
-        result.id = nil
-    end
-
-    return result
 end
 
 return logic

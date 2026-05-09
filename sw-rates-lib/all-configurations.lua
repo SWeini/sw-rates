@@ -35,6 +35,15 @@ local registry = require("scripts.configuration-registry")
 --- | Rates.Configuration.FluidFuelHeat
 --- | Rates.Configuration.FluidFuel
 
+---@alias Rates.Configuration.Annotation
+--- | Rates.Configuration.Annotation.Base
+--- | Rates.Configuration.Annotation.Extension alias this type in your mod to extend Rates.Configuration.Annotation to your own types
+---
+--- | Rates.Configuration.Annotation.BoilerInputFluidTemperatureUnknown
+--- | Rates.Configuration.Annotation.BoilerInputFluidTemperatureTooHigh
+--- | Rates.Configuration.Annotation.GeneratorInputFluidTemperatureUnknown
+--- | Rates.Configuration.Annotation.MetaSpeedLimitedByFluidFuel
+
 ---@diagnostic enable: undefined-doc-name
 
 registry.register({

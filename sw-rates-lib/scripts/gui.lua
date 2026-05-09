@@ -7,6 +7,12 @@
 ---@field tooltip? LocalisedString
 ---@field number_format? Rates.Node.NumberFormat
 
+---GUI description for an annotation.
+---@class (exact) Rates.Gui.AnnotationDescription
+---@field severity "error" | "warning" | "information"
+---@field text LocalisedString
+---@field icon? { sprite: SpritePath }
+
 ---Information about how to format an amount of a node
 ---@class Rates.Node.NumberFormat
 ---@field factor number
