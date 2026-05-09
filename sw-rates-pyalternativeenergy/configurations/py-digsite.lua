@@ -142,7 +142,7 @@ end
 logic.gui_annotation = function(annotation, conf)
     if (annotation.type == "py-digsite/speed-inaccurate") then
         return {
-            severity = "note",
+            severity = "information",
             text = { "sw-rates-annotation.py-digsite-speed-inaccurate" }
         }
     elseif (annotation.type == "py-digsite/food-unknown") then
