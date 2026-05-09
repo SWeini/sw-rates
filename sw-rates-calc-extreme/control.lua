@@ -5,6 +5,8 @@ local sheet = require("scripts.sheet")
 local handler = require("__core__.lualib.event_handler")
 local flib_gui = require("__flib__.gui")
 
+local entity_tracker = require("__sw-entity-tracker__.interface")
+
 handler.add_libraries({
     flib_gui,
     gui
@@ -60,6 +62,15 @@ script.on_event({
     defines.events.on_player_alt_selected_area,
     defines.events.on_player_alt_reverse_selected_area
 }, on_player_selected_area)
+
+entity_tracker.on_unit_number_changed(function(event)
+    local from_unit_number = event.from_unit_number
+    local entity = event.entity
+    if (selected_entities[from_unit_number]) then
+        selected_entities[from_unit_number] = nil
+        selected_entities[entity.unit_number] = entity
+    end
+end)
 
 ---@param e ConfigurationChangedData
 local function on_configuration_changed(e)

@@ -3,6 +3,8 @@ Version: 0.3.3
 Date: ????
   Features:
     - Show warnings
+  Bugfixes:
+    - No longer loses track of selected entities when they are built by construction bots
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.2
 Date: 2025-10-23

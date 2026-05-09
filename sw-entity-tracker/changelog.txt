@@ -1,0 +1,12 @@
+---------------------------------------------------------------------------------------------------
+Version: 0.1.0
+Date: ????
+  Features:
+    - Provides sw-entity-tracker-unit-number-changed event:
+    - Raised when ghost is built by player
+    - Raised when ghost is built by construction bot
+    - Raised when ghost deconstruction is undone
+    - Raised when ghost construction is redone
+    - Raised when ghost is upgraded by player (not via upgrade planner)
+    - Raised when entity is upgraded by player
+    - Raised when entity is upgraded by construction bot
