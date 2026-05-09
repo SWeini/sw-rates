@@ -3,7 +3,13 @@ do
     ---@field type "generator"
     ---@field entity LuaEntityPrototype
     ---@field quality LuaQualityPrototype
+    ---@field fluid? LuaFluidPrototype
     ---@field temperature number
+end
+
+do
+    ---@class (exact) Rates.Configuration.Annotation.GeneratorInputFluidUnknown : Rates.Configuration.Annotation.Base
+    ---@field type "generator/input-fluid-unknown"
 end
 
 do
@@ -30,7 +36,7 @@ end
 
 ---@param conf Rates.Configuration.Generator
 logic.get_id = function(conf)
-    return tostring(conf.temperature)
+    return (conf.fluid and conf.fluid.name or "<no-fluid>") .. tostring(conf.temperature)
 end
 
 ---@param conf Rates.Configuration.Generator
@@ -44,7 +50,7 @@ end
 
 ---@param conf Rates.Configuration.Generator
 logic.get_production = function(conf, result, options)
-    local fluid = get_fluids(conf.entity).input
+    local fluid = conf.fluid
 
     if (fluid == nil or conf.entity.scale_fluid_usage) then
         return
@@ -84,7 +90,13 @@ logic.get_production = function(conf, result, options)
 end
 
 logic.gui_annotation = function(annotation, conf)
-    if (annotation.type == "generator/input-fluid-temperature-unknown") then
+    if (annotation.type == "generator/input-fluid-unknown") then
+        ---@type Rates.Gui.AnnotationDescription
+        return {
+            text = { "sw-rates-annotation.generator-input-fluid-unknown" },
+            severity = "error"
+        }
+    elseif (annotation.type == "generator/input-fluid-temperature-unknown") then
         local fluids = get_fluids(conf.entity)
         ---@type Rates.Gui.AnnotationDescription
         return {
@@ -135,16 +147,22 @@ logic.get_from_entity = function(entity, options)
     local fluids = get_fluids(options.entity)
     local temperature = options.entity.maximum_temperature or fluids.input.default_temperature
     local temperature_set = false
+    local configured_fluid = fluids.input
     if (entity.type ~= "entity-ghost") then
         local fluid = entity.fluidbox[1]
         if (fluid) then
             temperature = fluid.temperature --[[@as number]]
             temperature_set = true
+            if (configured_fluid == nil) then
+                configured_fluid = prototypes.fluid[fluid.name]
+            end
         end
     end
 
     local annotations = nil ---@type Rates.Configuration.Annotation[]?
-    if (not temperature_set and not options.entity.burns_fluid) then
+    if (not fluids.input and not configured_fluid) then
+        annotations = { { type = "generator/input-fluid-unknown" } }
+    elseif (not temperature_set and not options.entity.burns_fluid) then
         annotations = { { type = "generator/input-fluid-temperature-unknown" } }
     end
 
@@ -155,6 +173,7 @@ logic.get_from_entity = function(entity, options)
         type = nil, ---@diagnostic disable-line: assign-type-mismatch
         entity = options.entity,
         quality = options.quality,
+        fluid = configured_fluid,
         temperature = temperature,
         annotations = annotations
     }
