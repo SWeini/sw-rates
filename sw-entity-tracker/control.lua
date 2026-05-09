@@ -1,4 +1,47 @@
 local interface = require("interface")
+local bplib = require("__bplib__.blueprint")
+local BlueprintBuild = bplib.BlueprintBuild
+
+local tag_name_ghost_unit_number = "sw-ghost-unit-number"
+
+script.on_event(defines.events.on_object_destroyed, function(event)
+    local deathrattles = storage.deathrattles ---@type {[uint64]: {entities: LuaEntity[]}}
+    if (not deathrattles) then
+        return
+    end
+    local metadata = deathrattles[event.registration_number]
+    deathrattles[event.registration_number] = nil
+    if (not metadata) then
+        return
+    end
+
+    local entities = metadata.entities
+    if (not entities) then
+        return
+    end
+
+    for _, entity in ipairs(entities) do
+        if (entity.valid and entity.type == "entity-ghost") then
+            local tags = entity.tags or {}
+            tags[tag_name_ghost_unit_number] = entity.unit_number
+            entity.tags = tags
+        end
+    end
+end)
+
+---@return uint64
+local function create_deathrattle()
+    local inv = storage.script_inventory
+    if (not inv) then
+        inv = game.create_inventory(1)
+        storage.script_inventory = inv
+    end
+
+    inv.insert { name = "coin", health = 0.5 }
+    local num = script.register_on_object_destroyed(inv[1].item)
+    inv.clear()
+    return num
+end
 
 ---@param entity LuaEntity
 ---@param from_unit_number uint64
@@ -7,7 +50,6 @@ local function raise_unit_number_changed(entity, from_unit_number)
         { entity = entity, from_unit_number = from_unit_number })
 end
 
-local tag_name_ghost_unit_number = "sw-ghost-unit-number"
 
 ---@alias EntityMiningData { tick: uint32, surface: LuaSurface, position: MapPosition.0, prototype: LuaEntityPrototype, quality: LuaQualityPrototype, unit_number: integer }
 local last_player_mining_events = {} ---@type { [uint32]: EntityMiningData }
@@ -143,4 +185,32 @@ script.on_event(defines.events.on_robot_mined_entity, function(event)
         unit_number = entity.unit_number
     }
     last_robot_mining_events[event.robot.unit_number] = mining_event
+end)
+
+script.on_event(defines.events.on_pre_build, function(event)
+    local bp_build = BlueprintBuild:new(event)
+    if not bp_build then
+        return
+    end
+
+    local overlap_map = bp_build:map_blueprint_indices_to_overlapping_entities()
+    if (not overlap_map) then
+        return
+    end
+
+    local overwritten_ghosts = {} ---@type LuaEntity[]
+    for _, entity in pairs(overlap_map) do
+        if (entity.type == "entity-ghost") then
+            overwritten_ghosts[#overwritten_ghosts + 1] = entity
+        end
+    end
+
+    if (#overwritten_ghosts > 0) then
+        local deathrattles = storage.deathrattles ---@type {[uint64]: {entities: LuaEntity[]}}
+        if (not deathrattles) then
+            deathrattles = {}
+            storage.deathrattles = deathrattles
+        end
+        deathrattles[create_deathrattle()] = { entities = overwritten_ghosts }
+    end
 end)
