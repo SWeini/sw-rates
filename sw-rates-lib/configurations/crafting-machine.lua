@@ -414,9 +414,70 @@ logic.get_from_entity = function(entity, options)
 
     local recipe, recipe_quality = get_recipe(entity)
 
+    if (options.type == "furnace" and recipe == nil and options.analyzer_inputs) then
+        local prototype = options.entity
+        local fluid_set = {} ---@type Rates.Analyzer.FluidSet
+        local fluid_boxes = options.analyzer_inputs.fluid_boxes
+        if (fluid_boxes) then
+            local offset = prototype.fluid_energy_source_prototype and 1 or 0
+            for index, fluids in pairs(fluid_boxes) do
+                if (prototype.fluidbox_prototypes[index + offset].production_type == "input") then
+                    for id, fluid in pairs(fluids) do
+                        fluid_set[id] = fluid
+                    end
+                end
+            end
+        end
+
+        local fluid_names = {}
+        for _, fluid in pairs(fluid_set) do
+            fluid_names[#fluid_names + 1] = fluid.fluid.name
+        end
+
+        local all_recipes = prototypes.get_recipe_filtered { { filter = "has-ingredient-fluid", elem_filters = { { filter = "name", name = fluid_names } } } }
+        local possible_recipes = {} ---@table<string, LuaRecipePrototype>
+        for name, possible_recipe in pairs(all_recipes) do
+            ---@cast possible_recipe LuaRecipePrototype
+            if (can_craft(prototype, possible_recipe)) then
+                if (#possible_recipe.ingredients == 1) then
+                    possible_recipes[name] = possible_recipe
+                end
+            end
+        end
+
+        local first_name, first_recipe = next(possible_recipes)
+        if (first_name ~= nil and next(possible_recipes, first_name) == nil) then
+            recipe = first_recipe
+            recipe_quality = prototypes.quality.normal
+        end
+    end
+
     if (recipe and recipe_quality) then
         local temperatures = nil ---@type table<string, string>?
-        if (entity.type ~= "entity-ghost") then
+        if (options.analyzer_inputs) then
+            local fb = options.analyzer_inputs.fluid_boxes
+            if (fb) then
+                local offset = options.entity.fluid_energy_source_prototype and 1 or 0
+                for i, ingredient in ipairs(recipe.ingredients) do
+                    if (ingredient.type == "fluid") then ---@cast ingredient Ingredient.fluid
+                        local temperature = nil
+                        local ambiguous = false
+                        for _, temp in pairs(fb[i + offset] or {}) do
+                            if (temp.fluid.name == ingredient.name) then
+                                if (temperature) then
+                                    ambiguous = true
+                                end
+                                temperature = temp.temperature
+                            end
+                        end
+                        if (temperature and not ambiguous) then
+                            temperatures = temperatures or {}
+                            temperatures["ingredient-" .. i] = "fluid/" .. ingredient.name .. "/" .. temperature
+                        end
+                    end
+                end
+            end
+        elseif (entity.type ~= "entity-ghost") then
             for i, ingredient in ipairs(recipe.ingredients) do
                 if (ingredient.type == "fluid") then ---@cast ingredient Ingredient.fluid
                     local temp = get_fluid_selected_input_temperature(entity.fluidbox, ingredient)
@@ -447,6 +508,67 @@ logic.get_from_entity = function(entity, options)
 
         if (temperatures) then
             return meta.with_selection(result, temperatures)
+        end
+
+        return result
+    end
+end
+
+logic.analyze_flow = function(entity, prototype, inputs)
+    if (prototype.type ~= "assembling-machine" and prototype.type ~= "furnace" and prototype.type ~= "rocket-silo") then
+        return
+    end
+
+    local recipe, recipe_quality = get_recipe(entity)
+
+    if (prototype.type == "furnace" and recipe == nil) then
+        ---@type Rates.Analyzer.EntityOutputs
+        local result = {
+            fluid_box_outputs = {},
+            required_fluid_box_inputs = {}
+        }
+
+        local offset = prototype.fluid_energy_source_prototype and 1 or 0
+
+        for i, fb_prototype in ipairs(prototype.fluidbox_prototypes) do
+            if (fb_prototype.production_type == "input") then
+                result.required_fluid_box_inputs[i + offset] = "on-change"
+            end
+        end
+
+        return result
+    end
+
+    if (recipe and recipe_quality) then
+        ---@type Rates.Analyzer.EntityOutputs
+        local result = {
+            fluid_box_outputs = {},
+            required_fluid_box_inputs = {}
+        }
+        local index = 0
+        if (prototype.fluid_energy_source_prototype) then
+            index = index + 1
+        end
+
+        for _, ingredient in ipairs(recipe.ingredients) do
+            if (ingredient.type == "fluid") then
+                index = index + 1
+                local fluid = prototypes.fluid[ingredient.name]
+                local temperature = { min = ingredient.minimum_temperature, max = ingredient.maximum_temperature }
+                local temps = generated_temperatures.get_generated_fluid_temperatures(fluid, temperature)
+                if (#temps > 1) then
+                    result.required_fluid_box_inputs[index] = "once"
+                end
+            end
+        end
+
+        for _, product in ipairs(recipe.products) do
+            if (product.type == "fluid") then
+                index = index + 1
+                local fluid = prototypes.fluid[product.name]
+                result.fluid_box_outputs[index] =
+                    configuration.build_fluid_set(fluid, product.temperature or fluid.default_temperature)
+            end
         end
 
         return result

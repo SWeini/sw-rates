@@ -146,12 +146,59 @@ logic.get_from_entity = function(entity, options)
         temperature = fluidbox.temperature --[[@as number]]
     end
 
+    if (options.analyzer_inputs and options.analyzer_inputs.fluid_boxes) then
+        local input = options.analyzer_inputs.fluid_boxes[1]
+        if (input) then
+            local count = table_size(input)
+            if (count == 1) then
+                _, f = next(input)
+                temperature = f.temperature
+            elseif (count > 1) then
+                local children = {} ---@type Rates.Configuration.FusionGenerator[]
+                for _, f in pairs(input) do
+                    children[#children + 1] = {
+                        type = "fusion-generator",
+                        entity = options.entity,
+                        quality = options.quality,
+                        temperature = f.temperature
+                    }
+                end
+                ---@type Rates.Configuration.Meta
+                return {
+                    type = "meta",
+                    children = children
+                }
+            end
+        end
+    end
+
     ---@type Rates.Configuration.FusionGenerator
     return {
         type = nil, ---@diagnostic disable-line: assign-type-mismatch
         entity = options.entity,
         quality = options.quality,
         temperature = temperature
+    }
+end
+
+logic.analyze_flow = function(entity, prototype, inputs)
+    if (prototype.type ~= "fusion-generator") then
+        return
+    end
+
+    local input_fluids = nil ---@type Rates.Analyzer.FluidSet
+    if (inputs.fluid_boxes) then
+        input_fluids = inputs.fluid_boxes[1]
+    end
+
+    local fluid = get_fluids(prototype)
+    ---@type Rates.Analyzer.EntityOutputs
+    return {
+        fluid_box_outputs = {
+            [1] = input_fluids,
+            [2] = configuration.build_fluid_set(fluid.output, fluid.output.default_temperature)
+        },
+        required_fluid_box_inputs = { [1] = "on-change" }
     }
 end
 

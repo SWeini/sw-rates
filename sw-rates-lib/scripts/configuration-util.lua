@@ -6,6 +6,28 @@ local energy_source = require("energy-source")
 local util = {
 }
 
+---@param set Rates.Analyzer.FluidSet
+---@param fluid LuaFluidPrototype
+---@param temperature number
+---@return boolean
+function util.add_fluid_to_set(set, fluid, temperature)
+    local id = fluid.name .. "/" .. temperature
+    if (set[id]) then
+        return false
+    end
+
+    set[id] = { fluid = fluid, temperature = temperature }
+    return true
+end
+
+---@param fluid LuaFluidPrototype
+---@param temperature number
+---@return Rates.Analyzer.FluidSet
+function util.build_fluid_set(fluid, temperature)
+    local id = fluid.name .. "/" .. temperature
+    return { [id] = { fluid = fluid, temperature = temperature } }
+end
+
 ---@param fluids table<string, table<number, true>>
 ---@param fluid LuaFluidPrototype
 ---@param temperature number?

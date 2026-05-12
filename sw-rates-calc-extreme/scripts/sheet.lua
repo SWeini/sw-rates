@@ -24,6 +24,7 @@
 
 local api = require("__sw-rates-lib__.api-usage")
 local simplex = require("simplex")
+local analyzer = require("__sw-rates-lib__.scripts.flow-analyzer")
 
 ---@param amounts Rates.Configuration.Amount[]
 ---@return table<string, { node: Rates.Node, amount: number }>
@@ -47,6 +48,13 @@ end
 ---@param entities LuaEntity[]
 ---@return Rates.Sheet
 local function build_from_entities(location, entities)
+    local analyzer_context = analyzer.create_context()
+    for _, entity in ipairs(entities) do
+        analyzer.add_required_entity(analyzer_context, entity)
+    end
+
+    analyzer.analyze_full(analyzer_context)
+
     local rows = {} ---@type table<string, Rates.Row>
     local nodes = {} ---@type table<string, { node: Rates.Node, has_positive: true?, has_negative: true? }>
     local use_pollution = game.map_settings.pollution.enabled
@@ -95,7 +103,8 @@ local function build_from_entities(location, entities)
     end
 
     for _, entity in ipairs(entities) do
-        local conf = api.configuration.get_from_entity(entity, { use_ghosts = true })
+        local inputs = analyzer.get_entity_inputs(analyzer_context, entity)
+        local conf = api.configuration.get_from_entity(entity, { use_ghosts = true, analyzer_inputs = inputs })
         if (conf) then
             local force = entity.force --[[@as LuaForce]]
             if (conf.type == "meta" and #conf.children > 1) then

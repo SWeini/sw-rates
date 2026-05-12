@@ -109,6 +109,9 @@ end
 
 logic.gui_annotation = function(annotation, conf)
     if (annotation.type == "boiler/input-fluid-temperature-unknown") then
+        if (conf.type == "meta") then
+            conf = conf.children[1]
+        end
         local fluids = get_fluids(conf.entity)
         ---@type Rates.Gui.AnnotationDescription
         return {
@@ -194,12 +197,30 @@ logic.get_from_entity = function(entity, options)
     local temperature = fluid.input.default_temperature
     local fluidbox = entity.fluidbox[1]
     local annotations = nil ---@type Rates.Configuration.Annotation[]?
+
     if (fluidbox) then
         temperature = fluidbox.temperature --[[@as number]]
     else
         annotations = {
             { type = "boiler/input-fluid-temperature-unknown" } --[[@as Rates.Configuration.Annotation.BoilerInputFluidTemperatureUnknown]]
         }
+    end
+
+    if (options.analyzer_inputs) then
+        local fluid_boxes = options.analyzer_inputs.fluid_boxes
+        if (fluid_boxes) then
+            local fb1 = fluid_boxes[1]
+            if (fb1) then
+                local first_id, first_temp = next(fb1)
+                if (first_id and next(fb1, first_id) == nil) then
+                    ---@cast first_temp -nil
+                    if (first_temp.fluid.name == fluid.input.name) then
+                        temperature = first_temp.temperature
+                        annotations = nil
+                    end
+                end
+            end
+        end
     end
 
     ---@type Rates.Configuration.Boiler
@@ -209,6 +230,23 @@ logic.get_from_entity = function(entity, options)
         quality = options.quality,
         temperature = temperature,
         annotations = annotations
+    }
+end
+
+logic.analyze_flow = function(entity, prototype, inputs)
+    if (prototype.type ~= "boiler") then
+        return
+    end
+
+    if (not is_supported(prototype)) then
+        return
+    end
+
+    local fluids = get_fluids(prototype)
+    ---@type Rates.Analyzer.EntityOutputs
+    return {
+        fluid_box_outputs = { [2] = configuration.build_fluid_set(fluids.output, prototype.target_temperature) },
+        required_fluid_box_inputs = { [1] = "once" }
     }
 end
 

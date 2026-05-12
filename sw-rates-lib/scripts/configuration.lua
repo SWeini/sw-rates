@@ -37,6 +37,8 @@
 ---@field get_from_entity? fun(entity: LuaEntity, options: Rates.Configuration.FromEntityOptions.Internal): Rates.Configuration?
 ---Used to modify the result of get_from_entity
 ---@field modify_from_entity? fun(entity: LuaEntity, conf: Rates.Configuration, options: Rates.Configuration.FromEntityOptions.Internal): Rates.Configuration?
+---Used to analyze fluid and item flow
+---@field analyze_flow? fun(entity: LuaEntity, prototype: LuaEntityPrototype, inputs: Rates.Analyzer.EntityInputs): Rates.Analyzer.EntityOutputs?
 
 ---@class (exact) Rates.Configuration.Type.Stats
 ---@field priority? number defaults to 0
@@ -67,9 +69,11 @@
 
 ---@class (exact) Rates.Configuration.FromEntityOptions
 ---@field use_ghosts? boolean defaults to true (use ghosts and everything else that will be built eventually)
+---@field analyzer_inputs? Rates.Analyzer.EntityInputs
 
 ---@class (exact) Rates.Configuration.FromEntityOptions.Internal
 ---@field use_ghosts boolean
+---@field analyzer_inputs? Rates.Analyzer.EntityInputs
 ---@field type string type of the entity
 ---@field entity LuaEntityPrototype prototype of the entity
 ---@field quality LuaQualityPrototype quality of the entity
@@ -147,6 +151,7 @@ local function register_one(type)
         end,
         get_from_entity = type.get_from_entity,
         modify_from_entity = type.modify_from_entity,
+        analyze_flow = type.analyze_flow,
         get_id = type.get_id,
         gui_recipe = type.gui_recipe,
         gui_entity = type.gui_entity,
@@ -371,6 +376,14 @@ local function get_annotations(conf)
         end
     end
 
+    if (conf.type == "meta") then
+        for _, child in ipairs(conf.children) do
+            for _, annotation in ipairs(child.annotations or {}) do
+                result[#result + 1] = annotation
+            end
+        end
+    end
+
     for _, entry in ipairs(registry.get_all_types()) do
         local new_annotations = nil ---@type Rates.Configuration.Annotation[]?
         if (entry.logic) then
@@ -553,6 +566,7 @@ local function get_from_entity(entity, options)
     ---@type Rates.Configuration.FromEntityOptions.Internal
     local options = {
         use_ghosts = use_ghosts,
+        analyzer_inputs = options.analyzer_inputs,
         type = data.entity.type,
         entity = data.entity,
         quality = data.quality
@@ -632,6 +646,37 @@ local function get_from_entity(entity, options)
     return result
 end
 
+---@param entity LuaEntity
+---@param inputs Rates.Analyzer.EntityInputs
+---@return Rates.Analyzer.EntityOutputs
+local function analyze_flow(entity, inputs)
+    ---@type Rates.Analyzer.EntityOutputs?
+    local result = nil
+    local prototype = util.get_useful_entity_data(entity, true).entity
+    for _, entry in ipairs(registry.get_all_types()) do
+        if (entry.logic) then
+            result = entry.logic.analyze_flow and
+                entry.logic.analyze_flow(entity, prototype, inputs)
+        else
+            local interface = interface_name(entry.type)
+            result = remote.interfaces[interface].analyze_flow and
+                remote.call(interface, "analyze_flow", entity, prototype, inputs) --[[@as Rates.Analyzer.EntityOutputs?]]
+        end
+
+        if (result) then
+            break
+        end
+    end
+
+
+    if (not result) then
+        result = {}
+    end
+
+    energy_source.analyze_flow(entity, prototype, inputs, result)
+    return result
+end
+
 return {
     register = register,
     get_id = get_id,
@@ -644,4 +689,5 @@ return {
     get_progression = get_progression,
     get_basic_configurations = get_basic_configurations,
     get_from_entity = get_from_entity,
+    analyze_flow = analyze_flow,
 }

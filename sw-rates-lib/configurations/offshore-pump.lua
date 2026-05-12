@@ -167,4 +167,20 @@ logic.get_from_entity = function(entity, options)
     }
 end
 
+logic.analyze_flow = function(entity, prototype, inputs)
+    if (prototype.type ~= "offshore-pump") then
+        return
+    end
+
+    local fluid = get_filtered_fluid(prototype)
+    if (not fluid) then
+        fluid = prototypes.fluid[entity.get_fluid_source_fluid()]
+    end
+
+    ---@type Rates.Analyzer.EntityOutputs
+    return {
+        fluid_box_outputs = { [1] = configuration.build_fluid_set(fluid, fluid.default_temperature) }
+    }
+end
+
 return logic

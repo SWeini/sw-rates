@@ -250,4 +250,28 @@ logic.get_from_entity = function(entity, options)
     }
 end
 
+logic.analyze_flow = function(entity, prototype, inputs)
+    if (prototype.type ~= "fusion-reactor") then
+        return
+    end
+
+    local neighbours = count_neighbours(entity, true)
+
+    local fluids = get_fluids(prototype)
+    local target_temperature = prototype.target_temperature or fluids.output.default_temperature
+
+    local neighbour_bonus = prototype.neighbour_bonus
+    local output_temperature = target_temperature * (1 + neighbours * neighbour_bonus)
+    if (output_temperature > fluids.output.max_temperature) then
+        output_temperature = fluids.output.max_temperature
+    end
+
+    ---@type Rates.Analyzer.EntityOutputs
+    return {
+        fluid_box_outputs = {
+            [2] = configuration.build_fluid_set(fluids.output, output_temperature)
+        }
+    }
+end
+
 return logic

@@ -77,6 +77,17 @@ local function get_fuel_from_burner(entity, prototype)
     end
 end
 
+---@param prototype LuaEntityPrototype
+---@return integer
+local function get_fuel_fluidbox_index(prototype)
+    local type = prototype.type
+    if (type == "boiler") then
+        return 3
+    end
+
+    return 1
+end
+
 ---@param fluidbox LuaFluidBox
 ---@param index integer
 ---@return Fluid?
@@ -110,17 +121,27 @@ local function get_from_entity(entity, conf, options)
 
     local fluid_energy_source = prototype.fluid_energy_source_prototype
     if (fluid_energy_source) then
-        if (entity.type == "entity-ghost") then
+        local fluid ---@type LuaFluidPrototype
+        local temperature ---@type number
+        local fluidbox = entity.type ~= "entity-ghost" and get_fluid_with_index(entity.fluidbox, 1)
+        if (fluidbox) then
+            fluid = prototypes.fluid[fluidbox.name]
+            temperature = fluidbox.temperature ---@cast temperature -nil
+        elseif (options.analyzer_inputs) then
+            local index = get_fuel_fluidbox_index(prototype)
+            local f = (options.analyzer_inputs.fluid_boxes or {})[index] or {}
+            local first_id, first_temp = next(f)
+            if (first_id and next(f, first_id) == nil) then
+                ---@cast first_temp -nil
+                fluid = first_temp.fluid
+                temperature = first_temp.temperature
+            else
+                return
+            end
+        else
             return
         end
 
-        local fluidbox = get_fluid_with_index(entity.fluidbox, 1)
-        if (not fluidbox) then
-            return
-        end
-
-        local fluid = prototypes.fluid[fluidbox.name]
-        local temperature = fluidbox.temperature ---@cast temperature -nil
         if (fluid_energy_source.burns_fluid) then
             if (fluid.fuel_value > 0) then
                 ---@type Rates.Configuration.FluidFuel
@@ -140,6 +161,21 @@ local function get_from_entity(entity, conf, options)
                 }
             end
         end
+    end
+end
+
+---@param entity LuaEntity
+---@param prototype LuaEntityPrototype
+---@param inputs Rates.Analyzer.EntityInputs
+---@param outputs Rates.Analyzer.EntityOutputs
+local function analyze_flow(entity, prototype, inputs, outputs)
+    local fluid_energy_source = prototype.fluid_energy_source_prototype
+    if (fluid_energy_source) then
+        if (not outputs.required_fluid_box_inputs) then
+            outputs.required_fluid_box_inputs = {}
+        end
+        local index = get_fuel_fluidbox_index(prototype)
+        outputs.required_fluid_box_inputs[index] = "once"
     end
 end
 
@@ -449,6 +485,7 @@ end
 
 return {
     get_from_entity = get_from_entity,
+    analyze_flow = analyze_flow,
     get_production = get_production,
     apply_fuel_to_production = apply_fuel_to_production,
 }

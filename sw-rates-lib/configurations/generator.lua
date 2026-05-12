@@ -166,6 +166,23 @@ logic.get_from_entity = function(entity, options)
         annotations = { { type = "generator/input-fluid-temperature-unknown" } }
     end
 
+    if (options.analyzer_inputs) then
+        local fluid_boxes = options.analyzer_inputs.fluid_boxes
+        if (fluid_boxes) then
+            local fb1 = fluid_boxes[1]
+            if (fb1) then
+                -- game.print("generator has analyzed input: " .. serpent.line(fb1))
+                local first_id, first_temp = next(fb1)
+                if (first_id and next(fb1, first_id) == nil) then
+                    ---@cast first_temp -nil
+                    configured_fluid = first_temp.fluid
+                    temperature = first_temp.temperature
+                    annotations = nil
+                end
+            end
+        end
+    end
+
     -- TODO: return all possible temperatures
 
     ---@type Rates.Configuration.Generator
@@ -176,6 +193,17 @@ logic.get_from_entity = function(entity, options)
         fluid = configured_fluid,
         temperature = temperature,
         annotations = annotations
+    }
+end
+
+logic.analyze_flow = function(entity, prototype, inputs)
+    if (prototype.type ~= "generator") then
+        return
+    end
+
+    ---@type Rates.Analyzer.EntityOutputs
+    return {
+        required_fluid_box_inputs = { [1] = "once" }
     }
 end
 
