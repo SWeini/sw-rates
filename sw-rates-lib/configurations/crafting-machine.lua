@@ -457,12 +457,13 @@ logic.get_from_entity = function(entity, options)
         if (options.analyzer_inputs) then
             local fb = options.analyzer_inputs.fluid_boxes
             if (fb) then
-                local offset = options.entity.fluid_energy_source_prototype and 1 or 0
+                local index = options.entity.fluid_energy_source_prototype and 1 or 0
                 for i, ingredient in ipairs(recipe.ingredients) do
                     if (ingredient.type == "fluid") then ---@cast ingredient Ingredient.fluid
+                        index = index + 1
                         local temperature = nil
                         local ambiguous = false
-                        for _, temp in pairs(fb[i + offset] or {}) do
+                        for _, temp in pairs(fb[index] or {}) do
                             if (temp.fluid.name == ingredient.name) then
                                 if (temperature) then
                                     ambiguous = true
@@ -477,7 +478,8 @@ logic.get_from_entity = function(entity, options)
                     end
                 end
             end
-        elseif (entity.type ~= "entity-ghost") then
+        end
+        if (entity.type ~= "entity-ghost") then
             for i, ingredient in ipairs(recipe.ingredients) do
                 if (ingredient.type == "fluid") then ---@cast ingredient Ingredient.fluid
                     local temp = get_fluid_selected_input_temperature(entity.fluidbox, ingredient)
