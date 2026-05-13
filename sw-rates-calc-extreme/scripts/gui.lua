@@ -121,7 +121,11 @@ local function resize_main_window(player)
     if (storage.gui) then
         local wnd_main = storage.gui.wnd_main
         if (wnd_main) then
-            wnd_main.style.maximal_height = get_max_height(player)
+            if (wnd_main.valid) then
+                wnd_main.style.maximal_height = get_max_height(player)
+            else
+                close_main_window(player)
+            end
         end
     end
 end
