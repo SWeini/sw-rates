@@ -49,8 +49,12 @@ end
 ---@return Rates.Sheet
 local function build_from_entities(location, entities)
     local analyzer_context = analyzer.create_context()
+    local buildings = {} ---@type LuaEntity[]
     for _, entity in ipairs(entities) do
-        analyzer.add_required_entity(analyzer_context, entity)
+        if (not entity.to_be_deconstructed()) then
+            analyzer.add_required_entity(analyzer_context, entity)
+            buildings[#buildings + 1] = entity
+        end
     end
 
     analyzer.analyze_full(analyzer_context)
@@ -102,7 +106,7 @@ local function build_from_entities(location, entities)
         return row
     end
 
-    for _, entity in ipairs(entities) do
+    for _, entity in ipairs(buildings) do
         local inputs = analyzer.get_entity_inputs(analyzer_context, entity)
         local conf = api.configuration.get_from_entity(entity, { use_ghosts = true, analyzer_inputs = inputs })
         if (conf) then
