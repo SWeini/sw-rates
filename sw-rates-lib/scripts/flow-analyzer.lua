@@ -233,6 +233,126 @@ end
 local all_lanes = { "L", "R" }
 
 ---@param dirty_entities table<uint64, LuaEntity>
+---@param dirty_belts table<uint64, LuaEntity>
+---@param context Rates.Analyzer.Context
+---@param entity LuaEntity
+---@param force_input_detection boolean
+local function belt_trace_backwards(dirty_entities, dirty_belts, context, entity, force_input_detection)
+    local type = base.get_entity_type(entity)
+    local unit_number = entity.unit_number ---@cast unit_number -nil
+
+    local changed = false
+    local outputs = flow_item.belt_output_connections(entity, type)
+    for from, to in pairs(outputs) do
+        local to_segment_id = context.item_locations[to]
+        if (to_segment_id) then
+            if (not context.item_locations[from]) then
+                changed = true
+            end
+            local from_segment = get_item_segment(dirty_entities, context, from)
+            from_segment.filtered_forward_segments[unit_number] = {
+                entity = entity,
+                filter = nil,
+                pass = { [to] = context.item_segments[to_segment_id] },
+                fail = {}
+            }
+        end
+    end
+    local inner = flow_item.belt_inner_connections(entity, type)
+    if (table_size(inner) > 0) then
+        changed = false
+    end
+    for from, filter in pairs(inner) do
+        local pass = {} ---@type table<string, Rates.Analyzer.ItemSegment>
+        local fail = {} ---@type table<string, Rates.Analyzer.ItemSegment>
+        local has_target = false
+        for _, id in ipairs(filter.pass) do
+            local segment_id = context.item_locations[id]
+            if (segment_id) then
+                pass[id] = context.item_segments[segment_id]
+                has_target = true
+            end
+        end
+        for _, id in ipairs(filter.fail or {}) do
+            local segment_id = context.item_locations[id]
+            if (segment_id) then
+                fail[id] = context.item_segments[segment_id]
+                has_target = true
+            end
+        end
+        if (has_target) then
+            if (not context.item_locations[from]) then
+                changed = true
+            end
+            local from_segment = get_item_segment(dirty_entities, context, from)
+            from_segment.filtered_forward_segments[unit_number] = {
+                entity = entity,
+                filter = filter.filter,
+                pass = pass,
+                fail = fail
+            }
+        end
+    end
+    if (changed or force_input_detection) then
+        for _, input in ipairs(entity.belt_neighbours.inputs) do
+            dirty_belts[input.unit_number] = input
+        end
+        if (type == "underground-belt" and entity.belt_to_ground_type == "output") then
+            local input = entity.neighbours
+            if (input) then
+                dirty_belts[input.unit_number] = input
+            end
+        end
+    end
+    if (type == "loader" or type == "loader-1x1") then
+        if (entity.loader_type == "input") then
+            local to_entity = flow_item.loader_get_container(entity)
+            if (to_entity) then
+                local drop_id = flow_item.get_item_placer_drop_location(entity)
+                local drop_segment_id = context.item_locations[drop_id]
+                local drop_segment = context.item_segments[drop_segment_id]
+                for _, lane in ipairs(all_lanes) do
+                    get_item_segment(dirty_entities, context, flow_item.item_location_belt(entity, lane)).filtered_forward_segments[unit_number] = {
+                        entity = entity,
+                        filter = nil,
+                        pass = { [drop_id] = drop_segment },
+                        fail = {}
+                    }
+                end
+            end
+        else
+            local pickup_entity = flow_item.loader_get_container(entity)
+            if (pickup_entity) then
+                local pickup_id = flow_item.item_location_entity(pickup_entity, "O")
+                local pickup_segment = get_item_segment(dirty_entities, context, pickup_id)
+                local filter1, filter2 ---@type Rates.Analyzer.ItemFilter?
+                if (base.get_entity_prototype(entity).per_lane_filters) then
+                    filter1, filter2 = flow_item.loader_get_lane_filters(entity)
+                else
+                    filter1 = flow_item.loader_get_filter(entity)
+                    filter2 = filter1
+                end
+
+                for _, lane in ipairs(all_lanes) do
+                    local to_id = flow_item.item_location_belt(entity, lane)
+                    local to_segment_id = context.item_locations[to_id]
+                    if (to_segment_id) then
+                        local to_segment = context.item_segments[to_segment_id]
+                        pickup_segment.filtered_forward_segments[unit_number .. lane] = {
+                            entity = entity,
+                            filter = lane == "L" and filter1 or filter2,
+                            pass = { [to_id] = to_segment },
+                            fail = {}
+                        }
+                    end
+                end
+                dirty_entities[pickup_entity.unit_number] = pickup_entity
+            end
+        end
+    end
+end
+
+---@param dirty_entities table<uint64, LuaEntity>
 ---@param context Rates.Analyzer.Context
 ---@param entity LuaEntity
 ---@param force_input_detection boolean
@@ -281,115 +401,19 @@ local function trace_backwards(dirty_entities, context, entity, force_input_dete
                 }
             end
         end
-    elseif (type == "transport-belt" or type == "underground-belt" or type == "linked-belt" or type == "lane-splitter" or type == "splitter" or type == "loader" or type == "loader-1x1") then
-        local changed = false
-        local outputs = flow_item.belt_output_connections(entity, type)
-        for from, to in pairs(outputs) do
-            local to_segment_id = context.item_locations[to]
-            if (to_segment_id) then
-                if (not context.item_locations[from]) then
-                    changed = true
-                end
-                local from_segment = get_item_segment(dirty_entities, context, from)
-                from_segment.filtered_forward_segments[unit_number] = {
-                    entity = entity,
-                    filter = nil,
-                    pass = { [to] = context.item_segments[to_segment_id] },
-                    fail = {}
-                }
-            end
-        end
-        local inner = flow_item.belt_inner_connections(entity, type)
-        if (table_size(inner) > 0) then
-            changed = false
-        end
-        for from, filter in pairs(inner) do
-            local pass = {} ---@type table<string, Rates.Analyzer.ItemSegment>
-            local fail = {} ---@type table<string, Rates.Analyzer.ItemSegment>
-            local has_target = false
-            for _, id in ipairs(filter.pass) do
-                local segment_id = context.item_locations[id]
-                if (segment_id) then
-                    pass[id] = context.item_segments[segment_id]
-                    has_target = true
-                end
-            end
-            for _, id in ipairs(filter.fail or {}) do
-                local segment_id = context.item_locations[id]
-                if (segment_id) then
-                    fail[id] = context.item_segments[segment_id]
-                    has_target = true
-                end
-            end
-            if (has_target) then
-                if (not context.item_locations[from]) then
-                    changed = true
-                end
-                local from_segment = get_item_segment(dirty_entities, context, from)
-                from_segment.filtered_forward_segments[unit_number] = {
-                    entity = entity,
-                    filter = filter.filter,
-                    pass = pass,
-                    fail = fail
-                }
-            end
-        end
-        if (changed or true) then
-            for _, input in ipairs(entity.belt_neighbours.inputs) do
-                dirty_entities[input.unit_number] = input
-            end
-            if (type == "underground-belt" and entity.belt_to_ground_type == "output") then
-                local input = entity.neighbours
-                if (input) then
-                    dirty_entities[input.unit_number] = input
-                end
-            end
-        end
-        if (type == "loader" or type == "loader-1x1") then
-            if (entity.loader_type == "input") then
-                local to_entity = flow_item.loader_get_container(entity)
-                if (to_entity) then
-                    local drop_id = flow_item.get_item_placer_drop_location(entity)
-                    local drop_segment_id = context.item_locations[drop_id]
-                    local drop_segment = context.item_segments[drop_segment_id]
-                    for _, lane in ipairs(all_lanes) do
-                        get_item_segment(dirty_entities, context, flow_item.item_location_belt(entity, lane)).filtered_forward_segments[unit_number] = {
-                            entity = entity,
-                            filter = nil,
-                            pass = { [drop_id] = drop_segment },
-                            fail = {}
-                        }
-                    end
-                end
-            else
-                local pickup_entity = flow_item.loader_get_container(entity)
-                if (pickup_entity) then
-                    local pickup_id = flow_item.item_location_entity(pickup_entity, "O")
-                    local pickup_segment = get_item_segment(dirty_entities, context, pickup_id)
-                    local filter1, filter2 ---@type Rates.Analyzer.ItemFilter?
-                    if (base.get_entity_prototype(entity).per_lane_filters) then
-                        filter1, filter2 = flow_item.loader_get_lane_filters(entity)
-                    else
-                        filter1 = flow_item.loader_get_filter(entity)
-                        filter2 = filter1
-                    end
+    elseif (flow_item.type_is_belt[type]) then
+        local dirty_belts = {} ---@type table<uint64, LuaEntity>
+        belt_trace_backwards(dirty_entities, dirty_belts, context, entity, true)
 
-                    for _, lane in ipairs(all_lanes) do
-                        local to_id = flow_item.item_location_belt(entity, lane)
-                        local to_segment_id = context.item_locations[to_id]
-                        if (to_segment_id) then
-                            local to_segment = context.item_segments[to_segment_id]
-                            pickup_segment.filtered_forward_segments[unit_number .. lane] = {
-                                entity = entity,
-                                filter = lane == "L" and filter1 or filter2,
-                                pass = { [to_id] = to_segment },
-                                fail = {}
-                            }
-                        end
-                    end
-                    dirty_entities[pickup_entity.unit_number] = pickup_entity
-                end
+        while (true) do
+            local belt_id, belt = next(dirty_belts)
+            if (belt_id == nil) then
+                break
             end
+
+            dirty_belts[belt_id] = nil
+            ---@cast belt -nil
+            belt_trace_backwards(dirty_entities, dirty_belts, context, belt, false)
         end
     elseif (type == "container" or type == "logistic-container" or type == "infinity-container") then
         local input_id = flow_item.item_location_entity(entity, "I")

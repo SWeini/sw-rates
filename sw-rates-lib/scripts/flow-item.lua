@@ -759,4 +759,5 @@ return {
     loader_get_lane_filters = loader_get_lane_filters,
     belt_output_connections = belt_output_connections,
     belt_inner_connections = belt_inner_connections,
+    type_is_belt = type_is_belt,
 }
