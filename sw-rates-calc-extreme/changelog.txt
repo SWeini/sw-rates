@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.7
+Date: 2026-05-16
+  Changes:
+    - Predict item on belts (and inserter/loader movement) for more precise results (experimental)
+---------------------------------------------------------------------------------------------------
 Version: 0.3.6
 Date: 2026-05-13
   Bugfixes:
