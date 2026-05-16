@@ -106,6 +106,9 @@ end
 ---@return Rates.Configuration.Fuel?
 local function get_from_entity(entity, conf, options)
     while (conf.type == "meta") do
+        if (conf.fuel) then
+            return
+        end
         conf = conf.children[1]
     end
 

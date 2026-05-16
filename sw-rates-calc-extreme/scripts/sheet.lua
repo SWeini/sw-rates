@@ -44,16 +44,43 @@ local function sum_amounts(amounts)
     return result
 end
 
+---@type table<string, true>
+local item_placer_types = {
+    ["inserter"] = true,
+    ["loader"] = true,
+    ["loader-1x1"] = true
+}
+
+---@type table<string, true>
+local vector_to_place_result_types = {
+    ["mining-drill"] = true,
+    ["assembling-machine"] = true,
+    ["furnace"] = true
+}
+
 ---@param location LuaSurface
 ---@param entities LuaEntity[]
 ---@return Rates.Sheet
 local function build_from_entities(location, entities)
     local analyzer_context = analyzer.create_context()
+
     local buildings = {} ---@type LuaEntity[]
     for _, entity in ipairs(entities) do
         if (not entity.to_be_deconstructed()) then
-            analyzer.add_required_entity(analyzer_context, entity)
-            buildings[#buildings + 1] = entity
+            local type = entity.type
+            if (type == "entity-ghost") then
+                type = entity.ghost_type
+            end
+
+            if (item_placer_types[type]) then
+                analyzer.add_item_placer(analyzer_context, entity)
+            else
+                analyzer.add_required_entity(analyzer_context, entity)
+                buildings[#buildings + 1] = entity
+                if (vector_to_place_result_types[type]) then
+                    analyzer.add_item_placer(analyzer_context, entity)
+                end
+            end
         end
     end
 

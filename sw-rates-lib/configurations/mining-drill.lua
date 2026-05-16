@@ -267,4 +267,89 @@ logic.get_from_entity = function(entity, options)
     }
 end
 
+logic.analyze_flow = function(entity, prototype, inputs)
+    if (prototype.type ~= "mining-drill") then
+        return
+    end
+
+    local resource
+
+    if (entity.type ~= "entity-ghost") then
+        local target = entity.mining_target
+        if (target) then
+            resource = target.prototype
+        end
+    end
+
+    if (not resource) then
+        local mining_area ---@type BoundingBox.0
+        if (support_mining_area) then
+            mining_area = entity.mining_area
+        else
+            local radius = prototype.get_mining_drill_radius(entity.quality)
+            local center = entity.position
+            mining_area = {
+                left_top = {
+                    x = center.x - radius,
+                    y = center.y - radius
+                },
+                right_bottom = {
+                    x = center.x + radius,
+                    y = center.y + radius
+                }
+            }
+        end
+        local resources_in_range = entity.surface.find_entities_filtered { type = "resource", area = mining_area }
+        for _, target in ipairs(resources_in_range) do
+            -- find_entities_filtered returns all colliding resources, but for mining drills the resource center needs to be inside the mining area
+            if (configuration.bbox_position_inside(target.position, mining_area)) then
+                local category = target.prototype.resource_category
+                if (prototype.resource_categories[category]) then
+                    resource = target.prototype
+                end
+            end
+        end
+    end
+
+    ---@type Rates.Analyzer.EntityOutputs
+    local result = {
+        fluid_box_outputs = {},
+        required_fluid_box_inputs = {},
+        items = {}
+    }
+
+    if (not resource) then
+        return result
+    end
+
+    local module_effects = configuration.get_useful_module_effects(entity, true)
+    configuration.filter_module_effects_receiver(module_effects, prototype.effect_receiver)
+    configuration.filter_module_effects_allowed(module_effects, prototype.allowed_effects)
+    configuration.filter_module_effects_category(module_effects, prototype.allowed_module_categories)
+
+    ---@type Rates.Configuration.MiningDrill
+    local conf = {
+        type = "mining-drill",
+        entity = prototype,
+        quality = entity.quality,
+        resource = resource,
+        module_effects = module_effects
+    }
+    local amounts = {} ---@type Rates.Configuration.Amount[]
+    logic.get_production(conf, amounts,
+        { apply_quality = true, force = entity.force --[[@as LuaForce]], surface = entity.surface })
+
+    for _, amount in ipairs(amounts) do
+        if (amount.amount > 0) then
+            local node = amount.node
+            if (node.type == "item") then
+                ---@cast node Rates.Node.Item
+                configuration.add_item_to_set(result.items, node.item, node.quality)
+            end
+        end
+    end
+
+    return result
+end
+
 return logic

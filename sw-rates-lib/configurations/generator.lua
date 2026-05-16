@@ -171,7 +171,6 @@ logic.get_from_entity = function(entity, options)
         if (fluid_boxes) then
             local fb1 = fluid_boxes[1]
             if (fb1) then
-                -- game.print("generator has analyzed input: " .. serpent.line(fb1))
                 local first_id, first_temp = next(fb1)
                 if (first_id and next(fb1, first_id) == nil) then
                     ---@cast first_temp -nil

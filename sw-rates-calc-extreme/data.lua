@@ -22,6 +22,9 @@ local type_filters = {
     "simple-entity-with-force",
     "solar-panel",
     "thruster",
+    "inserter",
+    "loader",
+    "loader-1x1"
 }
 
 ---@type data.SelectionToolPrototype

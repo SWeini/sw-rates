@@ -14,6 +14,7 @@ local progression = require("scripts.progression")
 local location = require("scripts.location")
 local generated_temperatures = require("scripts.generated-temperatures")
 local meta = require("meta")
+local energy_source = require("scripts.energy-source")
 
 local logic = { type = "crafting-machine" } ---@type Rates.Configuration.Type
 
@@ -407,6 +408,71 @@ logic.fill_progression = function(result, options)
     end
 end
 
+---@param prototype LuaEntityPrototype
+---@param inputs Rates.Analyzer.EntityInputs
+---@return { recipe: LuaRecipePrototype, quality: LuaQualityPrototype }[]
+local function get_furnace_recipes(prototype, inputs)
+    ---@type { recipe: LuaRecipePrototype, quality: LuaQualityPrototype }[]
+    local result = {}
+
+    local fluid_set = {} ---@type Rates.Analyzer.FluidSet
+    local fluid_boxes = inputs.fluid_boxes
+    if (fluid_boxes) then
+        local offset = prototype.fluid_energy_source_prototype and 1 or 0
+        for _, fb in ipairs(prototype.fluidbox_prototypes) do
+            if (fb.production_type == "input") then
+                fluid_set = fluid_boxes[1 + offset]
+            end
+        end
+    end
+
+    local fluid_names = {}
+    for _, fluid in pairs(fluid_set) do
+        fluid_names[#fluid_names + 1] = fluid.fluid.name
+    end
+
+    local fluid_only_recipes = prototypes.get_recipe_filtered { { filter = "has-ingredient-fluid", elem_filters = { { filter = "name", name = fluid_names } } } }
+    for name, possible_recipe in pairs(fluid_only_recipes) do
+        ---@cast possible_recipe LuaRecipePrototype
+        if (can_craft(prototype, possible_recipe)) then
+            if (#possible_recipe.ingredients == 1) then
+                result[#result + 1] = { recipe = possible_recipe, quality = prototypes.quality.normal }
+            end
+        end
+    end
+
+    local items = inputs.items
+    if (items) then
+        for id, item in pairs(items) do
+            local item_recipes = prototypes.get_recipe_filtered { { filter = "has-ingredient-item", elem_filters = { { filter = "name", name = item.item.name } } } }
+            for _, possible_recipe in pairs(item_recipes) do
+                if (can_craft(prototype, possible_recipe)) then
+                    if (#possible_recipe.ingredients == 1) then
+                        result[#result + 1] = { recipe = possible_recipe, quality = item.quality }
+                    elseif (#possible_recipe.ingredients == 2) then
+                        local i = possible_recipe.ingredients[1].type == "item" and 2 or 1
+                        local other_ingredient = possible_recipe.ingredients[i]
+                        if (other_ingredient.type == "fluid") then
+                            local has_fluid = false
+                            for _, fluid in pairs(fluid_set) do
+                                if (fluid.fluid.name == other_ingredient.name and fluid.temperature >= (other_ingredient.minimum_temperature or -math.huge) and fluid.temperature <= (other_ingredient.maximum_temperature or math.huge)) then
+                                    has_fluid = true
+                                    break
+                                end
+                            end
+                            if (has_fluid) then
+                                result[#result + 1] = { recipe = possible_recipe, quality = item.quality }
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return result
+end
+
 logic.get_from_entity = function(entity, options)
     if (options.type ~= "assembling-machine" and options.type ~= "furnace" and options.type ~= "rocket-silo") then
         return
@@ -415,40 +481,58 @@ logic.get_from_entity = function(entity, options)
     local recipe, recipe_quality = get_recipe(entity)
 
     if (options.type == "furnace" and recipe == nil and options.analyzer_inputs) then
-        local prototype = options.entity
-        local fluid_set = {} ---@type Rates.Analyzer.FluidSet
-        local fluid_boxes = options.analyzer_inputs.fluid_boxes
-        if (fluid_boxes) then
-            local offset = prototype.fluid_energy_source_prototype and 1 or 0
-            for index, fluids in pairs(fluid_boxes) do
-                if (prototype.fluidbox_prototypes[index + offset].production_type == "input") then
-                    for id, fluid in pairs(fluids) do
-                        fluid_set[id] = fluid
-                    end
+        local possible_recipes = get_furnace_recipes(options.entity, options.analyzer_inputs)
+        local size = table_size(possible_recipes)
+        if (size == 1) then
+            local first_recipe = possible_recipes[1]
+            recipe = first_recipe.recipe
+            recipe_quality = first_recipe.quality
+        elseif (size > 1) then
+            local pseudo_result = { type = "crafting-machine", entity = options.entity }
+            local fuel = energy_source.get_from_entity(entity, pseudo_result, options)
+
+            local children = {} ---@type Rates.Configuration[]
+            for _, r in ipairs(possible_recipes) do
+                local recipe = r.recipe
+
+                local module_effects = configuration.get_useful_module_effects(entity, options.use_ghosts)
+                configuration.filter_module_effects_receiver(module_effects, options.entity.effect_receiver)
+                configuration.filter_module_effects_allowed(module_effects, options.entity.allowed_effects)
+                configuration.filter_module_effects_category(module_effects, options.entity.allowed_module_categories)
+                configuration.filter_module_effects_allowed(module_effects, recipe.allowed_effects)
+                configuration.filter_module_effects_category(module_effects, recipe.allowed_module_categories)
+
+                ---@type Rates.Configuration.CraftingMachine
+                local conf = {
+                    type = "crafting-machine",
+                    entity = options.entity,
+                    quality = options.quality,
+                    module_effects = module_effects,
+                    recipe = recipe,
+                    recipe_quality = r.quality
+                }
+
+                if (fuel) then
+                    ---@type Rates.Configuration.Meta
+                    local m = {
+                        type = "meta",
+                        children = { conf },
+                        fuel = fuel
+                    }
+                    conf = m
                 end
+
+                children[#children + 1] = conf
             end
-        end
 
-        local fluid_names = {}
-        for _, fluid in pairs(fluid_set) do
-            fluid_names[#fluid_names + 1] = fluid.fluid.name
-        end
-
-        local all_recipes = prototypes.get_recipe_filtered { { filter = "has-ingredient-fluid", elem_filters = { { filter = "name", name = fluid_names } } } }
-        local possible_recipes = {} ---@table<string, LuaRecipePrototype>
-        for name, possible_recipe in pairs(all_recipes) do
-            ---@cast possible_recipe LuaRecipePrototype
-            if (can_craft(prototype, possible_recipe)) then
-                if (#possible_recipe.ingredients == 1) then
-                    possible_recipes[name] = possible_recipe
-                end
-            end
-        end
-
-        local first_name, first_recipe = next(possible_recipes)
-        if (first_name ~= nil and next(possible_recipes, first_name) == nil) then
-            recipe = first_recipe
-            recipe_quality = prototypes.quality.normal
+            ---@type Rates.Configuration.Meta
+            local meta = {
+                type = "meta",
+                children = children,
+                entity = options.entity,
+                quality = options.quality,
+            }
+            return meta
         end
     end
 
@@ -527,14 +611,60 @@ logic.analyze_flow = function(entity, prototype, inputs)
         ---@type Rates.Analyzer.EntityOutputs
         local result = {
             fluid_box_outputs = {},
-            required_fluid_box_inputs = {}
+            required_fluid_box_inputs = {},
+            items = {},
+            required_items = "on-change"
         }
 
         local offset = prototype.fluid_energy_source_prototype and 1 or 0
 
+        local num_input_fluidboxes = 0
         for i, fb_prototype in ipairs(prototype.fluidbox_prototypes) do
             if (fb_prototype.production_type == "input") then
                 result.required_fluid_box_inputs[i + offset] = "on-change"
+                num_input_fluidboxes = num_input_fluidboxes + 1
+            end
+        end
+
+        local possible_recipe = get_furnace_recipes(prototype, inputs)
+        for _, r in ipairs(possible_recipe) do
+            local recipe = r.recipe
+
+            local module_effects = configuration.get_useful_module_effects(entity, true)
+            configuration.filter_module_effects_receiver(module_effects, prototype.effect_receiver)
+            configuration.filter_module_effects_allowed(module_effects, prototype.allowed_effects)
+            configuration.filter_module_effects_category(module_effects, prototype.allowed_module_categories)
+            configuration.filter_module_effects_allowed(module_effects, recipe.allowed_effects)
+            configuration.filter_module_effects_category(module_effects, recipe.allowed_module_categories)
+
+            ---@type Rates.Configuration.CraftingMachine
+            local conf = {
+                type = "crafting-machine",
+                entity = prototype,
+                quality = entity.quality,
+                recipe = recipe,
+                recipe_quality = r.quality,
+                module_effects = module_effects
+            }
+            local amounts = {} ---@type Rates.Configuration.Amount[]
+            logic.get_production(conf, amounts,
+                { apply_quality = true, force = entity.force --[[@as LuaForce]], surface = entity.surface })
+
+            local fluidbox_index = num_input_fluidboxes
+            for _, amount in ipairs(amounts) do
+                if (amount.amount > 0) then
+                    local node = amount.node
+                    if (node.type == "item") then
+                        ---@cast node Rates.Node.Item
+                        configuration.add_item_to_set(result.items, node.item, node.quality)
+                    elseif (node.type == "fluid") then
+                        ---@cast node Rates.Node.Fluid
+                        fluidbox_index = fluidbox_index + 1
+                        result.fluid_box_outputs[fluidbox_index] = {}
+                        configuration.add_fluid_to_set(result.fluid_box_outputs[fluidbox_index], node.fluid,
+                            node.temperature)
+                    end
+                end
             end
         end
 
@@ -545,7 +675,8 @@ logic.analyze_flow = function(entity, prototype, inputs)
         ---@type Rates.Analyzer.EntityOutputs
         local result = {
             fluid_box_outputs = {},
-            required_fluid_box_inputs = {}
+            required_fluid_box_inputs = {},
+            items = {}
         }
         local index = 0
         if (prototype.fluid_energy_source_prototype) then
@@ -564,12 +695,66 @@ logic.analyze_flow = function(entity, prototype, inputs)
             end
         end
 
+        local module_effects = configuration.get_useful_module_effects(entity, true)
+        configuration.filter_module_effects_receiver(module_effects, prototype.effect_receiver)
+        configuration.filter_module_effects_allowed(module_effects, prototype.allowed_effects)
+        configuration.filter_module_effects_category(module_effects, prototype.allowed_module_categories)
+        configuration.filter_module_effects_allowed(module_effects, recipe.allowed_effects)
+        configuration.filter_module_effects_category(module_effects, recipe.allowed_module_categories)
+
+        ---@param m LuaItemPrototype
+        ---@return boolean
+        local function is_module_allowed(m)
+            return true
+        end
+
+        local surface_effect = entity.surface.global_effect
+        ---@type Rates.Internal.FloatModuleEffects
+        local max_effect = {
+            productivity = recipe.maximum_productivity
+        }
+        local additional_effects = {} ---@type Rates.Internal.FloatModuleEffects[]
+        do
+            local recipe = entity.force.recipes[recipe.name]
+            if (recipe) then
+                additional_effects[#additional_effects + 1] = {
+                    productivity = recipe.productivity_bonus
+                }
+            end
+        end
+
+        local effective_values = configuration.calculate_effects(
+            prototype.effect_receiver,
+            module_effects,
+            surface_effect,
+            additional_effects,
+            max_effect,
+            entity.force --[[@as LuaForce]],
+            is_module_allowed)
+
+        local quality_distribution = configuration.calculate_quality_distribution(recipe_quality,
+            effective_values.quality, entity.force --[[@as LuaForce]])
+        if (not quality_distribution) then
+            quality_distribution = { { quality = recipe_quality, multiplier = 1 } }
+        end
+
         for _, product in ipairs(recipe.products) do
             if (product.type == "fluid") then
                 index = index + 1
                 local fluid = prototypes.fluid[product.name]
                 result.fluid_box_outputs[index] =
                     configuration.build_fluid_set(fluid, product.temperature or fluid.default_temperature)
+            elseif (product.type == "item") then
+                for _, quality in pairs(quality_distribution) do
+                    configuration.add_item_to_set(result.items, prototypes.item[product.name], quality.quality)
+                end
+            end
+        end
+
+        if (prototype.vector_to_place_result) then
+            result.drop_items = {}
+            for id, item in pairs(result.items) do
+                result.drop_items[id] = item
             end
         end
 

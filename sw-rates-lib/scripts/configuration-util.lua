@@ -28,6 +28,20 @@ function util.build_fluid_set(fluid, temperature)
     return { [id] = { fluid = fluid, temperature = temperature } }
 end
 
+---@param set Rates.Analyzer.ItemSet
+---@param item LuaItemPrototype
+---@param quality LuaQualityPrototype
+---@return boolean
+function util.add_item_to_set(set, item, quality)
+    local id = item.name .. "/" .. quality.name
+    if (set[id]) then
+        return false
+    end
+
+    set[id] = { item = item, quality = quality }
+    return true
+end
+
 ---@param fluids table<string, table<number, true>>
 ---@param fluid LuaFluidPrototype
 ---@param temperature number?
