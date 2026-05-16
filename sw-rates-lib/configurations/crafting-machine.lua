@@ -695,46 +695,49 @@ logic.analyze_flow = function(entity, prototype, inputs)
             end
         end
 
-        local module_effects = configuration.get_useful_module_effects(entity, true)
-        configuration.filter_module_effects_receiver(module_effects, prototype.effect_receiver)
-        configuration.filter_module_effects_allowed(module_effects, prototype.allowed_effects)
-        configuration.filter_module_effects_category(module_effects, prototype.allowed_module_categories)
-        configuration.filter_module_effects_allowed(module_effects, recipe.allowed_effects)
-        configuration.filter_module_effects_category(module_effects, recipe.allowed_module_categories)
+        local quality_distribution ---@type { quality: LuaQualityPrototype, multiplier: number }[]
+        if (recipe_quality.next) then
+            local module_effects = configuration.get_useful_module_effects(entity, true)
+            configuration.filter_module_effects_receiver(module_effects, prototype.effect_receiver)
+            configuration.filter_module_effects_allowed(module_effects, prototype.allowed_effects)
+            configuration.filter_module_effects_category(module_effects, prototype.allowed_module_categories)
+            configuration.filter_module_effects_allowed(module_effects, recipe.allowed_effects)
+            configuration.filter_module_effects_category(module_effects, recipe.allowed_module_categories)
 
-        ---@param m LuaItemPrototype
-        ---@return boolean
-        local function is_module_allowed(m)
-            return true
-        end
-
-        local surface_effect = entity.surface.global_effect
-        ---@type Rates.Internal.FloatModuleEffects
-        local max_effect = {
-            productivity = recipe.maximum_productivity
-        }
-        local additional_effects = {} ---@type Rates.Internal.FloatModuleEffects[]
-        do
-            local recipe = entity.force.recipes[recipe.name]
-            if (recipe) then
-                additional_effects[#additional_effects + 1] = {
-                    productivity = recipe.productivity_bonus
-                }
+            ---@param m LuaItemPrototype
+            ---@return boolean
+            local function is_module_allowed(m)
+                return true
             end
-        end
 
-        local effective_values = configuration.calculate_effects(
-            prototype.effect_receiver,
-            module_effects,
-            surface_effect,
-            additional_effects,
-            max_effect,
-            entity.force --[[@as LuaForce]],
-            is_module_allowed)
+            local surface_effect = entity.surface.global_effect
+            ---@type Rates.Internal.FloatModuleEffects
+            local max_effect = {
+                productivity = recipe.maximum_productivity
+            }
+            local additional_effects = {} ---@type Rates.Internal.FloatModuleEffects[]
+            do
+                local recipe = entity.force.recipes[recipe.name]
+                if (recipe) then
+                    additional_effects[#additional_effects + 1] = {
+                        productivity = recipe.productivity_bonus
+                    }
+                end
+            end
 
-        local quality_distribution = configuration.calculate_quality_distribution(recipe_quality,
-            effective_values.quality, entity.force --[[@as LuaForce]])
-        if (not quality_distribution) then
+            local effective_values = configuration.calculate_effects(
+                prototype.effect_receiver,
+                module_effects,
+                surface_effect,
+                additional_effects,
+                max_effect,
+                entity.force --[[@as LuaForce]],
+                is_module_allowed)
+
+            quality_distribution = configuration.calculate_quality_distribution(recipe_quality,
+                    effective_values.quality, entity.force --[[@as LuaForce]]) or
+                { { quality = recipe_quality, multiplier = 1 } }
+        else
             quality_distribution = { { quality = recipe_quality, multiplier = 1 } }
         end
 

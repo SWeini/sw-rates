@@ -653,18 +653,27 @@ local function analyze_flow(entity, inputs)
     ---@type Rates.Analyzer.EntityOutputs?
     local result = nil
     local prototype = util.get_useful_entity_data(entity, true).entity
-    for _, entry in ipairs(registry.get_all_types()) do
-        if (entry.logic) then
-            result = entry.logic.analyze_flow and
-                entry.logic.analyze_flow(entity, prototype, inputs)
-        else
-            local interface = interface_name(entry.type)
-            result = remote.interfaces[interface].analyze_flow and
-                remote.call(interface, "analyze_flow", entity, prototype, inputs) --[[@as Rates.Analyzer.EntityOutputs?]]
-        end
+    local type = prototype.type
+    if (type == "furnace" or type == "assembling-machine") then
+        type = "crafting-machine"
+    end
+    local fast_logic = registry.get(type)
+    if (fast_logic and fast_logic.analyze_flow) then
+        result = fast_logic.analyze_flow(entity, prototype, inputs)
+    else
+        for _, entry in ipairs(registry.get_all_types()) do
+            if (entry.logic) then
+                result = entry.logic.analyze_flow and
+                    entry.logic.analyze_flow(entity, prototype, inputs)
+            else
+                local interface = interface_name(entry.type)
+                result = remote.interfaces[interface].analyze_flow and
+                    remote.call(interface, "analyze_flow", entity, prototype, inputs) --[[@as Rates.Analyzer.EntityOutputs?]]
+            end
 
-        if (result) then
-            break
+            if (result) then
+                break
+            end
         end
     end
 

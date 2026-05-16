@@ -174,6 +174,25 @@ local function initialize_item_placer(context, entity)
     end
 end
 
+---@param outputs Rates.Analyzer.EntityOutputs
+---@return boolean
+local function is_dynamic(outputs)
+    if (outputs.required_items == "on-change") then
+        return true
+    end
+
+    local fluids = outputs.required_fluid_box_inputs
+    if (fluids) then
+        for _, mode in pairs(fluids) do
+            if (mode == "on-change") then
+                return true
+            end
+        end
+    end
+
+    return false
+end
+
 ---@param context Rates.Analyzer.Context
 ---@param entity LuaEntity
 ---@return Rates.Analyzer.EntityInputs
@@ -401,24 +420,26 @@ local function trace_backwards(dirty_entities, context, entity, force_input_dete
         if (outputs.required_fluid_box_inputs) then
             local fluidbox = entity.fluidbox
             for index, mode in pairs(outputs.required_fluid_box_inputs) do
-                for pipe, connection in ipairs(fluidbox.get_pipe_connections(index)) do
-                    local conn = { fluidbox = fluidbox, index = index, pipe = pipe }
-                    local id = flow_fluid.fluidbox_connection_id(conn)
-                    local segment_id = context.fluid_boxes[id]
-                    if (segment_id == nil) then
-                        local content = flow_fluid.fluidbox_trace_segment(conn)
-                        segment_id = flow_fluid.create_fluid_segment(dirty_entities, context, content)
-                    end
-                    if (mode == "on-change" or force_input_detection) then
-                        if (connection.flow_direction ~= "output") then
-                            local segment = context.fluid_segments[segment_id]
-                            segment.dependent_entities[unit_number] = entity
+                if (mode == "on-change" or (mode and force_input_detection)) then
+                    for pipe, connection in ipairs(fluidbox.get_pipe_connections(index)) do
+                        local conn = { fluidbox = fluidbox, index = index, pipe = pipe }
+                        local id = flow_fluid.fluidbox_connection_id(conn)
+                        local segment_id = context.fluid_boxes[id]
+                        if (segment_id == nil) then
+                            local content = flow_fluid.fluidbox_trace_segment(conn)
+                            segment_id = flow_fluid.create_fluid_segment(dirty_entities, context, content)
+                        end
+                        if (mode == "on-change") then
+                            if (connection.flow_direction ~= "output") then
+                                local segment = context.fluid_segments[segment_id]
+                                segment.dependent_entities[unit_number] = entity
+                            end
                         end
                     end
                 end
             end
         end
-        if (outputs.required_items == "on-change" or force_input_detection) then
+        if (outputs.required_items == "on-change" or (outputs.required_items and force_input_detection)) then
             local id = flow_item.item_location_entity(entity, "I")
             get_item_segment(dirty_entities, context, id) -- adds item placers
             local input_segment = get_item_segment(dirty_entities, context, id)
@@ -427,14 +448,17 @@ local function trace_backwards(dirty_entities, context, entity, force_input_dete
 
         local drop_id = flow_item.get_item_placer_drop_location(entity)
         if (drop_id) then
-            local output_id = flow_item.item_location_entity(entity, "O")
-            local output_segment = get_item_segment(dirty_entities, context, output_id)
-            output_segment.filtered_forward_segments[unit_number] = {
-                entity = entity,
-                filter = nil,
-                pass = { [drop_id] = get_item_segment(dirty_entities, context, drop_id) },
-                fail = {}
-            }
+            local drop_segment_id = context.item_locations[drop_id]
+            if (drop_segment_id) then
+                local output_id = flow_item.item_location_entity(entity, "O")
+                local output_segment = get_item_segment(dirty_entities, context, output_id)
+                output_segment.filtered_forward_segments[unit_number] = {
+                    entity = entity,
+                    filter = nil,
+                    pass = { [drop_id] = context.item_segments[drop_segment_id] },
+                    fail = {}
+                }
+            end
         end
     end
 end
@@ -563,10 +587,12 @@ end
 local function analyze_full(context)
     -- STEP 1: Register inserter/loader/mining-drill at their drop location
 
+    local prof = game.create_profiler()
     for _, entity in pairs(context.item_placer_entities) do
         initialize_item_placer(context, entity)
     end
 
+    -- game.print({ "", "item placers: ", prof })
     -- game.print("before trace: " .. serpent.block { item_drop_locations = context.item_drop_locations })
 
     -- STEP 2: Build graph of items/fluid flow for everything that is required
@@ -588,6 +614,8 @@ local function analyze_full(context)
 
         trace_backwards(dirty, context, entity, false)
     end
+    -- game.print({ "", "backwards trace: ", prof })
+    -- game.print(serpent.line { item_locations = table_size(context.item_locations), fluid_boxes = table_size(context.fluid_boxes), entities = table_size(context.entities) })
 
     -- game.print("after backwards trace:")
     -- dump_context(context)
@@ -625,6 +653,7 @@ local function analyze_full(context)
             end
         end
     end
+    -- game.print({ "", "initial segment contents: ", prof })
 
     -- game.print(serpent.block(context.entities))
 
@@ -647,8 +676,11 @@ local function analyze_full(context)
 
     for unit_number, outputs in pairs(context.entities) do
         local entity = outputs.entity
-        dirty[unit_number] = entity
+        if (is_dynamic(outputs.outputs)) then
+            dirty[unit_number] = entity
+        end
     end
+    -- game.print({ "", "initial propagation: ", prof })
 
     -- game.print("after first forward propagation:")
     -- dump_context(context)
@@ -706,6 +738,7 @@ local function analyze_full(context)
             end
         end
     end
+    -- game.print({ "", "full propagation: ", prof })
 
     -- game.print("after full forward propagation:")
     -- dump_context(context)
