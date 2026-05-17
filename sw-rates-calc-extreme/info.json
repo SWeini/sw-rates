@@ -10,5 +10,10 @@
     "sw-rates-lib>=0.4.12",
     "sw-entity-tracker",
     "flib"
-  ]
+  ],
+  "package": {
+    "ignore": [
+      "docs/*"
+    ]
+  }
 }

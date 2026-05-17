@@ -3,7 +3,7 @@ The purpose of this mod is to provide a common framework that brings together co
 
 Tools using this framework:
 - [Production Rates Calculator](https://mods.factorio.com/mod/sw-rates-calc)
-- [Production Rates Calculator Extreme](https://mods.factorio.com/mod/sw-rates-calc-extreme)
+- [Production Rates Calculator Extreme](https://mods.factorio.com/mod/sw-rates-calc-extreme), see [manual](sw-rates-calc-extreme/docs/README.md)
 - [Reactor Layout](https://mods.factorio.com/mod/sw-rates-reactor-layout)
 
 Content supporting this framework:
