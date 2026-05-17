@@ -59,6 +59,79 @@ local function on_window_closed(e)
     end
 
     close_main_window(player)
+
+    local element = e.element
+    if (element and element.valid) then
+        if (element.name == main_window_name) then
+            gui.get_storage(player).gui = nil
+        end
+        element.destroy()
+    end
+end
+
+---@param element LuaGuiElement
+---@return LuaGuiElement?
+local function find_top_level_window(element)
+    local player = game.get_player(element.player_index) ---@cast player -nil
+    local screen = player.gui.screen
+    local search_element = element ---@type LuaGuiElement?
+    while (search_element) do
+        local parent = search_element.parent
+        if (parent == screen) then
+            return search_element
+        end
+
+        search_element = parent
+    end
+end
+
+local handler_tag_key = "__" .. script.mod_name .. "_handler"
+
+---@param element LuaGuiElement
+local function disable_events(element)
+    local tags = element.tags
+    if (tags[handler_tag_key]) then
+        tags[handler_tag_key] = nil
+        element.tags = tags
+    end
+    for _, child in ipairs(element.children) do
+        disable_events(child)
+    end
+end
+
+---@param e EventData.on_gui_click
+local function on_freeze_button_click(e)
+    local player = game.get_player(e.player_index) ---@cast player -nil
+    local storage = gui.get_storage(player)
+    if (not storage.gui or not storage.gui.button_close) then
+        return
+    end
+
+    if (not storage.is_pinned) then
+        storage.is_pinned = true
+        player.opened = nil
+        storage.is_pinned = nil
+    end
+    storage.gui.button_close.tooltip = { "gui.close" }
+    local wnd_main = storage.gui.wnd_main
+    wnd_main.name = nil
+    storage.gui = nil
+    local top_level = find_top_level_window(e.element)
+    if (top_level) then
+        local child = top_level.children[2]
+        if (child) then
+            disable_events(child)
+        end
+    end
+    local parent = e.element.parent ---@cast parent -nil
+    local button_pin = parent["button_pin"]
+    if (button_pin) then
+        button_pin.destroy()
+    end
+    local button_freeze = parent["button_freeze"]
+    if (button_freeze) then
+        button_freeze.destroy()
+    end
 end
 
 ---@param e EventData.on_gui_click
@@ -84,7 +157,16 @@ end
 ---@param e EventData.on_gui_click
 local function on_close_button_click(e)
     local player = game.get_player(e.player_index) ---@cast player -nil
-    close_main_window(player)
+    local top_level = find_top_level_window(e.element)
+    if (top_level) then
+        if (top_level.name == main_window_name) then
+            close_main_window(player)
+        else
+            top_level.destroy()
+        end
+    else
+        close_main_window(player)
+    end
 end
 
 ---@param e EventData.on_gui_click
@@ -142,6 +224,7 @@ end
 
 flib_gui.add_handlers({
     on_window_closed = on_window_closed,
+    on_freeze_button_click = on_freeze_button_click,
     on_pin_button_click = on_pin_button_click,
     on_close_button_click = on_close_button_click,
     on_constraint_button_click = on_constraint_button_click
@@ -298,6 +381,8 @@ function gui.build(player)
                 ignored_by_interaction = true
             },
             { type = "empty-widget", style = "flib_titlebar_drag_handle", ignored_by_interaction = true },
+            frame_action_button("button_freeze", "virtual-signal/signal-snowflake",
+                { "gui.sw-rates-calc-extreme-freeze" }, on_freeze_button_click),
             frame_action_button("button_pin", "flib_pin_white", { "gui.flib-keep-open" }, on_pin_button_click),
             frame_action_button("button_close", "utility/close", { "gui.close-instruction" }, on_close_button_click)
         },
