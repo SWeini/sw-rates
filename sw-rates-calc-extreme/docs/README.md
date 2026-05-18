@@ -29,7 +29,7 @@ Everything gets a lot more interesting with more than just one building type. In
 
 ![](basic-intermediates.png)
 
-Let's add some modules into the mix! Suddenly the ratio isn't perfect anymore. The right side tells you that there are 3 buildings for copper wire and 2 buildings for electronic circuits, but of the former only 2.78 are actually running (on average). They produce 8.1/s copper cable which is exactly the amount you need for the electronic circuits. If the used building count is white there is still headroom left, if red all the buildings are used - not necessarily a bad thing.
+Let's add some modules into the mix! Suddenly the ratio isn't perfect anymore. The right side tells you that there are 3 buildings for copper cable and 2 buildings for electronic circuits, but of the former only 2.78 are actually running (on average). They produce 8.1/s copper cable which is exactly the amount you need for the electronic circuits. If the used building count is white there is still headroom left, if red all the buildings are used - not necessarily a bad thing.
 
 ![](basic-balanced.png)
 
@@ -78,7 +78,7 @@ Two fluids of different temperature are different things. They don't interact an
 
 ![](basic-pipe-tracking.png)
 
-Many buildings "just work". For example, here is my very first spaceship I built and the initial rates in PRCE.
+Many buildings "just work". For example, here is my very first spaceship I built and the rates in PRCE - just one selection, nothing more.
 
 ![](basic-space.png)
 
@@ -86,7 +86,7 @@ A few notes about that:
 - Electricity is not linked by default. If you have power-producing buildings, you are often interested in the surplus of energy.
 - The calculated thrust is using the thrusters' efficiency profile.
 - Solar panels use the solar power of Nauvis orbit (where this ship is currently sitting).
-- I didn't filter the asteroid collectors, and so all 4 appear multiple times. (Some would happen if you feed a sushi belt into a recycler).
+- I didn't filter the asteroid collectors, and so all 4 appear multiple times. (The same would happen if you feed a sushi belt into a recycler).
 - Rates of asteroid collectors are just a good guess, and they assume that there are always asteroid chunks to grab. Definitely build more than what PRCE thinks is a perfect ratio.
 
 ## Under The Hood
@@ -101,7 +101,7 @@ You select specific buildings, and they stay selected. If you `Ctrl+X`,`Ctrl+V` 
 
 ### Detect Items and Fluids
 
-This is a multi-step process. First, starting from all buildings that need detection, the source of items/fluids is traced back to its source. This follows pipes/belts/inserters, respects filters, and stops when it finds a definitive source. The output if this first step is a graph of how items/fluids move. Second, all definitive sources produce their items and fluids, and then those move forward in the graph. When a building with dynamic output (such as a furnace) is reached, it might put more items/fluids into the system. This continues until there are no more changes.
+This is a multi-step process. First, starting from all buildings that need detection, the source of items/fluids is traced back to its source. This follows pipes/belts/inserters, respects filters, and stops when it finds a definitive source. The output of this first step is a graph of how items/fluids move. Second, all definitive sources produce their items and fluids, and then those move forward in the graph. When a building with dynamic output (such as a furnace) is reached, it might put more items/fluids into the system. This continues until there are no more changes.
 
 This is a quite involved step, and it covers a lot of edge cases (probably not all of them). Here are a few:
 - Two separate belt lanes
@@ -128,7 +128,7 @@ Not covered right now are:
 
 ### Configurations
 
-Every building is converted into a "configuration". This uses all the information available from the building itself, its surrounding beacons and the items/fluids detected in the previous step. One such configuration might be "Assembling machine 2 with copper wire recipe, 2 productivity modules 1, 2 beacons with 2 speed modules 1 each".
+Every building is converted into a "configuration". This uses all the information available from the building itself, its surrounding beacons and the items/fluids detected in the previous step. One such configuration might be "Assembling machine 2 with copper cable recipe, 2 productivity modules 1, 2 beacons with 2 speed modules 1 each".
 
 Then all buildings are grouped into identical configurations. Each of those groups becomes one row on the right side of the GUI.
 
@@ -137,9 +137,9 @@ Then all buildings are grouped into identical configurations. Each of those grou
 Every configuration has a fixed ratio of inputs and outputs. Calculating this should be straight forward, all the data is already there. However, there are a few challenges:
 - Rounding of module effects (they are rounded, aggregated and clamped in a certain way by the engine)
 - Buildings that can't run at 100% speed due to not having enough power
-- Rocket silo launch animation (haven't done that yet)
+- Rocket silo launch animation affecting maximal speed of rocket silos (haven't done that yet)
 - Thrusters don't have a fixed ratio due to their efficiency profile
-- When a spaceship is moving their solar energy changes every second
+- When a spaceship is moving their solar energy changes every second (PRCE instead uses the solar power at the midpoint)
 
 ### Balancing
 
@@ -149,6 +149,6 @@ PRCE calculates the used building numbers by optimizing a mathematical problem, 
 - Each balanced intermediate must be balanced (sum of production equals zero - consumption counts negative)
 - Non-balanced intermediates or pure products/ingredients don't appear at all
 
-If you've used any tool for planning your factory you might miss the first step: Telling what to optimize for. In a planning tool the user might define the goal "produce 5/s electronic circuits". This will become another constraint, similar to a balanced intermediate (sum equals 5/s). The goal is to minimize the "cost" (e.g. total number of used buildings).
+If you've used any tool for planning your factory you might miss the first step: Telling what to optimize for. In a planning tool the user might define the goal "produce 5/s electronic circuits". This will become another constraint, similar to a balanced intermediate (sum equals 5/s). The goal is to minimize the "cost" (e.g. total number of used buildings), and in return the building numbers don't have an upper limit.
 
 In PRCE you never defined your production goal. Instead the goal is to maximize the number of used buildings. In most cases this leads to the expected result. When your selection has multiple near-identical buildings, PRCE will prefer the worst building, which might be unintuitive at first sight. Also, if you have barrel/unbarrel loops just for fun, PRCE will gladly use all those useless buildings.
