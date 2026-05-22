@@ -6,6 +6,10 @@ local generated_temperatures = require("generated-temperatures")
 ---@return Rates.Configuration.ItemFuel?
 local function get_fuel_from_burner(entity, prototype)
     local inventory_size = prototype.burner_prototype.fuel_inventory_size
+    if (inventory_size == 0) then
+        return
+    end
+
     local filter = entity.get_inventory_filter(defines.inventory.fuel, 1)
     if (filter) then
         if (filter.comparator ~= "=") then
