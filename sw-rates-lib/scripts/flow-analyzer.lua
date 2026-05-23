@@ -363,42 +363,44 @@ local function trace_backwards(dirty_entities, context, entity, force_input_dete
     if (type == "inserter") then
         local drop_id = flow_item.inserter_get_item_placer_drop_location(entity)
         local drop_segment_id = context.item_locations[drop_id]
-        local drop_segment = context.item_segments[drop_segment_id]
-        local output = flow_item.inserter_get_static_output(entity)
-        if (output) then
-            for id, item in pairs(output) do
-                drop_segment.content[id] = item
-            end
-        else
-            local target = entity.pickup_target
-            local position = entity.pickup_position
-            local surface = entity.surface
-            if (not target) then
-                target = flow_item.find_drop_or_pickup_target(surface, position)
-            end
-            local filter = flow_item.inserter_get_filter(entity)
-            if (target) then
-                local pickup_ids = flow_item.get_item_placer_pickup_locations(target, position,
-                    entity.pickup_from_left_lane, entity.pickup_from_right_lane)
-                for _, id in ipairs(pickup_ids) do
-                    local pickup_segment = get_item_segment(dirty_entities, context, id)
-                    pickup_segment.filtered_forward_segments[unit_number] = {
+        if (drop_segment_id) then
+            local drop_segment = context.item_segments[drop_segment_id]
+            local output = flow_item.inserter_get_static_output(entity)
+            if (output) then
+                for id, item in pairs(output) do
+                    drop_segment.content[id] = item
+                end
+            else
+                local target = entity.pickup_target
+                local position = entity.pickup_position
+                local surface = entity.surface
+                if (not target) then
+                    target = flow_item.find_drop_or_pickup_target(surface, position)
+                end
+                local filter = flow_item.inserter_get_filter(entity)
+                if (target) then
+                    local pickup_ids = flow_item.get_item_placer_pickup_locations(target, position,
+                        entity.pickup_from_left_lane, entity.pickup_from_right_lane)
+                    for _, id in ipairs(pickup_ids) do
+                        local pickup_segment = get_item_segment(dirty_entities, context, id)
+                        pickup_segment.filtered_forward_segments[unit_number] = {
+                            entity = entity,
+                            filter = filter,
+                            pass = { [drop_id] = drop_segment },
+                            fail = {}
+                        }
+                    end
+                    dirty_entities[target.unit_number] = target
+                else
+                    local id = flow_item.item_location_map(surface, position)
+                    local item_segment = get_item_segment(dirty_entities, context, id)
+                    item_segment.filtered_forward_segments[unit_number] = {
                         entity = entity,
                         filter = filter,
                         pass = { [drop_id] = drop_segment },
                         fail = {}
                     }
                 end
-                dirty_entities[target.unit_number] = target
-            else
-                local id = flow_item.item_location_map(surface, position)
-                local item_segment = get_item_segment(dirty_entities, context, id)
-                item_segment.filtered_forward_segments[unit_number] = {
-                    entity = entity,
-                    filter = filter,
-                    pass = { [drop_id] = drop_segment },
-                    fail = {}
-                }
             end
         end
     elseif (flow_item.type_is_belt[type]) then
