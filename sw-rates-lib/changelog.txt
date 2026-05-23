@@ -4,6 +4,7 @@ Date: ????
   Bugfixes:
     - Fixed crash with burners that don't have any fuel inventory
     - Fixed crash with fluid-fueled inserters
+    - Fixed crash with fluid-fueled furnaces
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.13
 Date: 2026-05-16

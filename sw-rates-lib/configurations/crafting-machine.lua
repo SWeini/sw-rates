@@ -419,7 +419,8 @@ local function get_furnace_recipes(prototype, inputs)
     local fluid_boxes = inputs.fluid_boxes
     if (fluid_boxes) then
         local offset = prototype.fluid_energy_source_prototype and 1 or 0
-        for _, fb in ipairs(prototype.fluidbox_prototypes) do
+        for i = 1, #prototype.fluidbox_prototypes - offset do
+            local fb = prototype.fluidbox_prototypes[i]
             if (fb.production_type == "input") then
                 fluid_set = fluid_boxes[1 + offset]
             end
@@ -619,7 +620,8 @@ logic.analyze_flow = function(entity, prototype, inputs)
         local offset = prototype.fluid_energy_source_prototype and 1 or 0
 
         local num_input_fluidboxes = 0
-        for i, fb_prototype in ipairs(prototype.fluidbox_prototypes) do
+        for i = 1, #prototype.fluidbox_prototypes - offset do
+            local fb_prototype = prototype.fluidbox_prototypes[i]
             if (fb_prototype.production_type == "input") then
                 result.required_fluid_box_inputs[i + offset] = "on-change"
                 num_input_fluidboxes = num_input_fluidboxes + 1
