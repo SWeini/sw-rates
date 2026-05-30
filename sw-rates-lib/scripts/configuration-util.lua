@@ -253,7 +253,7 @@ function util.calculate_products(result, quality, products, frequency, productiv
                 amount_with_prod = base_amount
             end
 
-            local amount = amount_with_prod * product.independent_probability -- TODO: shared_probability
+            local amount = amount_with_prod * product.independent_probability * (product.shared_probability.max - product.shared_probability.min)
             if (quality_distribution) then
                 for j, q in ipairs(quality_distribution) do
                     result[#result + 1] = {
@@ -297,7 +297,7 @@ function util.calculate_products(result, quality, products, frequency, productiv
                 amount_with_prod = base_amount
             end
 
-            local amount = amount_with_prod * product.independent_probability -- TODO: shared_probability
+            local amount = amount_with_prod * product.independent_probability * (product.shared_probability.max - product.shared_probability.min)
             local fluid = prototypes.fluid[product.name]
             result[#result + 1] = {
                 tag = "product",
