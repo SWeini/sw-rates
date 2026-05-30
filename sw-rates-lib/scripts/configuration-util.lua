@@ -328,8 +328,9 @@ function util.calculate_quality_distribution(quality, bonus, force)
     local left = 1
     while (left > 0) do
         local quality_next = quality.next
+        local probability = jumps == 0 and quality.next_probability or quality.chain_probability
         local prob_next = quality_next and (force == nil or force.is_quality_unlocked(quality_next)) and
-            jumps < maximum_quality_jump and quality.next_probability or 0
+            jumps < maximum_quality_jump and probability or 0
         local bonus_next = prob_next * bonus
         if (bonus_next < 1) then
             local stay_probability = left - bonus_next
