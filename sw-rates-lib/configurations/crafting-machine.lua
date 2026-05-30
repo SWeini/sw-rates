@@ -79,8 +79,8 @@ end
 ---@return boolean
 local function can_craft(entity, recipe)
     local categories = entity.crafting_categories or {}
-    local has_category = categories[recipe.category]
-    for _, category in ipairs(recipe.additional_categories) do
+    local has_category = false
+    for _, category in ipairs(recipe.categories) do
         if (categories[category]) then
             has_category = true
         end
