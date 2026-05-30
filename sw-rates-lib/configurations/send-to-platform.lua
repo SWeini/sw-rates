@@ -18,7 +18,7 @@ end
 
 local characters = prototypes.get_entity_filtered { { filter = "type", type = "character" } }
 
-local rocket_lift_weight = prototypes.utility_constants["rocket_lift_weight"] --[[@as number]]
+local rocket_lift_weight = prototypes.utility_constants["default_rocket_lift_weight"] --[[@as number]]
 
 logic.fill_progression = function(result, options)
     local space_platforms = {} ---@type string[]

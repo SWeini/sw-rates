@@ -28,7 +28,7 @@ local function format_weight(weight)
     end
 end
 
-local rocket_lift_weight = format_weight(prototypes.utility_constants["rocket_lift_weight"] --[[@as number]])
+local rocket_lift_weight = format_weight(prototypes.utility_constants["default_rocket_lift_weight"] --[[@as number]])
 
 ---@param node Rates.Node.SendToPlatform
 result.gui_default = function(node)
