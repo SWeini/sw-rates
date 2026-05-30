@@ -1167,13 +1167,25 @@ function util.calculate_effects(receiver, effects, surface_effect, additional_ef
         result[name] = clamp_to_16_bit(value)
     end
 
+    for _, name in ipairs(all_module_effects) do
+        local value = (result[name] or 0) / 100
+        local limits = receiver[name .. "_limits"]
+        local low, high = limits.low, limits.high
+        if (value < low) then
+            value = low
+        elseif (value > high) then
+            value = high
+        end
+        result[name] = value
+    end
+
     return {
-        -- also clamp to allowed minimum value and calculate effective values
-        consumption = math.max(20, 100 + (result.consumption or 0)) / 100,
-        speed = math.max(20, 100 + (result.speed or 0)) / 100,
-        productivity = math.max(0, result.productivity or 0) / 100,
-        pollution = math.max(20, 100 + (result.pollution or 0)) / 100,
-        quality = math.max(0, result.quality or 0) / 100
+        -- calculate effective values
+        consumption = 1 + result.consumption,
+        speed = 1 + result.speed,
+        productivity = result.productivity,
+        pollution = 1 + result.pollution,
+        quality = result.quality
     }
 end
 
