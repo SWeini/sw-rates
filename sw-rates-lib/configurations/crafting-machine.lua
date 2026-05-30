@@ -305,7 +305,7 @@ logic.fill_progression = function(result, options)
         if (entity.fixed_recipe) then
             -- fixed recipe is a bit special, the recipe might still be locked (and this is fine)
 
-            local recipe = prototypes.recipe[entity.fixed_recipe]
+            local recipe = entity.fixed_recipe
             local locations = {} ---@type string[]
             for _, loc in ipairs(options.locations) do
                 if (progression.has_surface_conditions(loc, recipe.surface_conditions)) then
