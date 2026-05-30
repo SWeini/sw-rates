@@ -309,9 +309,7 @@ function util.calculate_products(result, quality, products, frequency, productiv
     end
 end
 
-local maximum_quality_jump = helpers.compare_versions(helpers.game_version, "2.0.69") >= 0
-    and prototypes.utility_constants["maximum_quality_jump"] --[[@as integer]]
-    or 255
+local maximum_quality_jump = prototypes.utility_constants["maximum_quality_jump"]
 
 ---@param quality LuaQualityPrototype
 ---@param bonus number

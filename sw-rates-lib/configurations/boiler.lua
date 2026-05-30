@@ -63,8 +63,6 @@ logic.gui_recipe = function(conf)
     }
 end
 
-local use_legacy_boiler_mechanics = helpers.compare_versions(helpers.game_version, "2.0.63") < 0
-
 ---@param conf Rates.Configuration.Boiler
 logic.get_production = function(conf, result, options)
     local fluids = get_fluids(conf.entity)
@@ -88,13 +86,7 @@ logic.get_production = function(conf, result, options)
 
     local energy_value_in = (output_temperature - input_temperature) * fluids.input.heat_capacity
     local amount_in = energy_usage * 60 / energy_value_in
-    local amount_out
-    if (use_legacy_boiler_mechanics) then
-        local energy_value_out = (output_temperature - fluids.output.default_temperature) * fluids.output.heat_capacity
-        amount_out = energy_usage * 60 / energy_value_out
-    else
-        amount_out = amount_in * (fluids.input.heat_capacity / fluids.output.heat_capacity)
-    end
+    local amount_out = amount_in * (fluids.input.heat_capacity / fluids.output.heat_capacity)
     result[#result + 1] = {
         tag = "ingredient",
         node = node.create.fluid(fluids.input, input_temperature),

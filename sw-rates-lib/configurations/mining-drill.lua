@@ -17,8 +17,6 @@ local logic = { type = "mining-drill" } ---@type Rates.Configuration.Type
 local entities = configuration.get_all_entities("mining-drill")
 local resources = prototypes.get_entity_filtered { { filter = "type", type = "resource" }, { filter = "minable" } }
 
-local support_mining_area = helpers.compare_versions(helpers.game_version, "2.0.69") >= 0
-
 ---@param entity LuaEntityPrototype
 ---@param resource LuaEntityPrototype
 ---@return boolean
@@ -223,23 +221,7 @@ logic.get_from_entity = function(entity, options)
     end
 
     if (not resource) then
-        local mining_area ---@type BoundingBox.0
-        if (support_mining_area) then
-            mining_area = entity.mining_area
-        else
-            local radius = options.entity.get_mining_drill_radius(options.quality)
-            local center = entity.position
-            mining_area = {
-                left_top = {
-                    x = center.x - radius,
-                    y = center.y - radius
-                },
-                right_bottom = {
-                    x = center.x + radius,
-                    y = center.y + radius
-                }
-            }
-        end
+        local mining_area = entity.mining_area
         local resources_in_range = entity.surface.find_entities_filtered { type = "resource", area = mining_area }
         for _, target in ipairs(resources_in_range) do
             -- find_entities_filtered returns all colliding resources, but for mining drills the resource center needs to be inside the mining area
@@ -282,23 +264,7 @@ logic.analyze_flow = function(entity, prototype, inputs)
     end
 
     if (not resource) then
-        local mining_area ---@type BoundingBox.0
-        if (support_mining_area) then
-            mining_area = entity.mining_area
-        else
-            local radius = prototype.get_mining_drill_radius(entity.quality)
-            local center = entity.position
-            mining_area = {
-                left_top = {
-                    x = center.x - radius,
-                    y = center.y - radius
-                },
-                right_bottom = {
-                    x = center.x + radius,
-                    y = center.y + radius
-                }
-            }
-        end
+        local mining_area = entity.mining_area
         local resources_in_range = entity.surface.find_entities_filtered { type = "resource", area = mining_area }
         for _, target in ipairs(resources_in_range) do
             -- find_entities_filtered returns all colliding resources, but for mining drills the resource center needs to be inside the mining area

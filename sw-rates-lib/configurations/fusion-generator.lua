@@ -15,8 +15,6 @@ local logic = { type = "fusion-generator" } ---@type Rates.Configuration.Type
 
 local entities = configuration.get_all_entities("fusion-generator")
 
-local support_effectivity = helpers.compare_versions(helpers.game_version, "2.0.67") >= 0
-
 ---@param prototype LuaEntityPrototype
 ---@return { input: LuaFluidPrototype, output: LuaFluidPrototype }
 local function get_fluids(prototype)
@@ -48,15 +46,8 @@ logic.get_production = function(conf, result, options)
         return
     end
 
-    local burns_fluid ---@type boolean
-    local effectivity ---@type number
-    if (support_effectivity) then
-        burns_fluid = conf.entity.burns_fluid
-        effectivity = conf.entity.effectivity
-    else
-        burns_fluid = false
-        effectivity = 1.0
-    end
+    local burns_fluid = conf.entity.burns_fluid
+    local effectivity = conf.entity.effectivity
 
     local input_temperature = conf.temperature
     local energy_per_fluid ---@type number
