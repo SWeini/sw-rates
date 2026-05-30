@@ -613,7 +613,7 @@ end
 local function analyze_full(context)
     -- STEP 1: Register inserter/loader/mining-drill at their drop location
 
-    local prof = game.create_profiler()
+    local prof = helpers.create_profiler()
     for _, entity in pairs(context.item_placer_entities) do
         initialize_item_placer(context, entity)
     end
