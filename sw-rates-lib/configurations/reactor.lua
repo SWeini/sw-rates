@@ -9,7 +9,6 @@ end
 local configuration = require("scripts.configuration-util")
 local node = require("scripts.node")
 local progression = require("scripts.progression")
-local math2d = require("math2d")
 
 local logic = { type = "reactor" } ---@type Rates.Configuration.Type
 
@@ -19,24 +18,10 @@ local entities = configuration.get_all_entities("reactor")
 ---@param use_ghosts boolean
 ---@return integer
 local function count_neighbours(entity, use_ghosts)
-    local data = configuration.get_useful_entity_data(entity, use_ghosts)
-    if (not data) then
-        return 0
-    end
-
-    local size = entity.tile_width
-    local position = entity.position
-    if (entity.tile_height ~= size) then
-        error("missing neighbour calculation for non-square reactors")
-    end
-
-    local bbox = math2d.bounding_box.create_from_centre(entity.position, size + 2)
-    local candidates = entity.surface.find_entities_filtered { area = bbox }
     local result = 0
-    for _, other in ipairs(candidates) do
-        local other_data = configuration.get_useful_entity_data(other, use_ghosts)
-        if (other_data and other_data.entity.name == data.entity.name) then
-            if (math2d.position.distance_squared(position, other.position) == size * size) then
+    for _, connection in ipairs(entity.neighbour_connectable_connections) do
+        if (connection.first and connection.target) then
+            if (use_ghosts or connection.target_real) then
                 result = result + 1
             end
         end

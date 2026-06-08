@@ -298,7 +298,7 @@ local function belt_trace_backwards(dirty_entities, dirty_belts, context, entity
             dirty_belts[input.unit_number] = input
         end
         if (type == "underground-belt" and entity.belt_to_ground_type == "output") then
-            local input = entity.neighbours
+            local input = entity.underground_belt_neighbour
             if (input) then
                 dirty_belts[input.unit_number] = input
             end

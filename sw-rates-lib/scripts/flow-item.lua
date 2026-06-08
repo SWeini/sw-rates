@@ -630,7 +630,7 @@ local function belt_output_connections(entity, type)
         result[item_location_belt(entity, "R")] = input.R
     elseif (type == "underground-belt") then
         if (entity.belt_to_ground_type == "input") then
-            local output = entity.neighbours
+            local output = entity.underground_belt_neighbour
             if (not output) then
                 return result
             end

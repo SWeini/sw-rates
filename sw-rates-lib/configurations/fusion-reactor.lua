@@ -9,8 +9,6 @@ end
 local configuration = require("scripts.configuration-util")
 local node = require("scripts.node")
 local progression = require("scripts.progression")
-local flib_direction = require("__flib__.direction")
-local math2d = require("math2d")
 
 local logic = { type = "fusion-reactor" } ---@type Rates.Configuration.Type
 
@@ -26,98 +24,16 @@ local function get_fluids(prototype)
 end
 
 ---@param entity LuaEntity
----@param connectable NeighbourConnectable
----@param i integer
----@param search boolean
----@return { x: number, y: number, direction: defines.direction }, data.MapPosition.struct?
-local function get_connection_point(entity, connectable, i, search)
-    local search_distance = connectable.neighbour_search_distance
-    local affected_by_direction = connectable.affected_by_direction ~= false
-    local connection = connectable.connections[i]
-    local direction = affected_by_direction and entity.direction or defines.direction.north
-    local connection_loc = math2d.position.ensure_xy(connection.location.position)
-    local connection_pos = flib_direction.to_vector_2d(direction, -connection_loc.y, connection_loc.x) --[[@as data.MapPosition.struct]]
-    local connection_dir = (direction + connection.location.direction) % 16 ---@type defines.direction
-    connection_pos = math2d.position.add(entity.position, connection_pos)
-    local search_pos = nil
-    if (search) then
-        local search_connection = flib_direction.to_vector(connection_dir, search_distance)
-        search_pos = math2d.position.add(connection_pos, search_connection)
-    end
-
-    return { x = connection_pos.x, y = connection_pos.y, direction = connection_dir }, search_pos
-end
-
----@param entity LuaEntity
----@param connectable NeighbourConnectable
----@param pos { x: number, y: number, direction: defines.direction }
----@return integer?
-local function get_connection_at(entity, connectable, pos)
-    local opposite = flib_direction.opposite(pos.direction)
-    for i = 1, #connectable.connections do
-        local point = get_connection_point(entity, connectable, i, false)
-        if (point.x == pos.x and point.y == pos.y and point.direction == opposite) then
-            return i
-        end
-    end
-end
-
----@param category string
----@param categories string[]
----@return boolean
-local function is_category_compatible(category, categories)
-    for _, cat in ipairs(categories) do
-        if (cat == category) then
-            return true
-        end
-    end
-
-    return false
-end
-
----@param a NeighbourConnectableConnectionDefinition
----@param b NeighbourConnectableConnectionDefinition
----@return boolean
-local function is_connection_compatible(a, b)
-    if (not is_category_compatible(a.category, b.neighbour_category)) then
-        return false
-    end
-
-    if (not is_category_compatible(b.category, a.neighbour_category)) then
-        return false
-    end
-
-    return true
-end
-
----@param entity LuaEntity
 ---@param use_ghosts boolean
 ---@return integer
 local function count_neighbours(entity, use_ghosts)
-    local data = configuration.get_useful_entity_data(entity, use_ghosts) ---@cast data -nil
-    local prototype = data.entity
-
-    local neighbours = {}
-    local connectable = prototype.neighbour_connectable ---@cast connectable -nil
-    for i, connection in ipairs(connectable.connections) do
-        local connection_pos, search_pos = get_connection_point(entity, connectable, i, true)
-        local candidates = entity.surface.find_entities_filtered({ position = search_pos })
-        for _, other in ipairs(candidates) do
-            local other_data = configuration.get_useful_entity_data(other, use_ghosts)
-            if (other_data and other_data.entity.name == prototype.name) then
-                local j = get_connection_at(other, connectable, connection_pos)
-                if (j) then
-                    if (is_connection_compatible(connection, connectable.connections[j])) then
-                        neighbours[other.unit_number] = other
-                    end
-                end
+    local result = 0
+    for _, connection in ipairs(entity.neighbour_connectable_connections) do
+        if (connection.first and connection.target) then
+            if (use_ghosts or connection.target_real) then
+                result = result + 1
             end
         end
-    end
-
-    local result = 0
-    for _, _ in pairs(neighbours) do
-        result = result + 1
     end
 
     return result
