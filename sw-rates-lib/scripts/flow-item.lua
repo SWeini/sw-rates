@@ -130,45 +130,33 @@ local function loader_get_container_position(entity)
     return get_relative_position(entity, { x = 0, y = len })
 end
 
+local transport_line_indices = {
+    ["transport-belt"] = { "L", "R" },
+    ["lane-splitter"] = { "LI", "RI", "LO", "RO" },
+    ["splitter"] = { "LIL", "RIL", "LIR", "RIR", "LOL", "ROL", "LOR", "ROR" }
+}
+
+transport_line_indices["underground-belt"] = transport_line_indices["transport-belt"]
+transport_line_indices["linked-belt"] = transport_line_indices["transport-belt"]
+transport_line_indices["loader"] = transport_line_indices["transport-belt"]
+transport_line_indices["loader-1x1"] = transport_line_indices["transport-belt"]
+
 ---@param entity LuaEntity
 ---@param type string
 ---@param position MapPosition.0
+---@param mirrored boolean
 ---@return Rates.Analyzer.ItemLocation
-local function get_item_location_drop_on_belt(entity, type, position)
-    local vec = get_relative_vector(entity, position)
-    if (type == "transport-belt") then
-        local shape = entity.belt_shape
-        if (shape == "straight") then
-            return item_location_belt(entity, vec.x < 0 and "L" or "R")
-        elseif (shape == "left") then
-            local x = vec.x + 0.5
-            local y = vec.y + 0.5
-            local dsqr = x * x + y * y
-            return item_location_belt(entity, dsqr < 0.5 and "L" or "R")
-        else -- shape == "right"
-            local x = vec.x - 0.5
-            local y = vec.y + 0.5
-            local dsqr = x * x + y * y
-            return item_location_belt(entity, dsqr < 0.5 and "R" or "L")
-        end
-    elseif (type == "underground-belt" or type == "linked-belt" or type == "loader" or type == "loader-1x1") then
-        return item_location_belt(entity, vec.x < 0 and "L" or "R")
-    elseif (type == "splitter") then
-        local x = vec.x
-        if (x < -0.5) then
-            return item_location_belt(entity, "LIL")
-        elseif (x < 0) then
-            return item_location_belt(entity, "RIL")
-        elseif (x < 0.5) then
-            return item_location_belt(entity, "LIR")
-        else
-            return item_location_belt(entity, "RIR")
-        end
-    elseif (type == "lane-splitter") then
-        return item_location_belt(entity, vec.x < 0 and "LI" or "RI")
-    else
+local function get_item_location_drop_on_belt(entity, type, position, mirrored)
+    local index = entity.get_item_insert_specification(position, mirrored)
+    local data = transport_line_indices[type]
+    if (not data) then
         error("entity not a belt")
     end
+    local lane = data[index]
+    if (not lane) then
+        error("invalid transport line for " .. type .. ": " .. index)
+    end
+    return item_location_belt(entity, lane)
 end
 
 ---@param entity LuaEntity
@@ -185,14 +173,15 @@ end
 ---@param entity LuaEntity?
 ---@param surface LuaSurface
 ---@param position MapPosition.0
+---@param mirrored boolean
 ---@return Rates.Analyzer.ItemLocation
-local function get_item_location_drop(entity, surface, position)
+local function get_item_location_drop(entity, surface, position, mirrored)
     if (not entity) then
         return item_location_map(surface, position)
     end
     local type = base.get_entity_type(entity)
     if (type_is_belt[type]) then
-        return get_item_location_drop_on_belt(entity, type, position)
+        return get_item_location_drop_on_belt(entity, type, position, mirrored)
     end
     return get_item_location_drop_on_entity(entity, type)
 end
@@ -228,7 +217,7 @@ local function get_item_placer_drop_location_position(entity)
     if (not target) then
         target = find_drop_or_pickup_target(surface, position)
     end
-    return get_item_location_drop(target, surface, position)
+    return get_item_location_drop(target, surface, position, entity.mirroring)
 end
 
 ---@param entity LuaEntity
