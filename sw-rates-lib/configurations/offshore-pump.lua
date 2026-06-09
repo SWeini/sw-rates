@@ -34,6 +34,29 @@ local function get_filtered_fluid(prototype)
     return prototype.fluidbox_prototypes[1].filter
 end
 
+---@param entity LuaEntity
+---@param use_ghosts boolean
+---@return LuaFluidPrototype?
+local function get_tile_fluid(entity, use_ghosts)
+    if (use_ghosts) then
+        local tile = entity.surface.get_tile(entity.get_fluid_source_tile())
+        local ghosts = tile.get_tile_ghosts(entity.force)
+        for _, tile_ghost in ipairs(ghosts) do
+            local tile_name = tile_ghost.ghost_name
+            local prototype = prototypes.tile[tile_name]
+            local fluid = prototype.fluid
+            if (fluid) then
+                return fluid
+            end
+        end
+    end
+
+    local fluid_name = entity.get_fluid_source_fluid()
+    if (fluid_name) then
+        return prototypes.fluid[fluid_name]
+    end
+end
+
 ---@param conf Rates.Configuration.OffshorePump
 logic.get_id = function(conf)
     return conf.fluid.name
@@ -155,7 +178,11 @@ logic.get_from_entity = function(entity, options)
 
     local fluid = get_filtered_fluid(options.entity)
     if (not fluid) then
-        fluid = prototypes.fluid[entity.get_fluid_source_fluid()]
+        fluid = get_tile_fluid(entity, options.use_ghosts)
+    end
+
+    if (not fluid) then
+        return nil
     end
 
     ---@type Rates.Configuration.OffshorePump
@@ -174,7 +201,12 @@ logic.analyze_flow = function(entity, prototype, inputs)
 
     local fluid = get_filtered_fluid(prototype)
     if (not fluid) then
-        fluid = prototypes.fluid[entity.get_fluid_source_fluid()]
+        fluid = get_tile_fluid(entity, true)
+    end
+
+    if (not fluid) then
+        ---@type Rates.Analyzer.EntityOutputs
+        return {}
     end
 
     ---@type Rates.Analyzer.EntityOutputs
