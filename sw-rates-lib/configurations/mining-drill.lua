@@ -130,7 +130,7 @@ logic.get_production = function(conf, result, options)
         local quality_distribution = nil
         if (options.apply_quality) then
             quality_distribution = configuration.calculate_quality_distribution(prototypes.quality.normal,
-                effective_values.quality, options.force)
+                effective_values.quality, nil, nil, options.force)
         end
 
         configuration.calculate_products(result, prototypes.quality.normal, mineable.products,

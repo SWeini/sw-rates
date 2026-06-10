@@ -37,8 +37,8 @@ logic.get_production = function(conf, result, options)
     local duration = conf.recipe.energy
     local frequency = speed / duration
 
-    configuration.calculate_ingredients(result, prototypes.quality.normal, conf.recipe.ingredients, frequency)
-    configuration.calculate_products(result, prototypes.quality.normal, conf.recipe.products, frequency, 0)
+    configuration.calculate_recipe_ingredients(result, conf.recipe, prototypes.quality.normal, frequency)
+    configuration.calculate_recipe_products(result, conf.recipe, prototypes.quality.normal, frequency, 0, 0, nil)
 end
 
 logic.fill_generated_temperatures = function(result)

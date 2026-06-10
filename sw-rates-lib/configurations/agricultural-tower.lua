@@ -139,7 +139,7 @@ logic.get_production = function(conf, result, options)
     }
 
     configuration.calculate_products(result, prototypes.quality.normal, plant_result.mineable_properties.products or {},
-        frequency, 0, nil)
+        frequency, 0)
 
     if (options.use_pollution) then
         local surface = options.surface

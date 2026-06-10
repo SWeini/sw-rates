@@ -193,16 +193,17 @@ function util.calculate_constant_pollution(result, entity, surface)
 end
 
 ---@param result Rates.Configuration.Amount[]
+---@param recipe LuaRecipePrototype
 ---@param quality LuaQualityPrototype
----@param ingredients Ingredient[]
 ---@param frequency number
-function util.calculate_ingredients(result, quality, ingredients, frequency)
-    for i, ingredient in ipairs(ingredients) do
+function util.calculate_recipe_ingredients(result, recipe, quality, frequency)
+    for i, ingredient in ipairs(recipe.ingredients) do
         if (ingredient.type == "item") then
+            local ingredient_quality = recipe.get_ingredient_quality(i, quality)
             result[#result + 1] = {
                 tag = "ingredient",
                 tag_extra = i,
-                node = node.create.item(prototypes.item[ingredient.name], quality),
+                node = node.create.item(prototypes.item[ingredient.name], ingredient_quality),
                 amount = -ingredient.amount * frequency
             }
         elseif (ingredient.type == "fluid") then
@@ -218,8 +219,52 @@ function util.calculate_ingredients(result, quality, ingredients, frequency)
 end
 
 ---@param result Rates.Configuration.Amount[]
+---@param recipe LuaRecipePrototype
 ---@param quality LuaQualityPrototype
----@param products (ItemProduct | FluidProduct | ResearchProgressProduct)[]
+---@param frequency number
+---@param productivity_bonus number
+---@param quality_bonus number
+---@param force LuaForce?
+function util.calculate_recipe_products(result, recipe, quality, frequency, productivity_bonus, quality_bonus, force)
+    for i, product in ipairs(recipe.products) do
+        local amount = recipe.get_product_amount(i, productivity_bonus)
+        if (product.type == "item") then
+            local product_quality = recipe.get_product_quality(i, quality)
+            if (quality_bonus == 0 or not product.affected_by_quality) then
+                result[#result + 1] = {
+                    tag = "product",
+                    tag_extra = i,
+                    node = node.create.item(prototypes.item[product.name], product_quality),
+                    amount = amount * frequency
+                }
+            else
+                local quality_distribution = util.calculate_quality_distribution(product_quality, quality_bonus,
+                    product.quality_min and prototypes.quality[product.quality_min],
+                    product.quality_max and prototypes.quality[product.quality_max], force)
+                for j, q in ipairs(quality_distribution) do
+                    result[#result + 1] = {
+                        tag = "product",
+                        tag_extra = i .. "q" .. j,
+                        node = node.create.item(prototypes.item[product.name], q.quality),
+                        amount = amount * frequency * q.multiplier
+                    }
+                end
+            end
+        elseif (product.type == "fluid") then
+            local fluid = prototypes.fluid[product.name]
+            result[#result + 1] = {
+                tag = "product",
+                tag_extra = i,
+                node = node.create.fluid(fluid, product.temperature or fluid.default_temperature),
+                amount = amount * frequency
+            }
+        end
+    end
+end
+
+---@param result Rates.Configuration.Amount[]
+---@param quality LuaQualityPrototype
+---@param products Product[]
 ---@param frequency number
 ---@param productivity_bonus number
 ---@param quality_distribution? { quality: LuaQualityPrototype, multiplier: number }[]
@@ -309,36 +354,79 @@ function util.calculate_products(result, quality, products, frequency, productiv
     end
 end
 
-local maximum_quality_jump = prototypes.utility_constants["maximum_quality_jump"]
+local maximum_quality_jump = prototypes.utility_constants["maximum_quality_jump"] --[[@as integer]]
 
 ---@param quality LuaQualityPrototype
 ---@param bonus number
+---@param quality_min LuaQualityPrototype?
+---@param quality_max LuaQualityPrototype?
 ---@param force LuaForce?
----@return { quality: LuaQualityPrototype, multiplier: number }[]?
-function util.calculate_quality_distribution(quality, bonus, force)
-    if (bonus <= 0) then
-        return
-    end
-
+---@return { quality: LuaQualityPrototype, multiplier: number }[]
+function util.calculate_quality_distribution(quality, bonus, quality_min, quality_max, force)
     local result = {} ---@type { quality: LuaQualityPrototype, multiplier: number }[]
-
     local jumps = 0
     local left = 1
-    while (left > 0) do
-        local quality_next = quality.next
-        local probability = jumps == 0 and quality.next_probability or quality.chain_probability
-        local prob_next = quality_next and (force == nil or force.is_quality_unlocked(quality_next)) and
-            jumps < maximum_quality_jump and probability or 0
-        local bonus_next = prob_next * bonus
-        if (bonus_next < 1) then
-            local stay_probability = left - bonus_next
-            result[#result + 1] = { quality = quality, multiplier = stay_probability }
-            left = bonus_next
-        end
+    if (bonus < 0) then
+        bonus = -bonus
+        while (left > 0) do
+            local quality_next = quality.previous
+            if (not quality_next) then
+                break
+            end
+            if (force and not force.is_quality_unlocked(quality_next)) then
+                break
+            end
+            if (quality == quality_min) then
+                break
+            end
+            if (jumps == maximum_quality_jump) then
+                break
+            end
 
-        bonus = bonus_next
-        quality = quality_next
-        jumps = jumps + 1
+            local prob_next = jumps == 0 and quality.previous_probability or quality.previous_chain_probability
+            local bonus_next = prob_next * bonus
+            if (bonus_next < 1) then
+                local stay_probability = left - bonus_next
+                result[#result + 1] = { quality = quality, multiplier = stay_probability }
+                left = bonus_next
+            end
+
+            bonus = bonus_next
+            quality = quality_next
+            jumps = jumps + 1
+        end
+    elseif (bonus > 0) then
+        while (left > 0) do
+            local quality_next = quality.next
+            if (not quality_next) then
+                break
+            end
+            if (force and not force.is_quality_unlocked(quality_next)) then
+                break
+            end
+            if (quality == quality_max) then
+                break
+            end
+            if (jumps == maximum_quality_jump) then
+                break
+            end
+
+            local prob_next = jumps == 0 and quality.next_probability or quality.chain_probability
+            local bonus_next = prob_next * bonus
+            if (bonus_next < 1) then
+                local stay_probability = left - bonus_next
+                result[#result + 1] = { quality = quality, multiplier = stay_probability }
+                left = bonus_next
+            end
+
+            bonus = bonus_next
+            quality = quality_next
+            jumps = jumps + 1
+        end
+    end
+
+    if (left > 0) then
+        result[#result + 1] = { quality = quality, multiplier = left }
     end
 
     return result

@@ -218,7 +218,7 @@ logic.get_production = function(conf, result, options)
     local duration = conf.recipe.energy
     local frequency = speed * effective_values.speed / duration
 
-    configuration.calculate_ingredients(result, conf.recipe_quality, conf.recipe.ingredients, frequency)
+    configuration.calculate_recipe_ingredients(result, conf.recipe, conf.recipe_quality, frequency)
 
     if (conf.entity.type == "rocket-silo") then
         local amount = frequency * (1 + effective_values.productivity) / conf.entity.rocket_parts_required
@@ -237,14 +237,8 @@ logic.get_production = function(conf, result, options)
             }
         end
     else
-        local quality_distribution = nil
-        if (options.apply_quality) then
-            quality_distribution = configuration.calculate_quality_distribution(conf.recipe_quality,
-                effective_values.quality, options.force)
-        end
-
-        configuration.calculate_products(result, conf.recipe_quality, conf.recipe.products, frequency,
-            effective_values.productivity, quality_distribution)
+        configuration.calculate_recipe_products(result, conf.recipe, conf.recipe_quality, frequency,
+            effective_values.productivity, effective_values.quality, options.force)
     end
 end
 
@@ -737,7 +731,7 @@ logic.analyze_flow = function(entity, prototype, inputs)
                 is_module_allowed)
 
             quality_distribution = configuration.calculate_quality_distribution(recipe_quality,
-                    effective_values.quality, entity.force --[[@as LuaForce]]) or
+                    effective_values.quality, nil, nil, entity.force --[[@as LuaForce]]) or
                 { { quality = recipe_quality, multiplier = 1 } }
         else
             quality_distribution = { { quality = recipe_quality, multiplier = 1 } }
