@@ -129,8 +129,26 @@ logic.get_production = function(conf, result, options)
     local duration = plant_result.growth_ticks / 60
     local frequency = num_tiles / duration
 
-    local energy_usage = conf.entity.get_max_energy_usage(conf.quality)
-    configuration.calculate_energy_source(result, conf.entity, energy_usage, options)
+    ---@param m LuaItemPrototype
+    ---@return boolean
+    local function is_module_allowed(m)
+        return true
+    end
+
+    local surface_effect = options.surface and location.get_global_effect(options.surface)
+    local additional_effects = {} ---@type Rates.Internal.FloatModuleEffects[]
+
+    local effective_values = configuration.calculate_effects(
+        conf.entity.effect_receiver,
+        conf.module_effects,
+        surface_effect,
+        additional_effects,
+        nil,
+        options.force,
+        is_module_allowed)
+
+    local energy_usage = conf.entity.get_max_energy_usage(conf.quality) * effective_values.consumption
+    configuration.calculate_energy_source(result, conf.entity, energy_usage, options, effective_values.pollution)
 
     result[#result + 1] = {
         tag = "ingredient",
@@ -138,8 +156,15 @@ logic.get_production = function(conf, result, options)
         amount = -frequency
     }
 
+    local quality_distribution = nil
+    if (options.apply_quality) then
+        quality_distribution = configuration.calculate_quality_distribution(prototypes.quality.normal,
+            effective_values.quality, nil, nil, options.force)
+    end
+
+    -- TODO: productivity needs some rounding on the product level
     configuration.calculate_products(result, prototypes.quality.normal, plant_result.mineable_properties.products or {},
-        frequency, 0)
+        frequency, effective_values.productivity, quality_distribution)
 
     if (options.use_pollution) then
         local surface = options.surface
@@ -180,6 +205,11 @@ logic.get_from_entity = function(entity, options)
         return
     end
 
+    local module_effects = configuration.get_useful_module_effects(entity, options.use_ghosts)
+    configuration.filter_module_effects_receiver(module_effects, options.entity.effect_receiver)
+    configuration.filter_module_effects_allowed(module_effects, options.entity.allowed_effects)
+    configuration.filter_module_effects_category(module_effects, options.entity.allowed_module_categories)
+
     local possible_seeds = {} ---@type LuaItemPrototype[]
     for _, seed in pairs(get_accepted_seeds(options.entity)) do
         if (can_plant_seed(entity.surface, seed)) then
@@ -213,6 +243,7 @@ logic.get_from_entity = function(entity, options)
             type = nil, ---@diagnostic disable-line: assign-type-mismatch
             entity = options.entity,
             quality = options.quality,
+            module_effects = module_effects,
             seed = preferred_seeds[1],
             seed_quality = prototypes.quality.normal
         }
@@ -225,6 +256,7 @@ logic.get_from_entity = function(entity, options)
             type = "agricultural-tower",
             entity = options.entity,
             quality = options.quality,
+            module_effects = module_effects,
             seed = seed,
             seed_quality = prototypes.quality.normal
         }
