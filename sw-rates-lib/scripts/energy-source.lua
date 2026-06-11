@@ -348,7 +348,25 @@ local function get_production(result, entity, energy_usage, pollutant, pollution
                     end
                 end
             else
-                -- TODO: fluid energy source from any heated fluid
+                result[#result + 1] = {
+                    tag = "energy-source-input",
+                    node = node.create.fluid_fuel_heat(),
+                    amount = -fuel_usage,
+                    fuel_usage = fuel_usage
+                }
+
+                if (pollutant) then
+                    local emission = fluid.emissions_per_joule[pollutant.name]
+                    if (emission and emission ~= 0) then
+                        result[#result + 1] = {
+                            tag = "pollution",
+                            tag_extra = "depends-on-fuel",
+                            node = node.create.pollution(pollutant),
+                            amount = energy_usage * 60
+                                * emission * (pollution_multiplier or 1)
+                        }
+                    end
+                end
             end
         end
 
