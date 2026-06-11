@@ -53,6 +53,15 @@ logic.get_production = function(conf, result, options)
         amount = -1
     }
 
+    local spent_fluid = conf.fluid.spent_fluid
+    if (spent_fluid) then
+        result[#result + 1] = {
+            tag = "energy-source-output",
+            node = node.create.fluid(prototypes.fluid[spent_fluid.name], spent_fluid.temperature),
+            amount = spent_fluid.amount
+        }
+    end
+
     result[#result + 1] = {
         tag = "product",
         node = node.create.fluid_fuel(),

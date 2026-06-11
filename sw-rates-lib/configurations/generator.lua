@@ -64,6 +64,15 @@ logic.get_production = function(conf, result, options)
         amount = -amount
     }
 
+    local spent_fluid = conf.entity.spent_fluid or fluid.spent_fluid
+    if (spent_fluid) then
+        result[#result + 1] = {
+            tag = "energy-source-output",
+            node = node.create.fluid(prototypes.fluid[spent_fluid.name], spent_fluid.temperature),
+            amount = amount * spent_fluid.amount
+        }
+    end
+
     local temperature = conf.temperature
     if (conf.entity.maximum_temperature and temperature > conf.entity.maximum_temperature) then
         temperature = conf.entity.maximum_temperature

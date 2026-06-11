@@ -230,12 +230,21 @@ local function get_production(result, entity, energy_usage, pollutant, pollution
 
         if (fluid.burns_fluid) then
             if (filter) then
+                local spent_fluid = fluid.spent_fluid or filter.spent_fluid
                 result[#result + 1] = {
                     tag = "energy-source-input",
                     node = node.create.fluid(filter, {}),
                     amount = -fuel_usage / filter.fuel_value,
                     fuel_usage = fuel_usage
                 }
+
+                if (spent_fluid) then
+                    result[#result + 1] = {
+                        tag = "energy-source-output",
+                        node = node.create.fluid(prototypes.fluid[spent_fluid.name], spent_fluid.temperature),
+                        amount = fuel_usage / filter.fuel_value * spent_fluid.amount
+                    }
+                end
 
                 if (pollutant) then
                     local emission = fluid.emissions_per_joule[pollutant.name]
@@ -272,6 +281,7 @@ local function get_production(result, entity, energy_usage, pollutant, pollution
             end
         else
             if (filter) then
+                local spent_fluid = fluid.spent_fluid or filter.spent_fluid
                 if (fluid.fluid_usage_per_tick > 0 and not fluid.scale_fluid_usage) then
                     result[#result + 1] = {
                         tag = "energy-source-input",
@@ -279,6 +289,13 @@ local function get_production(result, entity, energy_usage, pollutant, pollution
                         amount = -fluid.fluid_usage_per_tick * 60,
                         fuel_usage = fuel_usage
                     }
+                    if (spent_fluid) then
+                        result[#result + 1] = {
+                            tag = "energy-source-output",
+                            node = node.create.fluid(prototypes.fluid[spent_fluid.name], spent_fluid.temperature),
+                            amount = fluid.fluid_usage_per_tick * 60 * spent_fluid.amount
+                        }
+                    end
                 else
                     local default_temperature = filter.default_temperature
                     local temperatures = generated_temperatures.get_generated_fluid_temperatures(filter,
@@ -294,6 +311,13 @@ local function get_production(result, entity, energy_usage, pollutant, pollution
                             amount = -fuel_usage / fuel_value,
                             fuel_usage = fuel_usage
                         }
+                        if (spent_fluid) then
+                            result[#result + 1] = {
+                                tag = "energy-source-output",
+                                node = node.create.fluid(prototypes.fluid[spent_fluid.name], spent_fluid.temperature),
+                                amount = fuel_usage / fuel_value * spent_fluid.amount
+                            }
+                        end
                     else
                         result[#result + 1] = {
                             tag = "energy-source-input",
@@ -301,6 +325,13 @@ local function get_production(result, entity, energy_usage, pollutant, pollution
                             amount = -fuel_usage,
                             fuel_usage = fuel_usage
                         }
+                        if (spent_fluid) then
+                            result[#result + 1] = {
+                                tag = "energy-source-output",
+                                node = node.create.fluid(prototypes.fluid[spent_fluid.name], spent_fluid.temperature),
+                                amount = fuel_usage * spent_fluid.amount
+                            }
+                        end
                     end
                 end
 
