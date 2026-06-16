@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.16
+Date: 2026-06-16
+  Bugfixes:
+    - Fixed wrong lab research speed when combining research speed technology bonus and module effects
+---------------------------------------------------------------------------------------------------
 Version: 0.4.15
 Date: 2026-06-09
   Bugfixes:
