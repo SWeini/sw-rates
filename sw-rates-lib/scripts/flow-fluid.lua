@@ -13,10 +13,9 @@ local type_is_pipe = {
 ---@param entity LuaEntity
 ---@param outputs Rates.Analyzer.EntityOutputs
 local function debug_fluidbox(entity, outputs)
-    local fb = entity.fluidbox
-    local dbg = { entity = entity, unit_number = entity.unit_number, fluidboxes = #fb, outputs = outputs }
-    for i = 1, #fb do
-        dbg[i] = { content = fb[i], filter = fb.get_filter(i), lock = fb.get_locked_fluid(i) }
+    local dbg = { entity = entity, unit_number = entity.unit_number, fluidboxes = entity.fluids_count, outputs = outputs }
+    for i = 1, entity.fluids_count do
+        dbg[i] = { content = entity.get_fluid(i), filter = entity.get_fluid_filter(i) }
     end
     game.print(serpent.line(dbg))
 end
@@ -24,13 +23,13 @@ end
 ---@param connection Rates.Analyzer.FluidBoxConnection
 ---@return Rates.Analyzer.FluidLocation
 local function fluidbox_connection_id(connection)
-    return connection.fluidbox.owner.unit_number .. "/" .. connection.index .. "/" .. connection.pipe
+    return connection.entity.unit_number .. "/" .. connection.index .. "/" .. connection.pipe
 end
 
 ---@param connection Rates.Analyzer.FluidBoxConnection
 ---@return PipeConnection
 local function get_pipe_connection(connection)
-    return connection.fluidbox.get_pipe_connections(connection.index)[connection.pipe]
+    return connection.entity.get_fluid_box_pipe_connections(connection.index)[connection.pipe]
 end
 
 ---@param connection Rates.Analyzer.FluidBoxConnection
@@ -41,20 +40,20 @@ local function fluidbox_trace_segment(connection)
 
     ---@param connection Rates.Analyzer.FluidBoxConnection
     local function pass_through(connection)
-        local pipe_connections = connection.fluidbox.get_pipe_connections(connection.index)
+        local pipe_connections = connection.entity.get_fluid_box_pipe_connections(connection.index)
         local pipe_connection = pipe_connections[connection.pipe]
         if (pipe_connection.flow_direction == "input-output") then
             for pipe, pipe_connection in ipairs(pipe_connections) do
                 if (pipe ~= connection.pipe and pipe_connection.flow_direction == "input-output") then
                     ---@type Rates.Analyzer.FluidBoxConnection
-                    local conn = { fluidbox = connection.fluidbox, index = connection.index, pipe = pipe }
+                    local conn = { entity = connection.entity, index = connection.index, pipe = pipe }
                     local id = fluidbox_connection_id(conn)
                     if (not result[id]) then
                         result[id] = conn
                         if (pipe_connection.target) then
                             ---@type Rates.Analyzer.FluidBoxConnection
                             local target_connection = {
-                                fluidbox = pipe_connection.target,
+                                entity = pipe_connection.target,
                                 index = pipe_connection.target_fluidbox_index,
                                 pipe = pipe_connection.target_pipe_connection_index
                             }
@@ -79,7 +78,7 @@ local function fluidbox_trace_segment(connection)
     if (pipe_connection.target) then
         ---@type Rates.Analyzer.FluidBoxConnection
         local target_connection = {
-            fluidbox = pipe_connection.target,
+            entity = pipe_connection.target,
             index = pipe_connection.target_fluidbox_index,
             pipe = pipe_connection.target_pipe_connection_index
         }
@@ -110,14 +109,13 @@ end
 ---@param connections table<Rates.Analyzer.FluidLocation, Rates.Analyzer.FluidBoxConnection>
 ---@return boolean
 local function entity_outputs_into_segment(entity, outputs, connections)
-    local fluidbox = entity.fluidbox
-    for index = 1, #fluidbox do
+    for index = 1, entity.fluids_count do
         -- TODO: only count as output if outputs indicates an output into the fluidbox
-        local pipe_connections = fluidbox.get_pipe_connections(index)
+        local pipe_connections = entity.get_fluid_box_pipe_connections(index)
         for pipe, pipe_connection in ipairs(pipe_connections) do
             if (pipe_connection.flow_direction ~= "input") then
                 ---@type Rates.Analyzer.FluidBoxConnection
-                local connection = { fluidbox = fluidbox, index = index, pipe = pipe }
+                local connection = { entity = entity, index = index, pipe = pipe }
                 local id = fluidbox_connection_id(connection)
                 if (connections[id]) then
                     return true
@@ -146,7 +144,7 @@ local function create_fluid_segment(dirty_entities, context, connections)
     local entities = {} ---@type table<uint64, LuaEntity>
     for id, connection in pairs(connections) do
         context.fluid_boxes[id] = segment_id
-        local entity = connection.fluidbox.owner
+        local entity = connection.entity
         local unit_number = entity.unit_number ---@cast unit_number -nil
         entities[unit_number] = entity
     end

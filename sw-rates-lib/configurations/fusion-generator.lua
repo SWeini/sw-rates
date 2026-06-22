@@ -132,7 +132,7 @@ logic.get_from_entity = function(entity, options)
 
     local fluid = get_fluids(options.entity)
     local temperature = fluid.input.default_temperature
-    local fluidbox = entity.fluidbox[1]
+    local fluidbox = entity.get_fluid(1)
     if (fluidbox) then
         temperature = fluidbox.temperature --[[@as number]]
     end

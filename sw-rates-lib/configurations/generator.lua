@@ -158,7 +158,7 @@ logic.get_from_entity = function(entity, options)
     local temperature_set = false
     local configured_fluid = fluids.input
     if (entity.type ~= "entity-ghost") then
-        local fluid = entity.fluidbox[1]
+        local fluid = entity.get_fluid(1)
         if (fluid) then
             temperature = fluid.temperature --[[@as number]]
             temperature_set = true

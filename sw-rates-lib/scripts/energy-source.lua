@@ -92,14 +92,14 @@ local function get_fuel_fluidbox_index(prototype)
     return 1
 end
 
----@param fluidbox LuaFluidBox
+---@param entity LuaEntity
 ---@param index integer
 ---@return Fluid?
-local function get_fluid_with_index(fluidbox, index)
-    for i = 1, #fluidbox do
-        local proto = fluidbox.get_prototype(i)
+local function get_fluid_with_index(entity, index)
+    for i = 1, entity.fluids_count do
+        local proto = entity.get_fluid_box_prototype(i)
         if (proto.index == index) then
-            return fluidbox[i]
+            return entity.get_fluid(i)
         end
     end
 end
@@ -130,7 +130,7 @@ local function get_from_entity(entity, conf, options)
     if (fluid_energy_source) then
         local fluid ---@type LuaFluidPrototype
         local temperature ---@type number
-        local fluidbox = entity.type ~= "entity-ghost" and get_fluid_with_index(entity.fluidbox, 1)
+        local fluidbox = entity.type ~= "entity-ghost" and get_fluid_with_index(entity, 1)
         if (fluidbox) then
             fluid = prototypes.fluid[fluidbox.name]
             temperature = fluidbox.temperature ---@cast temperature -nil

@@ -72,7 +72,7 @@ local flow_fluid = require("flow-fluid")
 ---@field drop_items? Rates.Analyzer.ItemSet
 
 ---@class (strict) Rates.Analyzer.FluidBoxConnection
----@field fluidbox LuaFluidBox
+---@field entity LuaEntity
 ---@field index uint32
 ---@field pipe integer
 
@@ -202,12 +202,11 @@ local function get_entity_inputs(context, entity)
         fluid_boxes = {}
     }
 
-    local fluidbox = entity.fluidbox
-    for i = 1, #fluidbox do
+    for i = 1, entity.fluids_count do
         local content = {} ---@type Rates.Analyzer.FluidSet
-        local connections = fluidbox.get_pipe_connections(i)
+        local connections = entity.get_fluid_box_pipe_connections(i)
         for p = 1, #connections do
-            local id = flow_fluid.fluidbox_connection_id({ fluidbox = fluidbox, index = i, pipe = p })
+            local id = flow_fluid.fluidbox_connection_id({ entity = entity, index = i, pipe = p })
             local segment_id = context.fluid_boxes[id]
             if (segment_id) then
                 local segment = context.fluid_segments[segment_id]
@@ -444,11 +443,10 @@ local function trace_backwards(dirty_entities, context, entity, force_input_dete
         initialize_entity(context, entity)
         local outputs = context.entities[unit_number].outputs
         if (outputs.required_fluid_box_inputs) then
-            local fluidbox = entity.fluidbox
             for index, mode in pairs(outputs.required_fluid_box_inputs) do
                 if (mode == "on-change" or (mode and force_input_detection)) then
-                    for pipe, connection in ipairs(fluidbox.get_pipe_connections(index)) do
-                        local conn = { fluidbox = fluidbox, index = index, pipe = pipe }
+                    for pipe, connection in ipairs(entity.get_fluid_box_pipe_connections(index)) do
+                        local conn = { entity = entity, index = index, pipe = pipe }
                         local id = flow_fluid.fluidbox_connection_id(conn)
                         local segment_id = context.fluid_boxes[id]
                         if (segment_id == nil) then
@@ -663,10 +661,10 @@ local function analyze_full(context)
 
         if (outputs.fluid_box_outputs) then
             for index, fluids in pairs(outputs.fluid_box_outputs) do
-                local pipe_connections = entity.fluidbox.get_pipe_connections(index)
+                local pipe_connections = entity.get_fluid_box_pipe_connections(index)
                 for pipe, _ in ipairs(pipe_connections) do
                     ---@type Rates.Analyzer.FluidBoxConnection
-                    local connection = { fluidbox = entity.fluidbox, index = index, pipe = pipe }
+                    local connection = { entity = entity, index = index, pipe = pipe }
                     local output_id = flow_fluid.fluidbox_connection_id(connection)
                     local segment_id = context.fluid_boxes[output_id]
                     if (segment_id) then
@@ -723,12 +721,11 @@ local function analyze_full(context)
         local outputs = configuration.analyze_flow(entity, inputs)
         -- game.print("forward " .. unit_number .. ": " .. serpent.line({ inputs = inputs, outputs = outputs }))
         if (outputs.fluid_box_outputs) then
-            local fluidbox = entity.fluidbox
             local changed_segments = {} ---@type table<integer, Rates.Analyzer.FluidSegment>
             for index, out in pairs(outputs.fluid_box_outputs) do
-                local pipe_connections = fluidbox.get_pipe_connections(index)
+                local pipe_connections = entity.get_fluid_box_pipe_connections(index)
                 for pipe, pipe_connection in ipairs(pipe_connections) do
-                    local id = flow_fluid.fluidbox_connection_id({ fluidbox = fluidbox, index = index, pipe = pipe })
+                    local id = flow_fluid.fluidbox_connection_id({ entity = entity, index = index, pipe = pipe })
                     local segment_id = context.fluid_boxes[id]
                     if (segment_id) then
                         local segment = context.fluid_segments[segment_id]

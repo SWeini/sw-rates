@@ -93,24 +93,24 @@ local function can_craft(entity, recipe)
     return can_craft_core(entity, recipe)
 end
 
----@param fluidbox LuaFluidBox
+---@param entity LuaEntity
 ---@param fluid string
 ---@param production_type data.ProductionType
 ---@return integer?
-local function get_fluidbox(fluidbox, fluid, production_type)
-    for i = 1, #fluidbox do
-        local proto = fluidbox.get_prototype(i)
+local function get_fluidbox(entity, fluid, production_type)
+    for i = 1, entity.fluids_count do
+        local proto = entity.get_fluid_box_prototype(i)
         if (proto.object_name ~= "LuaFluidBoxPrototype") then
             proto = proto[1]
         end
         local production = proto.production_type
         if (production == production_type) then
-            local filter = fluidbox.get_filter(i)
+            local filter = entity.get_fluid_filter(i)
             if (filter and filter.name == fluid) then
                 return i
             end
 
-            local box = fluidbox[i]
+            local box = entity.get_fluid(i)
             if (box and box.name == fluid) then
                 return i
             end
@@ -118,11 +118,11 @@ local function get_fluidbox(fluidbox, fluid, production_type)
     end
 end
 
----@param fluidbox LuaFluidBox
+---@param entity LuaEntity
 ---@param fluid Ingredient.fluid
 ---@return number?
-local function get_fluid_selected_input_temperature(fluidbox, fluid)
-    local i = get_fluidbox(fluidbox, fluid.name, "input")
+local function get_fluid_selected_input_temperature(entity, fluid)
+    local i = get_fluidbox(entity, fluid.name, "input")
     if (not i) then
         -- no fluidbox found
         return
@@ -561,7 +561,7 @@ logic.get_from_entity = function(entity, options)
         if (entity.type ~= "entity-ghost") then
             for i, ingredient in ipairs(recipe.ingredients) do
                 if (ingredient.type == "fluid") then ---@cast ingredient Ingredient.fluid
-                    local temp = get_fluid_selected_input_temperature(entity.fluidbox, ingredient)
+                    local temp = get_fluid_selected_input_temperature(entity, ingredient)
                     if (temp) then
                         temperatures = temperatures or {}
                         temperatures["ingredient-" .. i] = "fluid/" .. ingredient.name .. "/" .. temp

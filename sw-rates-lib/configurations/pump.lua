@@ -10,7 +10,7 @@ logic.analyze_flow = function(entity, prototype, inputs)
 
     local result = {} ---@type Rates.Analyzer.EntityOutputs
 
-    local filter = entity.fluidbox.get_filter(1)
+    local filter = entity.get_fluid_filter(1)
     if (filter) then
         local fluid = prototypes.fluid[filter.name]
         local temperatures = generated_temperatures.get_generated_fluid_temperatures(fluid)
