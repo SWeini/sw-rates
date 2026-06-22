@@ -62,9 +62,13 @@ logic.get_production = function(conf, result, options)
     local additional_effects = {} ---@type Rates.Internal.FloatModuleEffects[]
     if (options.force) then
         additional_effects[#additional_effects + 1] = {
-            speed = options.force.laboratory_speed_modifier,
             productivity = options.force.laboratory_productivity_bonus
         }
+        speed = speed * (1 + options.force.laboratory_speed_modifier)
+    end
+
+    if (speed == 0) then
+        return
     end
 
     local effective_values = configuration.calculate_effects(
