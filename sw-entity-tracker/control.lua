@@ -1,6 +1,14 @@
 local interface = require("interface")
-local bplib = require("__bplib__.blueprint")
-local BlueprintBuild = bplib.BlueprintBuild
+local handler = require("__core__.lualib.event_handler")
+handler.add_lib({
+    on_load = function()
+        for type in pairs(defines.prototypes.entity) do
+            for proto in pairs(prototypes[type]) do
+                remote.call("bplib", "register_overlap_entity", proto.name)
+            end
+        end
+    end
+})
 
 local tag_name_ghost_unit_number = "sw-ghost-unit-number"
 
@@ -187,21 +195,11 @@ script.on_event(defines.events.on_robot_mined_entity, function(event)
     last_robot_mining_events[event.robot.unit_number] = mining_event
 end)
 
-script.on_event(defines.events.on_pre_build, function(event)
-    local bp_build = BlueprintBuild:new(event)
-    if not bp_build then
-        return
-    end
-
-    local overlap_map = bp_build:map_blueprint_indices_to_overlapping_entities()
-    if (not overlap_map) then
-        return
-    end
-
+script.on_event("bplib-overlaps", function(event)
     local overwritten_ghosts = {} ---@type LuaEntity[]
-    for _, entity in pairs(overlap_map) do
-        if (entity.type == "entity-ghost") then
-            overwritten_ghosts[#overwritten_ghosts + 1] = entity
+    for blueprint_index, overlapped_entity in pairs(event.overlaps) do
+        if (overlapped_entity.type == "entity-ghost") then
+            overwritten_ghosts[#overwritten_ghosts + 1] = overlapped_entity
         end
     end
 
