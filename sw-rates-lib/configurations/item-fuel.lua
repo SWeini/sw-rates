@@ -3,6 +3,7 @@ do
     ---@field type "item-fuel"
     ---@field item LuaItemPrototype
     ---@field quality LuaQualityPrototype
+    ---@field produce_burnt_result boolean
 end
 
 local configuration = require("scripts.configuration-util")
@@ -15,7 +16,7 @@ local items = prototypes.get_item_filtered { { filter = "fuel-value", comparison
 
 ---@param conf Rates.Configuration.ItemFuel
 logic.get_id = function(conf)
-    return conf.item.name .. "(" .. conf.quality.name .. ")"
+    return conf.item.name .. "(" .. conf.quality.name .. ")" .. (conf.produce_burnt_result and "+burnt" or "")
 end
 
 ---@param conf Rates.Configuration.ItemFuel
@@ -49,13 +50,15 @@ logic.get_production = function(conf, result, options)
         amount = -1
     }
 
-    local burnt_result = conf.item.burnt_result
-    if (burnt_result) then
-        result[#result + 1] = {
-            tag = "energy-source-output",
-            node = node.create.item(burnt_result, conf.quality),
-            amount = 1
-        }
+    if (conf.produce_burnt_result) then
+        local burnt_result = conf.item.burnt_result
+        if (burnt_result) then
+            result[#result + 1] = {
+                tag = "energy-source-output",
+                node = node.create.item(burnt_result, conf.quality),
+                amount = 1
+            }
+        end
     end
 
     result[#result + 1] = {
@@ -100,7 +103,8 @@ logic.fill_basic_configurations = function(result, options)
         result[#result + 1] = {
             type = nil, ---@diagnostic disable-line: assign-type-mismatch
             item = item,
-            quality = prototypes.quality.normal
+            quality = prototypes.quality.normal,
+            produce_burnt_result = true
         }
     end
 end

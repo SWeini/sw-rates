@@ -9,6 +9,7 @@ local function get_fuel_from_burner(entity, prototype)
     if (inventory_size == 0) then
         return
     end
+    local produce_burnt_result = prototype.burner_prototype.burnt_inventory_size > 0
 
     local filter = entity.get_inventory_filter(defines.inventory.fuel, 1)
     if (filter) then
@@ -47,7 +48,8 @@ local function get_fuel_from_burner(entity, prototype)
         return {
             type = "item-fuel",
             item = prototypes.item[filter.name],
-            quality = prototypes.quality[filter.quality]
+            quality = prototypes.quality[filter.quality],
+            produce_burnt_result = produce_burnt_result
         } --[[@as Rates.Configuration.ItemFuel]]
     end
 
@@ -76,7 +78,8 @@ local function get_fuel_from_burner(entity, prototype)
         return {
             type = "item-fuel",
             item = item.name,
-            quality = item.quality
+            quality = item.quality,
+            produce_burnt_result = produce_burnt_result
         } --[[@as Rates.Configuration.ItemFuel]]
     end
 end
