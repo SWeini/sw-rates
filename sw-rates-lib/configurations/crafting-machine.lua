@@ -128,7 +128,7 @@ local function get_fluid_selected_input_temperature(entity, fluid)
         return
     end
 
-    local box = fluidbox[i]
+    local box = entity.get_fluid(i)
     if (not box) then
         -- no fluid present
         return
