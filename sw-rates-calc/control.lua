@@ -132,7 +132,6 @@ local function analyze_entities(player, surface, entities)
     local options = {
         force = player.force --[[@as LuaForce]],
         surface = surface,
-        apply_quality = true,
         use_pollution = game.map_settings.pollution.enabled,
     }
 

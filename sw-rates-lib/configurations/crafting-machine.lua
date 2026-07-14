@@ -644,7 +644,7 @@ logic.analyze_flow = function(entity, prototype, inputs)
             }
             local amounts = {} ---@type Rates.Configuration.Amount[]
             logic.get_production(conf, amounts,
-                { apply_quality = true, force = entity.force --[[@as LuaForce]], surface = entity.surface })
+                { force = entity.force --[[@as LuaForce]], surface = entity.surface })
 
             local fluidbox_index = num_input_fluidboxes
             for _, amount in ipairs(amounts) do

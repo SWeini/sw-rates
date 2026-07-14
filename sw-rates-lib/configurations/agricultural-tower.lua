@@ -156,11 +156,8 @@ logic.get_production = function(conf, result, options)
         amount = -frequency
     }
 
-    local quality_distribution = nil
-    if (options.apply_quality) then
-        quality_distribution = configuration.calculate_quality_distribution(prototypes.quality.normal,
-            effective_values.quality, nil, nil, options.force)
-    end
+    local quality_distribution = configuration.calculate_quality_distribution(prototypes.quality.normal,
+        effective_values.quality, nil, nil, options.force)
 
     -- TODO: productivity needs some rounding on the product level
     configuration.calculate_products(result, prototypes.quality.normal, plant_result.mineable_properties.products or {},

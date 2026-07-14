@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.5.2
 Date: ????
+  Changes:
+    - Removed Rates.Configuration.ProductionOptions.apply_quality. Quality is always applied.
   Bugfixes:
     - Fixed crash when analyzing fluid through pumps (2.1 API changes)
     - Fixed very large module effects were incorrectly clamped

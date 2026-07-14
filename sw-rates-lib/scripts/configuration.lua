@@ -80,7 +80,6 @@
 
 ---@class (exact) Rates.Configuration.ProductionOptions
 ---@field load? number defaults to 1 (full load)
----@field apply_quality? boolean defaults to false (don't create higher quality items)
 ---@field use_pollution? boolean defaults to false (no pollution)
 ---@field solar_panel_mode? "day-and-night" | "average-and-buffer" defaults to "average-and-buffer"
 ---@field force? LuaForce used to calculate force-specific boni

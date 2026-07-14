@@ -127,12 +127,8 @@ logic.get_production = function(conf, result, options)
     end
 
     if (mineable.products) then
-        local quality_distribution = nil
-        if (options.apply_quality) then
-            quality_distribution = configuration.calculate_quality_distribution(prototypes.quality.normal,
-                effective_values.quality, nil, nil, options.force)
-        end
-
+        local quality_distribution = configuration.calculate_quality_distribution(prototypes.quality.normal,
+            effective_values.quality, nil, nil, options.force)
         configuration.calculate_products(result, prototypes.quality.normal, mineable.products,
             frequency, effective_values.productivity, quality_distribution)
     end
@@ -303,7 +299,7 @@ logic.analyze_flow = function(entity, prototype, inputs)
     }
     local amounts = {} ---@type Rates.Configuration.Amount[]
     logic.get_production(conf, amounts,
-        { apply_quality = true, force = entity.force --[[@as LuaForce]], surface = entity.surface })
+        { force = entity.force --[[@as LuaForce]], surface = entity.surface })
 
     for _, amount in ipairs(amounts) do
         if (amount.amount > 0) then

@@ -143,15 +143,6 @@ The surface will influence the production rates by:
 If not set, will not apply any of these modifiers (and assume "default" solar power).
 
 ```lua
-apply_quality: boolean
-```
-If `true`: When using quality modules, split products according to quality distribution.
-\
-If `false`: Products will always use the quality of the ingredients.
-\
-Defaults to `false`.
-
-```lua
 solar_panel_mode: "average-and-buffer" | "day-and-night"
 ```
 If `"average-and-buffer"`: Solar panels produce the average power output. Accumulators can directly provide the required energy buffer.
