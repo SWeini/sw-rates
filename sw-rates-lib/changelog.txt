@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.5.2
-Date: ????
+Date: 2026-07-14
   Changes:
     - Removed Rates.Configuration.ProductionOptions.apply_quality. Quality is always applied.
   Bugfixes:
