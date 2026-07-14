@@ -2,9 +2,12 @@ local node = require("node")
 local math2d = require("math2d")
 local location = require("location")
 local energy_source = require("energy-source")
+local quality_util = require("quality")
 
 local util = {
 }
+
+---@alias Rates.Internal.QualityDistribution { quality: LuaQualityPrototype, multiplier: number }[]
 
 ---@param set Rates.Analyzer.FluidSet
 ---@param fluid LuaFluidPrototype
@@ -267,7 +270,7 @@ end
 ---@param products Product[]
 ---@param frequency number
 ---@param productivity_bonus number
----@param quality_distribution? { quality: LuaQualityPrototype, multiplier: number }[]
+---@param quality_distribution? Rates.Internal.QualityDistribution
 function util.calculate_products(result, quality, products, frequency, productivity_bonus, quality_distribution)
     for i, product in ipairs(products) do
         if (product.type == "item") then
@@ -300,8 +303,12 @@ function util.calculate_products(result, quality, products, frequency, productiv
 
             local amount = amount_with_prod * product.independent_probability *
                 (product.shared_probability.max - product.shared_probability.min)
+            local qmin = product.quality_min and prototypes.quality[product.quality_min]
+            local qmax = product.quality_max and prototypes.quality[product.quality_max]
             if (quality_distribution) then
-                for j, q in ipairs(quality_distribution) do
+                local adjusted_quality_distribution = quality_util.apply_quality_adjustments_to_distribution(
+                    quality_distribution, qmin, qmax, product.quality_change)
+                for j, q in ipairs(adjusted_quality_distribution) do
                     result[#result + 1] = {
                         tag = "product",
                         tag_extra = i .. "q" .. j,
@@ -310,10 +317,12 @@ function util.calculate_products(result, quality, products, frequency, productiv
                     }
                 end
             else
+                local adjusted_quality = quality_util.apply_quality_adjustments(
+                    quality, qmin, qmax, product.quality_change)
                 result[#result + 1] = {
                     tag = "product",
                     tag_extra = i,
-                    node = node.create.item(prototypes.item[product.name], quality),
+                    node = node.create.item(prototypes.item[product.name], adjusted_quality),
                     amount = amount * frequency
                 }
             end
@@ -363,9 +372,9 @@ local maximum_quality_jump = prototypes.utility_constants["maximum_quality_jump"
 ---@param quality_min LuaQualityPrototype?
 ---@param quality_max LuaQualityPrototype?
 ---@param force LuaForce?
----@return { quality: LuaQualityPrototype, multiplier: number }[]
+---@return Rates.Internal.QualityDistribution
 function util.calculate_quality_distribution(quality, bonus, quality_min, quality_max, force)
-    local result = {} ---@type { quality: LuaQualityPrototype, multiplier: number }[]
+    local result = {} ---@type Rates.Internal.QualityDistribution
     local jumps = 0
     local left = 1
     if (bonus < 0) then

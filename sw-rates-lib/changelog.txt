@@ -4,6 +4,7 @@ Date: ????
   Bugfixes:
     - Fixed crash when analyzing fluid through pumps (2.1 API changes)
     - Fixed very large module effects were incorrectly clamped
+    - Fixed missing support for quality_min/quality_max/quality_change on ItemProduct outside of recipe
 ---------------------------------------------------------------------------------------------------
 Version: 0.5.1
 Date: 2026-06-24
