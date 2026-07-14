@@ -106,7 +106,7 @@ local function get_fluidbox(entity, fluid, production_type)
         local production = proto.production_type
         if (production == production_type) then
             local filter = entity.get_fluid_filter(i)
-            if (filter and filter.name == fluid) then
+            if (filter and filter.fluid and filter.fluid.name == fluid) then
                 return i
             end
 
