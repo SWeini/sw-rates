@@ -298,7 +298,8 @@ function util.calculate_products(result, quality, products, frequency, productiv
                 amount_with_prod = base_amount
             end
 
-            local amount = amount_with_prod * product.independent_probability * (product.shared_probability.max - product.shared_probability.min)
+            local amount = amount_with_prod * product.independent_probability *
+                (product.shared_probability.max - product.shared_probability.min)
             if (quality_distribution) then
                 for j, q in ipairs(quality_distribution) do
                     result[#result + 1] = {
@@ -342,7 +343,8 @@ function util.calculate_products(result, quality, products, frequency, productiv
                 amount_with_prod = base_amount
             end
 
-            local amount = amount_with_prod * product.independent_probability * (product.shared_probability.max - product.shared_probability.min)
+            local amount = amount_with_prod * product.independent_probability *
+                (product.shared_probability.max - product.shared_probability.min)
             local fluid = prototypes.fluid[product.name]
             result[#result + 1] = {
                 tag = "product",
@@ -1068,18 +1070,6 @@ local function round_to_integer(x)
     return math.floor(x + 0.5)
 end
 
----@param x integer
----@return integer
-local function clamp_to_16_bit(x)
-    if (x > 32767) then
-        return 32767
-    elseif (x < -32768) then
-        return -32768
-    else
-        return x
-    end
-end
-
 ---@param module LuaItemPrototype
 ---@param quality LuaQualityPrototype
 ---@return Rates.Internal.ModuleEffects
@@ -1117,7 +1107,12 @@ local default_effect_receiver = {
     base_effect = {},
     uses_beacon_effects = true,
     uses_module_effects = true,
-    uses_surface_effects = true
+    uses_surface_effects = true,
+    consumption_limits = { low = -0.8, high = 1000 },
+    speed_limits = { low = -0.8, high = 1000 },
+    productivity_limits = { low = -0.8, high = 1000 },
+    pollution_limits = { low = -0.8, high = 1000 },
+    quality_limits = { low = 0, high = 1000 }
 }
 
 ---@param receiver EffectReceiver?
@@ -1212,7 +1207,7 @@ function util.calculate_effects(receiver, effects, surface_effect, additional_ef
             for name, value in pairs(beacon.effects) do
                 -- order is important: sum effects of beacons by prototype, then multiply with profile, round to int64_t and clamp to int16_t
                 -- I don't know exactly why this clamping happens in the engine, but it does
-                effects_of_beacon_prototype[name] = clamp_to_16_bit(round_to_integer(value * profile_multiplier))
+                effects_of_beacon_prototype[name] = round_to_integer(value * profile_multiplier)
             end
 
             accumulate_effects(result, effects_of_beacon_prototype)
@@ -1236,14 +1231,9 @@ function util.calculate_effects(receiver, effects, surface_effect, additional_ef
         end
     end
 
-    for name, value in pairs(result) do
-        -- order is important: at the very end clamp to int16_t
-        result[name] = clamp_to_16_bit(value)
-    end
-
     for _, name in ipairs(all_module_effects) do
         local value = (result[name] or 0) / 100
-        local limits = receiver[name .. "_limits"]
+        local limits = receiver[name .. "_limits"] --[[@as EffectValueRange]]
         local low, high = limits.low, limits.high
         if (value < low) then
             value = low

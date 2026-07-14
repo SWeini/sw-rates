@@ -3,6 +3,7 @@ Version: 0.5.2
 Date: ????
   Bugfixes:
     - Fixed crash when analyzing fluid through pumps (2.1 API changes)
+    - Fixed very large module effects were incorrectly clamped
 ---------------------------------------------------------------------------------------------------
 Version: 0.5.1
 Date: 2026-06-24
