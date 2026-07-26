@@ -454,12 +454,15 @@ function util.calculate_solar_power(result, day, night, solar_panel_mode, proper
 
     local solar_power
     local day_night_cycle
+    local times
     if (surface) then
         solar_power = location.get_solar_power(surface, property)
         day_night_cycle = location.get_property(surface, day_night_cycle_property)
+        times = location.get_daytime_parameters(surface)
     else
         solar_power = property.default_value
         day_night_cycle = day_night_cycle_property.default_value
+        times = { dusk = 0.25, evening = 0.45, morning = 0.55, dawn = 0.75 }
     end
 
     day = day * (solar_power / 100)
@@ -513,9 +516,12 @@ function util.calculate_solar_power(result, day, night, solar_panel_mode, proper
             average = day
             accumulator_ratio = 0
         else
-            -- TODO: use LuaSurface.daytime_parameters for solar panel calculations
-            average = 0.7 * day + 0.3 * night
-            accumulator_ratio = 0.168 * math.abs(day - night)
+            local t1 = 1 - (times.dawn - times.dusk)
+            local t2 = times.morning - times.evening
+            local t3 = ((times.evening - times.dusk) + (times.dawn - times.morning)) / 2
+            local ratio = (t1 + t3) * (t2 + t3) * (1 - t3)
+            average = (t1 + t3) * day + (t2 + t3) * night
+            accumulator_ratio = ratio * math.abs(day - night)
         end
         if (accumulator_ratio ~= 0) then
             local energy_buffer = day_night_cycle * accumulator_ratio / 60
