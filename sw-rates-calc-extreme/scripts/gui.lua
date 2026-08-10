@@ -821,7 +821,7 @@ function gui.add_table(ui, sheet_data, player)
         if (button) then
             local is_constrained = sheet_data.constraints[node_id]
             if (in_and_out or is_constrained) then
-                button.style = is_constrained and "flib_slot_button_red" or "flib_slot_button_grey"
+                button.style = is_constrained and "flib_slot_button_blue" or "flib_slot_button_grey"
                 button.ignored_by_interaction = false
                 button.handler = { [defines.events.on_gui_click] = on_constraint_button_click }
                 button.tags = { node_id = node_id }
