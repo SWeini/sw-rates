@@ -119,6 +119,7 @@ local function build_from_entities(location, entities)
             local amounts = api.configuration.get_production(conf, {
                 force = force,
                 surface = location,
+                apply_quality = true,
                 use_pollution = use_pollution,
                 annotations = annotations
             })
@@ -341,6 +342,7 @@ local function get_total_production(sheet, surface, force)
         local amounts = api.configuration.get_production(row.configuration, {
             force = force --[[@as LuaForce]],
             surface = surface,
+            apply_quality = true,
             use_pollution = use_pollution,
             load = load
         })

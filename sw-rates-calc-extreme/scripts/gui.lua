@@ -13,6 +13,7 @@ local main_window_name = "sw-rates-calc-extreme_wnd_main"
 ---@field is_pinned? true
 ---@field sheet? Rates.Sheet
 ---@field removed_constraints? table<string, true>
+---@field window_location? GuiLocation
 
 ---@class GuiElements
 ---@field wnd_main LuaGuiElement
@@ -48,6 +49,28 @@ end
 ---@param player LuaPlayer
 function gui.force_close(player)
     close_main_window(player)
+end
+
+---@param player LuaPlayer
+---@return boolean
+local function should_remember_window_position(player)
+    local setting = player.mod_settings["sw-rates-calc-extreme-remember-window-position"]
+    if (setting) then
+        return setting.value --[[@as boolean]]
+    end
+
+    return true
+end
+
+---@param e EventData.on_gui_location_changed
+local function on_window_location_changed(e)
+    local element = e.element
+    if (not element or not element.valid) then
+        return
+    end
+
+    local player = game.get_player(e.player_index) ---@cast player -nil
+    gui.get_storage(player).window_location = element.location
 end
 
 ---@param e EventData.on_gui_closed
@@ -224,6 +247,7 @@ end
 
 flib_gui.add_handlers({
     on_window_closed = on_window_closed,
+    on_window_location_changed = on_window_location_changed,
     on_freeze_button_click = on_freeze_button_click,
     on_pin_button_click = on_pin_button_click,
     on_close_button_click = on_close_button_click,
@@ -364,7 +388,10 @@ function gui.build(player)
     local named_gui_elements = flib_gui.add(player.gui.screen, {
         type = "frame",
         name = main_window_name,
-        handler = { [defines.events.on_gui_closed] = on_window_closed },
+        handler = {
+            [defines.events.on_gui_closed] = on_window_closed,
+            [defines.events.on_gui_location_changed] = on_window_location_changed
+        },
         style_mods = {
             maximal_height = get_max_height(player)
         },
@@ -400,7 +427,12 @@ function gui.build(player)
     named_gui_elements.wnd_main = named_gui_elements[main_window_name]
     named_gui_elements[main_window_name] = nil
 
-    named_gui_elements.wnd_main.auto_center = true
+    local window_location = storage.window_location
+    if (window_location and should_remember_window_position(player)) then
+        named_gui_elements.wnd_main.location = window_location
+    else
+        named_gui_elements.wnd_main.auto_center = true
+    end
 
     return named_gui_elements
 end

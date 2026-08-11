@@ -10,3 +10,13 @@
 
 # Built Visual Studio Code Extensions
 *.vsix
+.DS_Store
+.swiftpm
+dev-notes.md
+*.zip
+# Xcode local settings & build artifacts
+xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+DerivedData/
+.build/
