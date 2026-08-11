@@ -402,6 +402,75 @@ logic.fill_progression = function(result, options)
     end
 end
 
+---@param quality LuaQualityPrototype
+---@param quality_change integer
+---@return LuaQualityPrototype
+local function shift_quality(quality, quality_change)
+    while quality_change > 0 and quality.next do
+        quality = quality.next
+        quality_change = quality_change - 1
+    end
+    while quality_change < 0 and quality.previous do
+        quality = quality.previous
+        quality_change = quality_change + 1
+    end
+    return quality
+end
+
+---@param quality LuaQualityPrototype
+---@param quality_min LuaQualityPrototype?
+---@param quality_max LuaQualityPrototype?
+---@return LuaQualityPrototype
+local function clamp_quality(quality, quality_min, quality_max)
+    if (quality_min and quality.level < quality_min.level) then
+        quality = quality_min
+    end
+    if (quality_max and quality.level > quality_max.level) then
+        quality = quality_max
+    end
+    return quality
+end
+
+--- Implements https://lua-api.factorio.com/latest/auxiliary/furnace-recipe-selection.html
+--- for one candidate recipe: given the item ingredient prototype (as
+--- declared on the recipe) and the quality of the item actually detected,
+--- returns the recipe quality the furnace would run at - or nil if this
+--- item's quality could never have come out of this recipe at all.
+---@param recipe LuaRecipePrototype
+---@param item_ingredient ItemIngredientPrototype
+---@param item_quality LuaQualityPrototype
+---@return LuaQualityPrototype?
+local function get_furnace_recipe_quality(recipe, item_ingredient, item_quality)
+    local recipe_quality
+    if (not recipe.can_set_quality) then
+        recipe_quality = prototypes.quality.normal
+    else
+        local quality_change = item_ingredient.quality_change or 0
+        local has_quality_control = quality_change ~= 0
+            or item_ingredient.quality_min ~= nil
+            or item_ingredient.quality_max ~= nil
+
+        if (not has_quality_control) then
+            recipe_quality = item_quality
+        else
+            recipe_quality = shift_quality(item_quality, -quality_change)
+        end
+    end
+
+    -- Validity check from the docs, applies uniformly to all three cases
+    -- above: does recipe_quality, transformed forward again, actually
+    -- require the item quality we observed?
+    local required_item_quality = clamp_quality(
+        shift_quality(recipe_quality, item_ingredient.quality_change or 0),
+        item_ingredient.quality_min, item_ingredient.quality_max)
+
+    if (required_item_quality ~= item_quality) then
+        return nil
+    end
+
+    return recipe_quality
+end
+
 ---@param prototype LuaEntityPrototype
 ---@param inputs Rates.Analyzer.EntityInputs
 ---@return { recipe: LuaRecipePrototype, quality: LuaQualityPrototype }[]
@@ -443,10 +512,15 @@ local function get_furnace_recipes(prototype, inputs)
             for _, possible_recipe in pairs(item_recipes) do
                 if (can_craft(prototype, possible_recipe)) then
                     if (#possible_recipe.ingredients == 1) then
-                        result[#result + 1] = { recipe = possible_recipe, quality = item.quality }
+                        local item_ingredient = possible_recipe.ingredients[1]
+                        local recipe_quality = get_furnace_recipe_quality(possible_recipe, item_ingredient, item.quality)
+                        if (recipe_quality) then
+                            result[#result + 1] = { recipe = possible_recipe, quality = recipe_quality }
+                        end
                     elseif (#possible_recipe.ingredients == 2) then
                         local i = possible_recipe.ingredients[1].type == "item" and 2 or 1
                         local other_ingredient = possible_recipe.ingredients[i]
+                        local item_ingredient = possible_recipe.ingredients[i == 1 and 2 or 1]
                         if (other_ingredient.type == "fluid") then
                             local has_fluid = false
                             for _, fluid in pairs(fluid_set) do
@@ -456,7 +530,10 @@ local function get_furnace_recipes(prototype, inputs)
                                 end
                             end
                             if (has_fluid) then
-                                result[#result + 1] = { recipe = possible_recipe, quality = item.quality }
+                                local recipe_quality = get_furnace_recipe_quality(possible_recipe, item_ingredient, item.quality)
+                                if (recipe_quality) then
+                                    result[#result + 1] = { recipe = possible_recipe, quality = recipe_quality }
+                                end
                             end
                         end
                     end
