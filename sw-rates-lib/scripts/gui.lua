@@ -36,6 +36,7 @@
 ---@alias Rates.Gui.NodeQualifier
 --- | Rates.Gui.NodeQualifier.Base
 ---
+--- | Rates.Gui.NodeQualifier.InfiniteResource
 --- | Rates.Gui.NodeQualifier.Temperature
 --- | Rates.Gui.NodeQualifier.TemperatureRange
 --- | Rates.Gui.NodeQualifier.Neighbours
@@ -44,6 +45,10 @@
 ---@class Rates.Gui.NodeQualifier.Base
 ---@field type string
 ---@field text LocalisedString
+
+---@class Rates.Gui.NodeQualifier.InfiniteResource : Rates.Gui.NodeQualifier.Base
+---@field type "infinite-resource"
+---@field amount number
 
 ---@class Rates.Gui.NodeQualifier.Temperature : Rates.Gui.NodeQualifier.Base
 ---@field type "temperature"

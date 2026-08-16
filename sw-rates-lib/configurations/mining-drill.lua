@@ -5,6 +5,7 @@ do
     ---@field quality LuaQualityPrototype
     ---@field module_effects Rates.Configuration.ModuleEffects
     ---@field resource? LuaEntityPrototype
+    ---@field amount? number
 end
 
 local configuration = require("scripts.configuration-util")
@@ -40,15 +41,29 @@ end
 
 ---@param conf Rates.Configuration.MiningDrill
 logic.get_id = function(conf)
-    return conf.resource and conf.resource.name or "<no-resource>"
+    local id = (conf.resource and conf.resource.name or "<no-resource>")
+    if (conf.amount) then
+        id = id .. "/" .. conf.amount
+    end
+
+    return id
 end
 
 ---@param conf Rates.Configuration.MiningDrill
 logic.gui_recipe = function(conf)
     if (conf.resource) then
+        local qualifier ---@type Rates.Gui.NodeQualifier.InfiniteResource?
+        if (conf.amount) then
+            qualifier = {
+                type = "infinite-resource",
+                amount = conf.amount,
+                text = string.format("%.0f%%", conf.amount * 100 / conf.resource.normal_resource_amount)
+            }
+        end
         ---@type Rates.Gui.NodeDescription
         return {
-            element = { type = "entity", name = conf.resource.name }
+            element = { type = "entity", name = conf.resource.name },
+            qualifier = qualifier,
         }
     end
 
@@ -111,12 +126,21 @@ logic.get_production = function(conf, result, options)
     local mineable = conf.resource.mineable_properties
     local duration = mineable.mining_time
     local frequency = speed * effective_values.speed / duration
+    local yield = 1
+    local consumption = 1
+    if (conf.resource.infinite_resource and conf.amount) then
+        yield = conf.amount / conf.resource.normal_resource_amount
+        consumption = conf.amount > conf.resource.minimum_resource_amount and
+            conf.resource.infinite_depletion_resource_amount or 0
+    end
 
-    result[#result + 1] = {
-        tag = "resource",
-        node = node.create.map_entity(conf.resource, prototypes.quality.normal),
-        amount = -frequency * drain
-    }
+    if (consumption > 0) then
+        result[#result + 1] = {
+            tag = "resource",
+            node = node.create.map_entity(conf.resource, prototypes.quality.normal),
+            amount = -frequency * drain * consumption
+        }
+    end
 
     if (mineable.required_fluid) then
         result[#result + 1] = {
@@ -130,7 +154,7 @@ logic.get_production = function(conf, result, options)
         local quality_distribution = configuration.calculate_quality_distribution(prototypes.quality.normal,
             effective_values.quality, nil, nil, options.force)
         configuration.calculate_products(result, prototypes.quality.normal, mineable.products,
-            frequency, effective_values.productivity, quality_distribution)
+            frequency * yield, effective_values.productivity, quality_distribution)
     end
 end
 
@@ -208,11 +232,15 @@ logic.get_from_entity = function(entity, options)
     end
 
     local resource
+    local amount
 
     if (entity.type ~= "entity-ghost") then
         local target = entity.mining_target
         if (target) then
             resource = target.prototype
+            if (resource.infinite_resource) then
+                amount = target.amount
+            end
         end
     end
 
@@ -225,6 +253,9 @@ logic.get_from_entity = function(entity, options)
                 local category = target.prototype.resource_category
                 if (options.entity.resource_categories[category]) then
                     resource = target.prototype
+                    if (resource.infinite_resource) then
+                        amount = target.amount
+                    end
                 end
             end
         end
@@ -242,6 +273,7 @@ logic.get_from_entity = function(entity, options)
         quality = options.quality,
         module_effects = module_effects,
         resource = resource,
+        amount = amount,
     }
 end
 
