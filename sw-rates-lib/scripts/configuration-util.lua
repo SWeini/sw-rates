@@ -965,7 +965,8 @@ function util.get_useful_module_effects(entity, use_ghosts)
     local module_slots = util.collect_modules(entity, use_ghosts)
     local modules = util.sum_modules(module_slots)
     local beacons = util.collect_beacons(entity, use_ghosts)
-    return { modules = modules, beacons = beacons }
+    ---@type Rates.Configuration.ModuleEffects
+    return { modules = modules, beacons = beacons, local_effect = entity.local_effect }
 end
 
 ---@param name Rates.Internal.EffectType
@@ -1123,6 +1124,7 @@ local default_effect_receiver = {
     uses_beacon_effects = true,
     uses_module_effects = true,
     uses_surface_effects = true,
+    uses_local_effects = true,
     consumption_limits = { low = -0.8, high = 1000 },
     speed_limits = { low = -0.8, high = 1000 },
     productivity_limits = { low = -0.8, high = 1000 },
@@ -1149,6 +1151,10 @@ function util.calculate_effects(receiver, effects, surface_effect, additional_ef
 
     if (receiver.uses_surface_effects and surface_effect) then
         accumulate_effects(result, to_integer_percentage_effects(surface_effect))
+    end
+
+    if (receiver.uses_local_effects and effects and effects.local_effect) then
+        accumulate_effects(result, to_integer_percentage_effects(effects.local_effect))
     end
 
     local modules = effects and effects.modules

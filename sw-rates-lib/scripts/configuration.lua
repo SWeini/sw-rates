@@ -97,6 +97,7 @@
 ---@class (exact) Rates.Configuration.ModuleEffects
 ---@field modules? Rates.Configuration.Module[]
 ---@field beacons? Rates.Configuration.Beacon[]
+---@field local_effect? Effect
 
 ---@class (exact) Rates.Configuration.Module
 ---@field module LuaItemPrototype
@@ -273,6 +274,20 @@ local function get_id(conf)
             for _, module in ipairs(beacon.per_beacon_modules) do
                 id = id .. "/bm=" .. module.module.name .. "(" .. module.quality.name .. ")x" .. module.count
             end
+        end
+        local local_effect = conf.module_effects.local_effect
+        if (local_effect) then
+            local function add(name, prefix)
+                local value = local_effect[name]
+                if (value and value ~= 0) then
+                    id = id .. prefix .. value
+                end
+            end
+            add("consumption", "/lec=")
+            add("speed", "/les=")
+            add("productivity", "/lep=")
+            add("pollution", "/lee=")
+            add("quality", "/leq=")
         end
     end
 
