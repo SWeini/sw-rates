@@ -167,7 +167,7 @@ end
 
 ---@param conf Rates.Configuration.CraftingMachine
 logic.get_production = function(conf, result, options)
-    local effective_values = {} ---@type ModuleEffects
+    local effective_values = {} ---@type Effect
     local speed
     if (conf.entity.type == "character") then
         speed = 1

@@ -13,7 +13,7 @@
 ---@field id string
 
 ---@param location Rates.Location
----@return ModuleEffects?
+---@return Effect?
 local function get_global_effect(location)
     ---@diagnostic disable-next-line: param-type-mismatch
     if (location.object_name == "LuaSurface") then ---@cast location LuaSurface

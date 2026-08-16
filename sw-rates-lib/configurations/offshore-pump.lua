@@ -39,7 +39,8 @@ end
 ---@return LuaFluidPrototype?
 local function get_tile_fluid(entity, use_ghosts)
     if (use_ghosts) then
-        local tile = entity.surface.get_tile(entity.get_fluid_source_tile())
+        local tile_position = entity.get_fluid_source_tile() ---@cast tile_position TilePosition.0
+        local tile = entity.surface.get_tile(tile_position.x, tile_position.y)
         local ghosts = tile.get_tile_ghosts(entity.force)
         for _, tile_ghost in ipairs(ghosts) do
             local tile_name = tile_ghost.ghost_name

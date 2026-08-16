@@ -184,7 +184,7 @@ function creator.map_tile(tile, location)
     return "map-tile/" .. tile .. "/" .. location
 end
 
----@param products (ItemProduct | FluidProduct | ResearchProgressProduct)[]?
+---@param products Product[]?
 ---@param location string
 ---@return Rates.Progression.MultiItemPost
 function creator.products(products, location)

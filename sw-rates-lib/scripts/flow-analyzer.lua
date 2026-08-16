@@ -4,7 +4,7 @@ local base = require("base-util")
 local flow_item = require("flow-item")
 local flow_fluid = require("flow-fluid")
 
----@class (strict) Rates.Analyzer.Context
+---@class (exact) Rates.Analyzer.Context
 ---Entities that need their inputs determined
 ---@field required_entities table<uint64, LuaEntity>
 ---Entities that can place items that are difficult to search for
@@ -22,7 +22,7 @@ local flow_fluid = require("flow-fluid")
 ---Analyzed entities
 ---@field entities table<uint64, { entity: LuaEntity, outputs: Rates.Analyzer.EntityOutputs }>
 
----@class (strict) Rates.Analyzer.ItemWithQuality
+---@class (exact) Rates.Analyzer.ItemWithQuality
 ---@field item LuaItemPrototype
 ---@field quality LuaQualityPrototype
 
@@ -39,13 +39,13 @@ local flow_fluid = require("flow-fluid")
 ---@alias Rates.Analyzer.FilteredItemForwardSpecification { filter: Rates.Analyzer.ItemFilter, pass: Rates.Analyzer.ItemLocation[], fail: Rates.Analyzer.ItemLocation[] } | { pass: Rates.Analyzer.ItemLocation[] }
 ---@alias Rates.Analyzer.FilteredItemForward { entity: LuaEntity, filter?: Rates.Analyzer.ItemFilter, pass: table<Rates.Analyzer.ItemLocation, Rates.Analyzer.ItemSegment>, fail: table<Rates.Analyzer.ItemLocation, Rates.Analyzer.ItemSegment> }
 
----@class (strict) Rates.Analyzer.ItemSegment
+---@class (exact) Rates.Analyzer.ItemSegment
 ---@field content Rates.Analyzer.ItemSet
 ---@field item_drop_entities table<uint64, { type: string, entity: LuaEntity }>
 ---@field dependent_entities table<uint64, { type: string, entity: LuaEntity }>
 ---@field filtered_forward_segments table<uint64, Rates.Analyzer.FilteredItemForward>
 
----@class (strict) Rates.Analyzer.FluidWithTemperature
+---@class (exact) Rates.Analyzer.FluidWithTemperature
 ---@field fluid LuaFluidPrototype
 ---@field temperature number
 
@@ -55,23 +55,23 @@ local flow_fluid = require("flow-fluid")
 ---@alias Rates.Analyzer.FluidFilter fun(fluid: Rates.Analyzer.FluidWithTemperature): boolean
 ---@alias Rates.Analyzer.FilteredFluidForward { entity: LuaEntity, filter?: Rates.Analyzer.FluidFilter, pass: table<Rates.Analyzer.FluidLocation, Rates.Analyzer.FluidSegment> }
 
----@class (strict) Rates.Analyzer.FluidSegment
+---@class (exact) Rates.Analyzer.FluidSegment
 ---@field content Rates.Analyzer.FluidSet
 ---@field dependent_entities table<uint64, LuaEntity>
 ---@field filtered_forward_segments table<uint64, Rates.Analyzer.FilteredFluidForward>
 
----@class (strict) Rates.Analyzer.EntityInputs
+---@class (exact) Rates.Analyzer.EntityInputs
 ---@field fluid_boxes? table<integer, Rates.Analyzer.FluidSet>
 ---@field items? Rates.Analyzer.ItemSet
 
----@class (strict) Rates.Analyzer.EntityOutputs
+---@class (exact) Rates.Analyzer.EntityOutputs
 ---@field required_fluid_box_inputs? table<integer, "once"|"on-change">
 ---@field fluid_box_outputs? table<integer, Rates.Analyzer.FluidSet>
 ---@field required_items? "once"|"on-change"
 ---@field items? Rates.Analyzer.ItemSet
 ---@field drop_items? Rates.Analyzer.ItemSet
 
----@class (strict) Rates.Analyzer.FluidBoxConnection
+---@class (exact) Rates.Analyzer.FluidBoxConnection
 ---@field entity LuaEntity
 ---@field index uint32
 ---@field pipe integer

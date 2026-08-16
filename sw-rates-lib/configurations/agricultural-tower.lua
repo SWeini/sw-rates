@@ -3,6 +3,7 @@ do
     ---@field type "agricultural-tower"
     ---@field entity LuaEntityPrototype
     ---@field quality LuaQualityPrototype
+    ---@field module_effects Rates.Configuration.ModuleEffects
     ---@field seed LuaItemPrototype
     ---@field seed_quality LuaQualityPrototype
 end
@@ -190,6 +191,7 @@ logic.fill_basic_configurations = function(result, options)
                 type = nil, ---@diagnostic disable-line: assign-type-mismatch
                 entity = entity,
                 quality = prototypes.quality.normal,
+                module_effects = {},
                 seed = seed,
                 seed_quality = prototypes.quality.normal
             }

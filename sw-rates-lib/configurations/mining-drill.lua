@@ -60,7 +60,7 @@ end
 
 ---@param conf Rates.Configuration.MiningDrill
 logic.get_production = function(conf, result, options)
-    local effective_values = {} ---@type ModuleEffects
+    local effective_values = {} ---@type Effect
     local speed, drain
     if (conf.entity.type == "character") then
         speed = conf.entity.mining_speed

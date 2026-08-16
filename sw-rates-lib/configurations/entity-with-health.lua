@@ -4,14 +4,14 @@ local logic = { type = "entity-with-health" } ---@type Rates.Configuration.Type
 
 local enemies = prototypes.get_entity_filtered { { filter = "type", type = { "unit-spawner", "unit" } }, { mode = "and", filter = "flag", flag = "placeable-enemy" } }
 
----@param loots? Loot[]
+---@param loots? ItemProduct[]
 ---@param location any
 ---@return Rates.Progression.Post
 local function get_loot(loots, location)
     local result = {} ---@type Rates.Progression.Post
 
     for _, loot in ipairs(loots or {}) do
-        result[#result + 1] = progression.create.item(loot.item, location)
+        result[#result + 1] = progression.create.item(loot.name, location)
     end
 
     return result
