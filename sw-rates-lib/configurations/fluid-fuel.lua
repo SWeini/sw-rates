@@ -31,11 +31,11 @@ end
 ---@param conf Rates.Configuration.FluidFuel
 logic.gui_entity = function(conf)
     local qualifier ---@type Rates.Gui.NodeQualifier.Temperature?
-    local temps = generated_temperatures.get_generated_fluid_temperatures(node.fluid)
-    if (#temps == 1 and temps[1] == node.temperature) then
+    local temps = generated_temperatures.get_generated_fluid_temperatures(conf.fluid)
+    if (#temps == 1 and temps[1] == conf.temperature) then
         qualifier = nil
     else
-        qualifier = configuration.create_qualifier_temperature(node.temperature)
+        qualifier = configuration.create_qualifier_temperature(conf.temperature)
     end
 
     ---@type Rates.Gui.NodeDescription
