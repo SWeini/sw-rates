@@ -1,8 +1,10 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.5.3
-Date: ????
+Date: 2026-08-22
   Changes:
     - Support modded daytime_parameters for solar panels
+    - Support LuaEntity::local_effect
+    - More accurate rates for infinite resources
 ---------------------------------------------------------------------------------------------------
 Version: 0.5.2
 Date: 2026-07-14
