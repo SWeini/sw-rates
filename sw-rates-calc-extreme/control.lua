@@ -50,7 +50,7 @@ local function on_player_selected_area(e)
         sheet_data.constraints[node_id] = nil
     end
 
-    sheet.solve_sheet(sheet_data)
+    sheet.solve_sheet(sheet_data, player)
 
     local ui = gui.build(player)
     gui.add_table(ui, sheet_data, player)

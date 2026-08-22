@@ -187,7 +187,7 @@ local function on_constraint_button_click(e)
         sheet_data.constraints[node_id] = nil
     end
 
-    sheet.solve_sheet(sheet_data)
+    sheet.solve_sheet(sheet_data, player)
     gui.add_table(storage.gui, sheet_data, player)
 end
 
@@ -821,7 +821,9 @@ function gui.add_table(ui, sheet_data, player)
         if (button) then
             local is_constrained = sheet_data.constraints[node_id]
             if (in_and_out or is_constrained) then
-                button.style = is_constrained and "flib_slot_button_red" or "flib_slot_button_grey"
+                button.style = is_constrained and
+                    (amount_balanced > 0 and "flib_slot_button_blue" or "flib_slot_button_red") or
+                    "flib_slot_button_grey"
                 button.ignored_by_interaction = false
                 button.handler = { [defines.events.on_gui_click] = on_constraint_button_click }
                 button.tags = { node_id = node_id }

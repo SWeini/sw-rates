@@ -31,7 +31,7 @@ local Objective = { type = "minimize" }
 local objective_mt = { __index = Objective }
 
 ---@class Simplex.Options
-local Options = { tolerance_feasability = 1e-9 }
+local Options = { tolerance_feasability = 1e-9, tolerance_pivot = 1e-9 }
 local options_mt = { __index = Options }
 
 ---@class Simplex.Tableau
@@ -190,19 +190,19 @@ end
 
 function Tableau:dump()
     -- log(serpent.block(self))
-    local result = {}
-    for i = 1, self.n_rows do
-        local var = self.var_basic[i]
-        local name
-        if (var > 0) then
-            result[tostring(self.owner.variables[var])] = self.b[i]
-        else
-            local b = self.b[i]
-            if (b > 0) then
-                result[tostring(self.owner.constraints[-var])] = b
-            end
-        end
-    end
+    -- local result = {}
+    -- for i = 1, self.n_rows do
+    --     local var = self.var_basic[i]
+    --     local name
+    --     if (var > 0) then
+    --         result[tostring(self.owner.variables[var])] = self.b[i]
+    --     else
+    --         local b = self.b[i]
+    --         if (b > 0) then
+    --             result[tostring(self.owner.constraints[-var])] = b
+    --         end
+    --     end
+    -- end
     -- log(serpent.block({ obj = self.obj, obj2 = self.obj2, variable_values = result }))
 end
 
@@ -382,6 +382,7 @@ local function find_pivot_element(tableau)
     local type = 1
     ---@type number?
     local min
+    local limit = tableau.owner.options.tolerance_pivot
     do
         local upper_bound = tableau.upper_bound
         local upper = upper_bound[tableau.var_free[pc]]
@@ -390,12 +391,12 @@ local function find_pivot_element(tableau)
         end
 
         for i, a in ipairs(tableau.a[pc]) do
-            if (a > 0) then
+            if (a > limit) then
                 local ratio = tableau.b[i] / a
                 if (min == nil or ratio < min) then
                     type, min, pr = 2, ratio, i
                 end
-            elseif (a < 0) then
+            elseif (a < -limit) then
                 local u = upper_bound[tableau.var_basic[i]]
                 if (u) then
                     local ratio = (tableau.b[i] - u.u) / a

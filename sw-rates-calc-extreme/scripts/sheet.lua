@@ -200,8 +200,11 @@ local function build_from_entities(location, entities)
 end
 
 ---@param sheet Rates.Sheet
-local function solve_sheet(sheet)
+---@param player LuaPlayer
+local function solve_sheet(sheet, player)
     local s = simplex.new()
+    local setting_pivot = settings.get_player_settings(player)["sw-rates-calc-extreme-simplex-min-pivot-element"]
+    s.options.tolerance_pivot = setting_pivot.value --[[@as number]]
     local constraints = {} ---@type table<string, Simplex.Constraint>
 
     for name, constraint in pairs(sheet.constraints) do
