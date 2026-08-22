@@ -187,7 +187,7 @@ local function on_constraint_button_click(e)
         sheet_data.constraints[node_id] = nil
     end
 
-    sheet.solve_sheet(sheet_data)
+    sheet.solve_sheet(sheet_data, player)
     gui.add_table(storage.gui, sheet_data, player)
 end
 
