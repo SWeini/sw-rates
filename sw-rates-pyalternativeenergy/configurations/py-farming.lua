@@ -8,10 +8,7 @@ end
 local logic = { type = "py-farming", stats = { priority = 100 } } ---@type Rates.Configuration.Type
 
 ---@type { [string]: { default_module: string, domain: "animal" | "plant" | "fungi" } }
-local farm_buildings = require("__pyalienlife__/scripts/farming/farm-building-list")
-for key, value in pairs(require("__pyalternativeenergy__/scripts/farming")) do
-    farm_buildings[key] = value
-end
+local farm_buildings = prototypes.mod_data["pyanodons"].data["farm_buildings"]
 
 ---@param entity_name string
 ---@return { default_module: string, domain: "animal" | "plant" | "fungi" }?
