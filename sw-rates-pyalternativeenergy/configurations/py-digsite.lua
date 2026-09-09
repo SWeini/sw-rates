@@ -261,6 +261,17 @@ logic.modify_from_entity = function(entity, conf, options)
 
     local resource = get_resource_from_entity(entity_data, entity)
     local food = get_food_from_entity(entity)
+    if (food == nil and options.analyzer_inputs) then
+        local items = options.analyzer_inputs.items
+        if (items) then
+            for _, item in pairs(items) do
+                if (food_types[item.item.name]) then
+                    food = { food = item.item, quality = item.quality }
+                    break
+                end
+            end
+        end
+    end
 
     conf.recipe = nil
     conf.recipe_quality = nil
@@ -273,6 +284,35 @@ logic.modify_from_entity = function(entity, conf, options)
         conf.food_quality = food.quality
     end
     return conf
+end
+
+logic.analyze_flow = function(entity, prototype, inputs)
+    local site_data = mod_data.dig_sites[prototype.name]
+
+    if (not site_data) then
+        return
+    end
+
+    ---@type Rates.Analyzer.EntityOutputs
+    local result = {
+        items = {},
+        required_items = "once",
+    }
+
+    local resource = get_resource_from_entity(site_data, entity)
+    if (resource and resource.mineable_properties) then
+        ---@type Rates.Configuration.Amount[]
+        local products = {}
+        configuration.calculate_products(products, prototypes.quality.normal, resource.mineable_properties.products, 1, 0)
+        for _, product in ipairs(products) do
+            local node = product.node
+            if (node.type == "item") then
+                configuration.add_item_to_set(result.items, node.item, node.quality)
+            end
+        end
+    end
+
+    return result
 end
 
 return logic

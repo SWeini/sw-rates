@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.2
 Date: ????
+  Features:
+    - Trace food of dig-site ghosts
   Changes:
     - Use mod-data for PyAL farm buildings
     - Use mod-data for PyAL dino-dig-site and its creatures
