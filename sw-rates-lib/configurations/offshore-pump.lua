@@ -172,6 +172,10 @@ logic.fill_basic_configurations = function(result, options)
     end
 end
 
+logic.affects_entity = function(prototype)
+    return prototype.type == "offshore-pump"
+end
+
 logic.get_from_entity = function(entity, options)
     if (options.type ~= "offshore-pump") then
         return

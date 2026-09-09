@@ -1,5 +1,9 @@
 local logic = { type = "py-turd", stats = { priority = 100 } } ---@type Rates.Configuration.Type
 
+logic.affects_entity = function(prototype)
+    return prototype.type == "assembling-machine"
+end
+
 logic.modify_from_entity = function(entity, conf, options)
     if (conf.type ~= "crafting-machine") then
         return

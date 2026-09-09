@@ -14,6 +14,10 @@ local function filter_can_add_fluid(filter)
     return filter.percentage > 0
 end
 
+logic.affects_entity = function(prototype)
+    return prototype.type == "infinity-pipe"
+end
+
 logic.analyze_flow = function(entity, prototype, inputs)
     if (prototype.type ~= "infinity-pipe") then
         return

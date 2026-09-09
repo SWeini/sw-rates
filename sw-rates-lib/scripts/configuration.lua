@@ -33,6 +33,8 @@
 ---@field fill_progression? fun(result: Rates.Progression.Rules, options: Rates.Progression.Options)
 ---Used to provide Factoriopedia-like information
 ---@field fill_basic_configurations? fun(result: Rates.Configurations, options: Rates.Configuration.FillBasicOptions)
+---Used for performance optimizations (for get_from_entity, modify_from_entity and analyze_flow)
+---@field affects_entity? fun(prototype: LuaEntityPrototype): boolean
 ---Used to give the best possible description of an existing entity
 ---@field get_from_entity? fun(entity: LuaEntity, options: Rates.Configuration.FromEntityOptions.Internal): Rates.Configuration?
 ---Used to modify the result of get_from_entity
@@ -149,6 +151,7 @@ local function register_one(type)
             type.fill_basic_configurations(result, options)
             return result
         end,
+        affects_entity = type.affects_entity,
         get_from_entity = type.get_from_entity,
         modify_from_entity = type.modify_from_entity,
         analyze_flow = type.analyze_flow,
@@ -540,12 +543,75 @@ local function get_basic_configurations(options)
     return result
 end
 
+---@class Rates.PrototypeCacheEntry
+---@field get_from_entity { type: string, logic: Rates.Configuration.Type? }[]
+---@field modify_from_entity { type: string, logic: Rates.Configuration.Type? }[]
+---@field analyze_flow { type: string, logic: Rates.Configuration.Type? }[]
+
+---@type table<string, Rates.PrototypeCacheEntry>
+local type_cache = {}
+
+---@param prototype LuaEntityPrototype
+---@return Rates.PrototypeCacheEntry
+local function get_types_for(prototype)
+    local name = prototype.name
+    local result = type_cache[name]
+    if (not result) then
+        result = {
+            get_from_entity = {},
+            modify_from_entity = {},
+            analyze_flow = {},
+        }
+        type_cache[name] = result
+        for _, entry in pairs(registry.get_all_types()) do
+            local is_affected = true
+            if (entry.logic) then
+                if (entry.logic.affects_entity) then
+                    is_affected = entry.logic.affects_entity(prototype)
+                end
+
+                if (is_affected) then
+                    if (entry.logic.get_from_entity) then
+                        result.get_from_entity[#result.get_from_entity + 1] = entry
+                    end
+                    if (entry.logic.modify_from_entity) then
+                        result.modify_from_entity[#result.modify_from_entity + 1] = entry
+                    end
+                    if (entry.logic.analyze_flow) then
+                        result.analyze_flow[#result.analyze_flow + 1] = entry
+                    end
+                end
+            else
+                local interface = interface_name(entry.type)
+                local interfaces = remote.interfaces[interface]
+                if (interfaces.affects_entity) then
+                    is_affected = remote.call(interface, "affects_entity", prototype) --[[@as boolean]]
+                end
+
+                if (is_affected) then
+                    if (interfaces.get_from_entity) then
+                        result.get_from_entity[#result.get_from_entity + 1] = entry
+                    end
+                    if (interfaces.modify_from_entity) then
+                        result.modify_from_entity[#result.modify_from_entity + 1] = entry
+                    end
+                    if (interfaces.analyze_flow) then
+                        result.analyze_flow[#result.analyze_flow + 1] = entry
+                    end
+                end
+            end
+        end
+    end
+
+    return result
+end
+
 ---@param entity LuaEntity
 ---@param conf Rates.Configuration
 ---@param options Rates.Configuration.FromEntityOptions.Internal
 ---@return Rates.Configuration
 local function modify_from_entity(entity, conf, options)
-    local types = registry.get_all_types()
+    local types = get_types_for(options.entity).modify_from_entity
     for i = #types, 1, -1 do
         local entry = types[i]
         local result
@@ -583,15 +649,11 @@ local function get_from_entity(entity, options)
         analyzer_inputs = options.analyzer_inputs,
         type = data.entity.type,
         entity = data.entity,
-        quality = data.quality
+        quality = data.quality,
     }
 
-    options.type = data.entity.type
-    options.entity = data.entity
-    options.quality = data.quality
-
     local result = nil
-    for _, entry in ipairs(registry.get_all_types()) do
+    for _, entry in ipairs(get_types_for(data.entity).get_from_entity) do
         if (entry.logic) then
             result = entry.logic.get_from_entity and entry.logic.get_from_entity(entity, options)
         else
@@ -667,27 +729,18 @@ local function analyze_flow(entity, inputs)
     ---@type Rates.Analyzer.EntityOutputs?
     local result = nil
     local prototype = util.get_useful_entity_data(entity, true).entity
-    local type = prototype.type
-    if (type == "furnace" or type == "assembling-machine") then
-        type = "crafting-machine"
-    end
-    local fast_logic = registry.get(type)
-    if (fast_logic and fast_logic.analyze_flow) then
-        result = fast_logic.analyze_flow(entity, prototype, inputs)
-    else
-        for _, entry in ipairs(registry.get_all_types()) do
-            if (entry.logic) then
-                result = entry.logic.analyze_flow and
-                    entry.logic.analyze_flow(entity, prototype, inputs)
-            else
-                local interface = interface_name(entry.type)
-                result = remote.interfaces[interface].analyze_flow and
-                    remote.call(interface, "analyze_flow", entity, prototype, inputs) --[[@as Rates.Analyzer.EntityOutputs?]]
-            end
+    for _, entry in ipairs(get_types_for(prototype).analyze_flow) do
+        if (entry.logic) then
+            result = entry.logic.analyze_flow and
+                entry.logic.analyze_flow(entity, prototype, inputs)
+        else
+            local interface = interface_name(entry.type)
+            result = remote.interfaces[interface].analyze_flow and
+                remote.call(interface, "analyze_flow", entity, prototype, inputs) --[[@as Rates.Analyzer.EntityOutputs?]]
+        end
 
-            if (result) then
-                break
-            end
+        if (result) then
+            break
         end
     end
 

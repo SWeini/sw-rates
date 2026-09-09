@@ -468,6 +468,11 @@ local function get_furnace_recipes(prototype, inputs)
     return result
 end
 
+logic.affects_entity = function(prototype)
+    local type = prototype.type
+    return type == "assembling-machine" or type == "furnace" or type == "rocket-silo"
+end
+
 logic.get_from_entity = function(entity, options)
     if (options.type ~= "assembling-machine" and options.type ~= "furnace" and options.type ~= "rocket-silo") then
         return

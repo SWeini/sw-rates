@@ -125,6 +125,10 @@ logic.fill_progression = function(result, options)
     end
 end
 
+logic.affects_entity = function(prototype)
+    return prototype.type == "assembling-machine" and prototype.name == "mega-farm"
+end
+
 logic.modify_from_entity = function(entity, conf, options)
     if (conf.type == "crafting-machine" and conf.entity.name == "mega-farm") then
         ---@cast conf Rates.Configuration.PySmartFarm

@@ -102,6 +102,10 @@ logic.fill_basic_configurations = function(result, options)
     end
 end
 
+logic.affects_entity = function(prototype)
+    return prototype.type == "reactor"
+end
+
 logic.get_from_entity = function(entity, options)
     if (options.type ~= "reactor") then
         return

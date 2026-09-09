@@ -78,6 +78,14 @@ logic.get_production = function(conf, result, options)
     end
 end
 
+logic.affects_entity = function(prototype)
+    if (prototype.type == "simple-entity-with-owner") then
+        return hidden_solar_panels[prototype.name] ~= nil
+    end
+
+    return prototype.type == "solar-panel"
+end
+
 logic.get_from_entity = function(entity, options)
     if (options.type == "simple-entity-with-owner") then
         local hidden_solar_panel = hidden_solar_panels[options.entity.name]

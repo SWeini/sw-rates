@@ -96,6 +96,10 @@ logic.fill_progression = function(result, options)
     end
 end
 
+logic.affects_entity = function(prototype)
+    return prototype.type == "thruster"
+end
+
 logic.get_from_entity = function(entity, options)
     if (options.type ~= "thruster") then
         return

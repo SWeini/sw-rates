@@ -51,6 +51,10 @@ logic.fill_progression = function(result, options)
     end
 end
 
+logic.affects_entity = function(prototype)
+    return prototype.type == "mining-drill"
+end
+
 logic.get_from_entity = function(entity, options)
     if (not options.use_ghosts) then
         return

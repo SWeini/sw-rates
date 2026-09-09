@@ -41,6 +41,10 @@ logic.fill_basic_configurations = function(result, options)
     end
 end
 
+logic.affects_entity = function(prototype)
+    return prototype.type == "accumulator"
+end
+
 logic.get_from_entity = function(entity, options)
     if (options.type ~= "accumulator") then
         return

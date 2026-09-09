@@ -3,6 +3,10 @@ local generated_temperatures = require("scripts.generated-temperatures")
 
 local logic = { type = "pump" } ---@type Rates.Configuration.Type
 
+logic.affects_entity = function(prototype)
+    return prototype.type == "pump"
+end
+
 logic.analyze_flow = function(entity, prototype, inputs)
     if (prototype.type ~= "pump") then
         return

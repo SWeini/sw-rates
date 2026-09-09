@@ -249,6 +249,10 @@ logic.fill_basic_configurations = function(result, options)
     end
 end
 
+logic.affects_entity = function(prototype)
+    return prototype.type == "assembling-machine" and mod_data.dig_sites[prototype.name] ~= nil
+end
+
 logic.modify_from_entity = function(entity, conf, options)
     if (conf.type ~= "crafting-machine") then
         return

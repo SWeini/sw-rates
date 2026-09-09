@@ -1,5 +1,9 @@
 local logic = { type = "valve" } ---@type Rates.Configuration.Type
 
+logic.affects_entity = function(prototype)
+    return prototype.type == "valve"
+end
+
 logic.analyze_flow = function(entity, prototype, inputs)
     if (prototype.type ~= "valve") then
         return

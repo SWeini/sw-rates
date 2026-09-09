@@ -100,6 +100,10 @@ logic.fill_basic_configurations = function(result, options)
     end
 end
 
+logic.affects_entity = function(prototype)
+    return prototype.type == "assembling-machine" and prototype.name == "bioport"
+end
+
 logic.get_from_entity = function(entity, options)
     if (options.type ~= "assembling-machine" or options.entity.name ~= "bioport") then
         return
