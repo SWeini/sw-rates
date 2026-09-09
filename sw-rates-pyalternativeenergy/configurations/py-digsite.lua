@@ -4,6 +4,7 @@ do
     ---@field entity LuaEntityPrototype
     ---@field quality LuaQualityPrototype
     ---@field module_effects Rates.Configuration.ModuleEffects
+    ---@field resource? LuaEntityPrototype
     ---@field food? LuaItemPrototype
     ---@field food_quality? LuaQualityPrototype
 end
@@ -18,6 +19,17 @@ do
     ---@field type "py-digsite/food-unknown"
 end
 
+---@type { creatures: table<string, { proxy: string, mining_bonus: number }>, foods: table<string, number>, resource_categories: table<string, true>, dig_sites: table<string, { mining_range: number, mining_range_offsets: table<defines.direction, MapPosition.0> }> }
+local mod_data = prototypes.mod_data["pyanodons"].data["digosaurus"]
+local supported_resource_categories = mod_data.resource_categories
+---@type string[]
+local supported_resources = {}
+for _, resource in pairs(prototypes.get_entity_filtered { { filter = "type", type = "resource" } }) do
+    if (supported_resource_categories[resource.resource_category]) then
+        supported_resources[#supported_resources + 1] = resource.name
+    end
+end
+
 local api = require("__sw-rates-lib__.api-configuration")
 local configuration = api.configuration
 local node = api.node
@@ -26,25 +38,48 @@ local progression = api.progression
 local logic = { type = "py-digsite", stats = { priority = 100 } } ---@type Rates.Configuration.Type
 
 ---@type { [string]: { amount: number, ticks: number } }
-local dig_creatures = {
-    ["digosaurus"] = { amount = 1, ticks = 15 * 30 },
-    ["thikat"] = { amount = 2, ticks = 4 * 49 * 2 },
-    ["work-o-dile"] = { amount = 3, ticks = 8 * 49 * 2 },
-}
+local dig_creatures = {}
+for name, data in pairs(mod_data.creatures) do
+    local unit = prototypes.entity[name]
+    local proxy = prototypes.entity[data.proxy]
+    local ticks = proxy.get_max_health() * unit.attack_parameters.cooldown
+    dig_creatures[name] = { amount = data.mining_bonus, ticks = ticks }
+end
 
-dig_creatures["digosaurus-turd"] = dig_creatures["digosaurus"]
-dig_creatures["thikat-turd"] = dig_creatures["thikat"]
-dig_creatures["work-o-dile-turd"] = dig_creatures["work-o-dile"]
+local food_types = mod_data.foods
 
----@type { [string]: number }
-local food_types = {
-    ["dried-meat"] = 1,
-    ["guts"] = 1,
-    ["meat"] = 2,
-    ["workers-food"] = 8,
-    ["workers-food-02"] = 16,
-    ["workers-food-03"] = 32,
-}
+for _, site_data in pairs(mod_data.dig_sites) do
+    for _, direction in pairs { "north", "east", "south", "west" } do
+        local offset = site_data.mining_range_offsets[defines.direction[direction] .. ""]
+        offset = { x = offset.x or offset[1], y = offset.y or offset[2] }
+        site_data.mining_range_offsets[defines.direction[direction]] = offset
+    end
+end
+
+---@param data { mining_range: number, mining_range_offsets: table<defines.direction, MapPosition.0> }
+---@param entity LuaEntity
+---@return LuaEntityPrototype?
+local function get_resource_from_entity(data, entity)
+    local position = entity.position
+    local range = data.mining_range
+    local offset = data.mining_range_offsets[entity.direction]
+
+    local area = {
+        { position.x - range + offset.x, position.y - range + offset.y },
+        { position.x + range + offset.x, position.y + range + offset.y }
+    }
+
+    local resources = entity.surface.find_entities_filtered { area = area, type = "resource", name = supported_resources }
+    local compatible_resources = {} ---@type table<string, LuaEntityPrototype>
+    for _, resource in ipairs(resources) do
+        local prototype = resource.prototype
+        compatible_resources[prototype.name] = prototype
+    end
+
+    for _, prototype in pairs(compatible_resources) do
+        return prototype
+    end
+end
 
 ---@param inventory  LuaInventory
 ---@return LuaItemPrototype?, LuaQualityPrototype?
@@ -80,22 +115,34 @@ end
 
 ---@param conf Rates.Configuration.PyDigsite
 logic.get_id = function(conf)
+    local id = (conf.resource and conf.resource.name or "<no-resource>")
     local food = conf.food and conf.food.name or "?"
     local food_quality = conf.food_quality and conf.food_quality.name or "?"
-    return food .. "(" .. food_quality .. ")"
+    return id .. "/" .. food .. "(" .. food_quality .. ")"
 end
 
 ---@param conf Rates.Configuration.PyDigsite
 logic.gui_recipe = function(conf)
+    if (conf.resource) then
+        ---@type Rates.Gui.NodeDescription
+        return {
+            element = { type = "entity", name = conf.resource.name }
+        }
+    end
+
     ---@type Rates.Gui.NodeDescription
     return {
-        element = { type = "entity", name = "ore-nexelit" }
+        icon = { sprite = "utility/resources_depleted_icon" }
     }
 end
 
 ---@param conf Rates.Configuration.PyDigsite
 logic.get_production = function(conf, result, options)
     configuration.calculate_energy_source(result, conf.entity, conf.entity.energy_usage, options)
+
+    if (conf.resource == nil) then
+        return
+    end
 
     if (conf.food == nil or conf.food_quality == nil) then
         if (options.annotations) then
@@ -122,7 +169,7 @@ logic.get_production = function(conf, result, options)
     end
     result[#result + 1] = {
         tag = "resource",
-        node = node.create.map_entity(prototypes.entity["ore-nexelit"], prototypes.quality["normal"]),
+        node = node.create.map_entity(conf.resource, prototypes.quality.normal),
         amount = -resource
     }
     result[#result + 1] = {
@@ -131,12 +178,10 @@ logic.get_production = function(conf, result, options)
         node = node.create.item(conf.food, conf.food_quality),
         amount = -food
     }
-    result[#result + 1] = {
-        tag = "product",
-        tag_number = 1,
-        node = node.create.item(prototypes.item["nexelit-ore"], prototypes.quality["normal"]),
-        amount = ore
-    }
+    local mineable = conf.resource.mineable_properties
+    if (mineable.products) then
+        configuration.calculate_products(result, prototypes.quality.normal, mineable.products, ore, 0)
+    end
 end
 
 logic.gui_annotation = function(annotation, conf)
@@ -205,10 +250,16 @@ logic.fill_basic_configurations = function(result, options)
 end
 
 logic.modify_from_entity = function(entity, conf, options)
-    if (conf.type ~= "crafting-machine" or conf.entity.name ~= "dino-dig-site") then
+    if (conf.type ~= "crafting-machine") then
         return
     end
 
+    local entity_data = mod_data.dig_sites[conf.entity.name]
+    if (not entity_data) then
+        return
+    end
+
+    local resource = get_resource_from_entity(entity_data, entity)
     local food = get_food_from_entity(entity)
 
     conf.recipe = nil
@@ -216,6 +267,7 @@ logic.modify_from_entity = function(entity, conf, options)
     ---@cast conf Rates.Configuration.PyDigsite
     conf.type = "py-digsite"
     conf.module_effects.beacons = nil
+    conf.resource = resource
     if (food) then
         conf.food = food.food
         conf.food_quality = food.quality
