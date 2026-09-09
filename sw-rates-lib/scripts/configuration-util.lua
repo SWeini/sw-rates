@@ -894,12 +894,107 @@ local function add_module(map, module, module_quality)
     entry.count = entry.count + 1
 end
 
+---@param name Rates.Internal.EffectType
+---@param x number
+---@return boolean
+local function is_positive_effect(name, x)
+    if (positive_module_effect[name]) then
+        return x > 0
+    else
+        return x < 0
+    end
+end
+
+---@param entity LuaEntityPrototype
+---@param beacon LuaEntityPrototype
+---@return boolean
+local function is_beacon_compatible(entity, beacon)
+    local allowed_categories_entity = entity.allowed_module_categories
+    local allowed_categories_beacon = beacon.allowed_module_categories
+
+    local allowed_effects_entity = entity.allowed_effects or {}
+    local allowed_effects_beacon = beacon.allowed_effects or {}
+    local forbidden_effects = {}
+    for _, property in ipairs(all_module_effects) do
+        if (not allowed_effects_entity[property] or not allowed_effects_beacon[property]) then
+            forbidden_effects[#forbidden_effects + 1] = property
+        end
+    end
+
+    for _, module in pairs(prototypes.get_item_filtered { { filter = "type", type = "module" } }) do
+        local category = module.category
+        if (not allowed_categories_entity or allowed_categories_entity[category]) then
+            if (not allowed_categories_beacon or allowed_categories_beacon[category]) then
+                local allowed = true
+                for _, property in ipairs(forbidden_effects) do
+                    local effect = module.module_effects and module.module_effects[property] or 0
+                    if (is_positive_effect(property, effect)) then
+                        allowed = false
+                        break
+                    end
+                end
+                if (allowed) then
+                    return true
+                end
+            end
+        end
+    end
+
+    return false
+end
+
+---@type table<string, number>
+local beacon_range_cache = {}
+
+---@param prototype LuaEntityPrototype
+---@return number
+local function get_max_beacon_range_for_entity(prototype)
+    local name = prototype.name
+    local result = beacon_range_cache[name]
+    if (result) then
+        return result
+    end
+
+    ---@type { beacon: LuaEntityPrototype, range: number }[]
+    local beacons = {}
+    for _, beacon in pairs(prototypes.get_entity_filtered { { filter = "type", type = "beacon" } }) do
+        local max_range = 0
+        for _, quality in pairs(prototypes.quality) do
+            local range = beacon.get_supply_area_distance(quality)
+            if (range > max_range) then
+                max_range = range
+            end
+        end
+        beacons[#beacons + 1] = { beacon = beacon, range = max_range }
+    end
+
+    table.sort(beacons, function(a, b)
+        return a.range > b.range
+    end)
+
+    result = 0
+    for _, beacon in ipairs(beacons) do
+        if (is_beacon_compatible(prototype, beacon.beacon)) then
+            result = beacon.range
+            break
+        end
+    end
+
+    beacon_range_cache[name] = result
+    return result
+end
+
 ---@param entity LuaEntity
 ---@param use_ghosts boolean
 ---@return Rates.Configuration.Beacon[]
 function util.collect_beacons(entity, use_ghosts)
+    local prototype = util.get_useful_entity_data(entity, use_ghosts).entity
+    local receiver = prototype.effect_receiver
+    if (receiver and not receiver.uses_beacon_effects) then
+        return {}
+    end
     local bbox = entity.bounding_box
-    local max_distance = prototypes.max_beacon_supply_area_distance + 1
+    local max_distance = get_max_beacon_range_for_entity(prototype) + 1
     local diagonal = { x = max_distance, y = max_distance }
     local search_box = {
         left_top = math2d.position.subtract(bbox.left_top, diagonal),
@@ -968,17 +1063,6 @@ function util.get_useful_module_effects(entity, use_ghosts)
     return { modules = modules, beacons = beacons, local_effect = entity.local_effect }
 end
 
----@param name Rates.Internal.EffectType
----@param x number
----@return boolean
-local function is_positive_effect(name, x)
-    if (positive_module_effect[name]) then
-        return x > 0
-    else
-        return x < 0
-    end
-end
-
 ---@param effects Rates.Configuration.ModuleEffects
 ---@param receiver EffectReceiver?
 function util.filter_module_effects_receiver(effects, receiver)
@@ -992,6 +1076,10 @@ function util.filter_module_effects_receiver(effects, receiver)
 
     if (not receiver.uses_beacon_effects) then
         effects.beacons = nil
+    end
+
+    if (not receiver.uses_local_effects) then
+        effects.local_effect = nil
     end
 end
 
