@@ -19,15 +19,24 @@ do
     ---@field type "py-digsite/food-unknown"
 end
 
----@type { creatures: table<string, { proxy: string, mining_bonus: number }>, foods: table<string, number>, resource_categories: table<string, true>, dig_sites: table<string, { mining_range: number, mining_range_offsets: table<defines.direction, MapPosition.0> }> }
-local mod_data = prototypes.mod_data["pyanodons"].data["digosaurus"]
-local supported_resource_categories = mod_data.resource_categories
----@type string[]
-local supported_resources = {}
-for _, resource in pairs(prototypes.get_entity_filtered { { filter = "type", type = "resource" } }) do
-    if (supported_resource_categories[resource.resource_category]) then
-        supported_resources[#supported_resources + 1] = resource.name
-    end
+do
+    ---@class DigosaurPrototype
+    ---@field proxy data.EntityID mining target
+    ---@field mining_bonus number
+
+    ---@class DigSitePrototype
+    ---@field mining_range number the radius of the mining area
+    ---@field mining_range_offsets {[defines.direction]: MapPosition} mining area offset
+    ---@field spawn_point {[defines.direction]: MapPosition} spawning offset for digosaurs
+
+    ---@class (partial) pyModData
+    ---@field digosaurus DigosaursData
+
+    ---@class DigosaursData
+    ---@field creatures {[data.EntityID]: DigosaurPrototype}
+    ---@field foods {[data.ItemID]: number}
+    ---@field resource_categories {[data.ResourceCategoryID]: true}
+    ---@field dig_sites {[data.EntityID]: DigSitePrototype}
 end
 
 local api = require("__sw-rates-lib__.api-configuration")
@@ -36,6 +45,18 @@ local node = api.node
 local progression = api.progression
 
 local logic = { type = "py-digsite", stats = { priority = 100 } } ---@type Rates.Configuration.Type
+
+---@type pyModData
+local mod_data = prototypes.mod_data["pyanodons"].data
+local mod_data = mod_data.digosaurus
+
+---@type string[]
+local supported_resources = {}
+for _, resource in pairs(prototypes.get_entity_filtered { { filter = "type", type = "resource" } }) do
+    if (mod_data.resource_categories[resource.resource_category]) then
+        supported_resources[#supported_resources + 1] = resource.name
+    end
+end
 
 ---@type { [string]: { amount: number, ticks: number } }
 local dig_creatures = {}
@@ -51,7 +72,7 @@ local food_types = mod_data.foods
 for _, site_data in pairs(mod_data.dig_sites) do
     for _, direction in pairs { "north", "east", "south", "west" } do
         local offset = site_data.mining_range_offsets[defines.direction[direction] .. ""]
-        offset = { x = offset.x or offset[1], y = offset.y or offset[2] }
+        local offset = { x = offset.x or offset[1], y = offset.y or offset[2] }
         site_data.mining_range_offsets[defines.direction[direction]] = offset
     end
 end

@@ -2,16 +2,27 @@ do
     ---@class Rates.Configuration.Annotation.PyFarmingNoModules : Rates.Configuration.Annotation.Base
     ---@field type "py-farming/no-modules"
     ---@field domain "animal" | "plant" | "fungi"
-    ---@field default_module? string
+    ---@field default_module? data.ModuleName
+end
+
+do
+    ---@class (partial) pyModData
+    ---@field farm_buildings table<string,AlienlifeFarmPrototype>
+
+    ---@class AlienlifeFarmPrototype
+    ---@field default_module? data.ModuleName
+    ---@field domain "plant"|"animal"|"fungi"
 end
 
 local logic = { type = "py-farming", stats = { priority = 100 } } ---@type Rates.Configuration.Type
 
----@type { [string]: { default_module: string, domain: "animal" | "plant" | "fungi" } }
-local farm_buildings = prototypes.mod_data["pyanodons"].data["farm_buildings"]
+---@type pyModData
+local mod_data = prototypes.mod_data["pyanodons"].data
+
+local farm_buildings = mod_data.farm_buildings
 
 ---@param entity_name string
----@return { default_module: string, domain: "animal" | "plant" | "fungi" }?
+---@return AlienlifeFarmPrototype?
 local function get_farm(entity_name)
     local is_turd = not not entity_name:find("%-turd")
     local name = entity_name:gsub("%-mk..+", is_turd and "-turd" or "")
@@ -36,7 +47,7 @@ logic.get_annotations = function(conf)
     return { {
         type = "py-farming/no-modules",
         domain = farm.domain,
-        default_module = farm.default_module
+        default_module = farm.default_module,
     } }
 end
 
