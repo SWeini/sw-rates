@@ -1001,14 +1001,15 @@ function util.collect_beacons(entity, use_ghosts)
         right_bottom = math2d.position.add(bbox.right_bottom, diagonal)
     }
 
-    ---@type EntitySearchFilters
-    local filter = { type = { "beacon" }, area = search_box }
-    if (use_ghosts) then
-        filter.type[#filter.type + 1] = "entity-ghost"
-        filter.ghost_type = "beacon"
+    local candidates = {} ---@type LuaEntity[]
+    for _, entity in ipairs(entity.surface.find_entities_filtered { type = "beacon", area = search_box }) do
+        candidates[#candidates + 1] = entity
     end
-
-    local candidates = entity.surface.find_entities_filtered(filter)
+    if (use_ghosts) then
+        for _, ghost in ipairs(entity.surface.find_entities_filtered { type = "entity-ghost", ghost_type = "beacon", area = search_box }) do
+            candidates[#candidates + 1] = ghost
+        end
+    end
 
     local useful_beacons = {} ---@type { entity: LuaEntity, prototype: LuaEntityPrototype, quality: LuaQualityPrototype }[]
     for _, entity in pairs(candidates) do
