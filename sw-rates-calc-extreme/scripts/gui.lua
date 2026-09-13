@@ -8,16 +8,20 @@ local gui = {
 
 local main_window_name = "sw-rates-calc-extreme_wnd_main"
 
+---@alias Rates.Gui.RateUnit "automatic"|"second"|"minute"|"hour"
+
 ---@class PerPlayerStorage
 ---@field gui? GuiElements
 ---@field is_pinned? true
 ---@field sheet? Rates.Sheet
 ---@field removed_constraints? table<string, true>
+---@field rate_unit? Rates.Gui.RateUnit
 
 ---@class GuiElements
 ---@field wnd_main LuaGuiElement
 ---@field button_pin LuaGuiElement
 ---@field button_close LuaGuiElement
+---@field dropdown_rate_unit LuaGuiElement
 ---@field table_total LuaGuiElement
 ---@field table_buildings LuaGuiElement
 
@@ -191,6 +195,129 @@ local function on_constraint_button_click(e)
     gui.add_table(storage.gui, sheet_data, player)
 end
 
+---@type Rates.Gui.RateUnit[]
+local rate_unit_order = { "automatic", "second", "minute", "hour" }
+
+---@type table<Rates.Gui.RateUnit, integer>
+local rate_unit_index = {}
+for i, unit in ipairs(rate_unit_order) do
+    rate_unit_index[unit] = i
+end
+
+---@type table<string, { multiplier: number, suffix: LocalisedString }>
+local explicit_rate_units = {
+    second = { multiplier = 1, suffix = { "gui.sw-rates-calc-extreme-unit-second" } },
+    minute = { multiplier = 60, suffix = { "gui.sw-rates-calc-extreme-unit-minute" } },
+    hour = { multiplier = 3600, suffix = { "gui.sw-rates-calc-extreme-unit-hour" } }
+}
+
+--- Matches the library's own scale_number() threshold (sw-rates-lib
+--- scripts/gui.lua): below this, a value is escalated to the next bigger
+--- unit rather than shown as an uninformative 0.0.
+local zero_display_threshold = 0.1
+
+---@param player LuaPlayer
+---@return Rates.Gui.RateUnit
+local function get_rate_unit(player)
+    return gui.get_storage(player).rate_unit or "automatic"
+end
+
+--- Only nodes using the library's default "/s" number format are eligible
+--- for an explicit second/minute/hour override - nodes with their own
+--- number_format (power in W, thrust in N, plain counts, ...) keep using
+--- the library's automatic formatting regardless of the chosen rate unit.
+---@param ui Rates.Gui.NodeDescription
+---@return boolean
+local function has_rate_number_format(ui)
+    local number_format = ui.number_format
+    return not number_format or number_format.unit == "/s"
+end
+
+--- Picks the unit to actually display in, starting from `preferred_unit`
+--- and escalating to the next bigger unit(s) only if `amount` would
+--- otherwise show up as 0.0. Never escalates past "hour".
+---@param amount number
+---@param preferred_unit "second"|"minute"|"hour"
+---@return "second"|"minute"|"hour"
+local function pick_effective_unit(amount, preferred_unit)
+    for i = rate_unit_index[preferred_unit], #rate_unit_order do
+        local unit = rate_unit_order[i]
+        local multiplier = explicit_rate_units[unit].multiplier
+        if (i == #rate_unit_order or math.abs(amount) * multiplier >= zero_display_threshold) then
+            return unit
+        end
+    end
+
+    return preferred_unit
+end
+
+--- Formats `amount` (given in units per second, before the node's own
+--- number_format.factor) using a fixed, explicitly chosen unit instead of
+--- the library's automatic second/minute/hour pick - except when that unit
+--- would display as 0.0, in which case the next bigger unit is used
+--- instead (see `pick_effective_unit`). Mirrors the "[font=item-count]"
+--- wrapping the library's own gui_amount_text() uses, for visual parity.
+---@param ui Rates.Gui.NodeDescription
+---@param amount number
+---@param preferred_unit "second"|"minute"|"hour"
+---@return LocalisedString
+local function format_amount_explicit_unit(ui, amount, preferred_unit)
+    local factor = (ui.number_format and ui.number_format.factor) or 1
+    local scaled = amount * factor
+    local unit = pick_effective_unit(scaled, preferred_unit)
+    local info = explicit_rate_units[unit]
+    return { "", "[font=item-count]", api.gui.format_number(scaled * info.multiplier), info.suffix, "[/font]" }
+end
+
+---@param ui Rates.Gui.NodeDescription
+---@param amount number
+---@param rate_unit Rates.Gui.RateUnit
+---@return { button: Rates.Gui.ButtonDescription, text: LocalisedString }
+local function gui_button_and_text_with_unit(ui, amount, rate_unit)
+    if (rate_unit == "automatic" or not has_rate_number_format(ui)) then
+        return api.gui.gui_button_and_text(ui, amount)
+    end
+
+    -- Reuse the library's own icon + name/qualifier assembly (button
+    -- styling, tooltip stripping, quality coloring, ...) by asking for it
+    -- without an amount, then splice in our explicitly-unit-formatted
+    -- amount using the same "<amount> <name>" layout gui_button_and_text
+    -- itself uses - otherwise the item name is lost entirely.
+    local name_only = api.gui.gui_button_and_text(ui, nil)
+    return {
+        button = name_only.button,
+        text = { "", format_amount_explicit_unit(ui, amount, rate_unit), " ", name_only.text }
+    }
+end
+
+---@param ui Rates.Gui.NodeDescription
+---@param amount number
+---@param rate_unit Rates.Gui.RateUnit
+---@return LocalisedString
+local function gui_amount_text_with_unit(ui, amount, rate_unit)
+    if (rate_unit == "automatic" or not has_rate_number_format(ui)) then
+        return api.gui.gui_amount_text(ui, amount)
+    end
+
+    return format_amount_explicit_unit(ui, amount, rate_unit)
+end
+
+---@param e EventData.on_gui_selection_state_changed
+local function on_rate_unit_dropdown_changed(e)
+    local player = game.get_player(e.player_index) ---@cast player -nil
+    local unit = rate_unit_order[e.element.selected_index]
+    if (not unit) then
+        return
+    end
+
+    local storage = gui.get_storage(player)
+    storage.rate_unit = unit
+
+    if (storage.gui and storage.sheet) then
+        gui.add_table(storage.gui, storage.sheet, player)
+    end
+end
+
 ---@param player LuaPlayer
 ---@return number
 local function get_max_height(player)
@@ -227,7 +354,8 @@ flib_gui.add_handlers({
     on_freeze_button_click = on_freeze_button_click,
     on_pin_button_click = on_pin_button_click,
     on_close_button_click = on_close_button_click,
-    on_constraint_button_click = on_constraint_button_click
+    on_constraint_button_click = on_constraint_button_click,
+    on_rate_unit_dropdown_changed = on_rate_unit_dropdown_changed
 })
 
 --- @param name string
@@ -381,6 +509,25 @@ function gui.build(player)
                 ignored_by_interaction = true
             },
             { type = "empty-widget", style = "flib_titlebar_drag_handle", ignored_by_interaction = true },
+            {
+                type = "drop-down",
+                name = "dropdown_rate_unit",
+                items = {
+                    { "gui.sw-rates-calc-extreme-rate-unit-auto" },
+                    { "gui.sw-rates-calc-extreme-unit-second" },
+                    { "gui.sw-rates-calc-extreme-unit-minute" },
+                    { "gui.sw-rates-calc-extreme-unit-hour" }
+                },
+                selected_index = rate_unit_index[get_rate_unit(player)],
+                tooltip = { "gui.sw-rates-calc-extreme-rate-unit-tooltip" },
+                style_mods = {
+                    width = 46,
+                    top_margin = 2,
+                    bottom_margin = 2,
+                    right_margin = 4
+                },
+                handler = { [defines.events.on_gui_selection_state_changed] = on_rate_unit_dropdown_changed }
+            },
             frame_action_button("button_freeze", "virtual-signal/signal-snowflake",
                 { "gui.sw-rates-calc-extreme-freeze" }, on_freeze_button_click),
             frame_action_button("button_pin", "flib_pin_white", { "gui.flib-keep-open" }, on_pin_button_click),
@@ -771,6 +918,7 @@ function gui.add_table(ui, sheet_data, player)
     local total_in = {} ---@type flib.GuiElemDef[]
     local total_out = {} ---@type flib.GuiElemDef[]
     local zero = {} ---@type flib.GuiElemDef[]
+    local rate_unit = get_rate_unit(player)
     for _, subtotal in ipairs(total_i) do
         local ui = api.node.gui_default(subtotal.node)
         local node_id = api.node.get_id(subtotal.node)
@@ -779,8 +927,8 @@ function gui.add_table(ui, sheet_data, player)
 
         local amount_net = subtotal.produced + subtotal.consumed
         local amount_balanced = math.min(subtotal.produced, -subtotal.consumed)
-        local data = api.gui.gui_button_and_text(ui, math.abs(amount_net))
-        local text_balanced = api.gui.gui_amount_text(ui, amount_balanced)
+        local data = gui_button_and_text_with_unit(ui, math.abs(amount_net), rate_unit)
+        local text_balanced = gui_amount_text_with_unit(ui, amount_balanced, rate_unit)
         local icon = create_node_icon_direct(data.button)
         local target ---@type flib.GuiElemDef[]
         if (balanced) then
