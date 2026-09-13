@@ -116,12 +116,12 @@ end
 ---@param entity LuaEntity
 ---@return { food: LuaItemPrototype, quality: LuaQualityPrototype}?
 local function get_food_from_entity(entity)
-    local food_input = entity.surface.find_entities_filtered { name = "dino-dig-site-food-input", position = entity.position }
-    if (#food_input ~= 1) then
+    local food_input = entity.surface.find_entity(entity.name .. "-food-input", entity.position)
+    if (not food_input) then
         return
     end
 
-    local food_inventory = food_input[1].get_inventory(defines.inventory.chest)
+    local food_inventory = food_input.get_inventory(defines.inventory.chest)
     if (not food_inventory) then
         return
     end
@@ -285,7 +285,7 @@ logic.modify_from_entity = function(entity, conf, options)
     end
 
     local resource = get_resource_from_entity(entity_data, entity)
-    local food = get_food_from_entity(entity)
+    local food = entity.type ~= "entity-ghost" and get_food_from_entity(entity) or nil
     if (food == nil and options.analyzer_inputs) then
         local items = options.analyzer_inputs.items
         if (items) then
@@ -323,6 +323,11 @@ logic.analyze_flow = function(entity, prototype, inputs)
         items = {},
         required_items = "once",
     }
+
+    local food_input = entity.surface.find_entity(prototype.name .. "-food-input", entity.position)
+    if (food_input) then
+        result.additional_input_entities = { food_input }
+    end
 
     local resource = get_resource_from_entity(site_data, entity)
     if (resource and resource.mineable_properties) then

@@ -70,6 +70,7 @@ local flow_fluid = require("flow-fluid")
 ---@field required_items? "once"|"on-change"
 ---@field items? Rates.Analyzer.ItemSet
 ---@field drop_items? Rates.Analyzer.ItemSet
+---@field additional_input_entities? LuaEntity[]
 
 ---@class (exact) Rates.Analyzer.FluidBoxConnection
 ---@field entity LuaEntity
@@ -468,6 +469,21 @@ local function trace_backwards(dirty_entities, context, entity, force_input_dete
             get_item_segment(dirty_entities, context, id) -- adds item placers
             local input_segment = get_item_segment(dirty_entities, context, id)
             input_segment.dependent_entities[unit_number] = entity
+        end
+
+        if (outputs.additional_input_entities) then
+            for _, source_entity in ipairs(outputs.additional_input_entities) do
+                local input_id = flow_item.item_location_entity(source_entity, "I")
+                local input = get_item_segment(dirty_entities, context, input_id)
+                local output_id = flow_item.item_location_entity(entity, "I")
+                local output = get_item_segment(dirty_entities, context, output_id)
+                input.filtered_forward_segments[unit_number] = {
+                    entity = entity,
+                    filter = nil,
+                    pass = { [output_id] = output },
+                    fail = {}
+                }
+            end
         end
 
         local drop_id = flow_item.get_item_placer_drop_location(entity)
