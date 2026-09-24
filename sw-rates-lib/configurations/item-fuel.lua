@@ -21,16 +21,25 @@ end
 
 ---@param conf Rates.Configuration.ItemFuel
 logic.gui_recipe = function(conf)
-    local category = conf.item.fuel_category ---@cast category -nil
-    local sprite = "tooltip-category-" .. category
+    local categories = conf.item.fuel_categories ---@cast categories -nil
+    local sprite = "tooltip-category-" .. (#categories == 1 and categories[1] or "")
     if (not helpers.is_valid_sprite_path(sprite)) then
         sprite = "tooltip-category-fuel"
+    end
+
+    local name = { "" } ---@type LocalisedString
+    for i, category in ipairs(categories) do
+        if (i > 1) then
+            name[#name + 1] = "/"
+        end
+
+        name[#name + 1] = prototypes.fuel_category[category].localised_name
     end
 
     ---@type Rates.Gui.NodeDescription
     return {
         icon = { sprite = sprite },
-        name = prototypes.fuel_category[category].localised_name
+        name = name
     }
 end
 
@@ -61,38 +70,45 @@ logic.get_production = function(conf, result, options)
         end
     end
 
+    local categories = {} ---@type LuaFuelCategoryPrototype[]
+    for i, category in ipairs(conf.item.fuel_categories) do
+        categories[i] = prototypes.fuel_category[category]
+    end
     result[#result + 1] = {
         tag = "product",
-        node = node.create.item_fuel(prototypes.fuel_category[conf.item.fuel_category]),
+        node = node.create.item_fuels(categories),
         amount = conf.item.fuel_value
     }
 end
 
 logic.fill_progression = function(result, options)
     for _, item in pairs(items) do
-        local id = "item/fuel/" .. item.name .. "/*"
-        result[id] = {
-            pre = {
-                progression.create.item(item.name, "*")
-            },
-            post = {
-                progression.create.item_fuel(item.fuel_category, "*")
-            },
-            multi = options.locations
-        }
-
-        if (item.burnt_result) then
-            id = "item/burnt-result/" .. item.name .. "/*"
+        for _, category in pairs(item.fuel_categories) do
+            local fuel_category = prototypes[category]
+            local id = "item/fuel/" .. item.name .. "/" .. category .. "/*"
             result[id] = {
                 pre = {
-                    progression.create.item(item.name, "*"),
-                    progression.create.burner(item.fuel_category, "*")
+                    progression.create.item(item.name, "*")
                 },
                 post = {
-                    progression.create.item(item.burnt_result.name, "*")
+                    progression.create.item_fuel(fuel_category, "*")
                 },
                 multi = options.locations
             }
+
+            if (item.burnt_result) then
+                id = "item/burnt-result/" .. item.name .. "/*"
+                result[id] = {
+                    pre = {
+                        progression.create.item(item.name, "*"),
+                        progression.create.burner(fuel_category, "*")
+                    },
+                    post = {
+                        progression.create.item(item.burnt_result.name, "*")
+                    },
+                    multi = options.locations
+                }
+            end
         end
     end
 end
