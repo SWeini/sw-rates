@@ -14,15 +14,12 @@ logic.analyze_flow = function(entity, prototype, inputs)
 
     local result = {} ---@type Rates.Analyzer.EntityOutputs
 
-    local filter = entity.get_fluid_filter(1)
-    if (filter) then
-        local fluid = filter.fluid --[[@as LuaFluidPrototype]]
-        if (fluid) then
-            local temperatures = generated_temperatures.get_generated_fluid_temperatures(fluid)
-            if (#temperatures == 1) then
-                result.fluid_box_outputs = { [1] = configuration.build_fluid_set(fluid, temperatures[1]) }
-                return result
-            end
+    local fluid = entity.get_fluid_filter(1)
+    if (fluid) then
+        local temperatures = generated_temperatures.get_generated_fluid_temperatures(fluid)
+        if (#temperatures == 1) then
+            result.fluid_box_outputs = { [1] = configuration.build_fluid_set(fluid, temperatures[1]) }
+            return result
         end
     end
 

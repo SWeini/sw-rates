@@ -7,6 +7,6 @@
   "homepage": "https://github.com/SWeini/sw-rates",
   "description": "Calculating production rates was never easier.",
   "dependencies": [
-    "base >= 2.1.20"
+    "base >= 2.1.22"
   ]
 }
