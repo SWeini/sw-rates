@@ -94,10 +94,10 @@ local function can_craft(entity, recipe)
 end
 
 ---@param entity LuaEntity
----@param fluid string
+---@param fluid_name string
 ---@param production_type data.ProductionType
 ---@return integer?
-local function get_fluidbox(entity, fluid, production_type)
+local function get_fluidbox(entity, fluid_name, production_type)
     for i = 1, entity.fluids_count do
         local proto = entity.get_fluid_box_prototype(i)
         if (proto.object_name ~= "LuaFluidBoxPrototype") then
@@ -105,13 +105,13 @@ local function get_fluidbox(entity, fluid, production_type)
         end
         local production = proto.production_type
         if (production == production_type) then
-            local filter = entity.get_fluid_filter(i)
-            if (filter and filter.fluid and filter.fluid.name == fluid) then
+            local fluid = entity.get_fluid_filter(i)
+            if (fluid and fluid.name == fluid_name) then
                 return i
             end
 
             local box = entity.get_fluid(i)
-            if (box and box.name == fluid) then
+            if (box and box.name == fluid_name) then
                 return i
             end
         end
@@ -267,8 +267,7 @@ logic.fill_progression = function(result, options)
 
     for _, recipe in pairs(prototypes.recipe) do
         if (not recipe.parameter and recipe.name ~= "recipe-unknown") then
-            add_recipe_catogory(recipe, recipe.category)
-            for _, category in ipairs(recipe.additional_categories) do
+            for _, category in ipairs(recipe.categories) do
                 add_recipe_catogory(recipe, category)
             end
         end

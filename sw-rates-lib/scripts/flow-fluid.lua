@@ -15,7 +15,7 @@ local type_is_pipe = {
 local function debug_fluidbox(entity, outputs)
     local dbg = { entity = entity, unit_number = entity.unit_number, fluidboxes = entity.fluids_count, outputs = outputs }
     for i = 1, entity.fluids_count do
-        dbg[i] = { content = entity.get_fluid(i), filter = entity.get_fluid_filter(i) }
+        dbg[i] = { content = entity.get_fluid(i), fluid = entity.get_fluid_filter(i) }
     end
     game.print(serpent.line(dbg))
 end
