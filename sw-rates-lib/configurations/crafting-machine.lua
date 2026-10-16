@@ -296,10 +296,10 @@ logic.fill_progression = function(result, options)
     end
 
     for _, entity in pairs(entities) do
-        if (entity.fixed_recipe) then
+        local recipe = entity.fixed_recipe
+        if (recipe) then
             -- fixed recipe is a bit special, the recipe might still be locked (and this is fine)
 
-            local recipe = entity.fixed_recipe
             local locations = {} ---@type string[]
             for _, loc in ipairs(options.locations) do
                 if (progression.has_surface_conditions(loc, recipe.surface_conditions)) then
