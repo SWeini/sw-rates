@@ -54,11 +54,15 @@ logic.gui_recipe = function(conf)
     if (conf.resource) then
         local qualifier ---@type Rates.Gui.NodeQualifier.InfiniteResource?
         if (conf.amount) then
-            qualifier = {
-                type = "infinite-resource",
-                amount = conf.amount,
-                text = string.format("%.0f%%", conf.amount * 100 / conf.resource.normal_resource_amount)
-            }
+            if (conf.amount == conf.resource.normal_resource_amount and conf.resource.infinite_depletion_resource_amount == 0) then
+                -- no qualifier for truely infinite resource at 100%
+            else
+                qualifier = {
+                    type = "infinite-resource",
+                    amount = conf.amount,
+                    text = string.format("%.0f%%", conf.amount * 100 / conf.resource.normal_resource_amount)
+                }
+            end
         end
         ---@type Rates.Gui.NodeDescription
         return {
