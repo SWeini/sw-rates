@@ -158,6 +158,14 @@ logic.gui_recipe = function(conf)
 end
 
 ---@param conf Rates.Configuration.PyDigsite
+logic.gui_grouping = function(conf)
+    ---@type Rates.Gui.GroupingDescription
+    return {
+        id = conf.entity.name .. "/" .. conf.quality.name
+    }
+end
+
+---@param conf Rates.Configuration.PyDigsite
 logic.get_production = function(conf, result, options)
     configuration.calculate_energy_source(result, conf.entity, conf.entity.energy_usage, options)
 

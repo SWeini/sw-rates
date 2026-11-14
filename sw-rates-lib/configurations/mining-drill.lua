@@ -74,6 +74,23 @@ logic.gui_recipe = function(conf)
 end
 
 ---@param conf Rates.Configuration.MiningDrill
+logic.gui_grouping = function(conf)
+    if (not conf.resource) then
+        ---@type Rates.Gui.GroupingDescription
+        return {
+            id = conf.entity.name .. "/" .. conf.quality.name,
+        }
+    end
+
+    ---@type Rates.Gui.GroupingDescription
+    return {
+        id = conf.entity.name .. "/" .. conf.quality.name .. "/" .. conf.resource.name,
+        entity = { element = { type = "entity-with-quality", name = conf.entity.name, quality = conf.quality.name } },
+        recipe = { element = { type = "entity", name = conf.resource.name } }
+    }
+end
+
+---@param conf Rates.Configuration.MiningDrill
 logic.get_production = function(conf, result, options)
     local effective_values = {} ---@type Effect
     local speed, drain

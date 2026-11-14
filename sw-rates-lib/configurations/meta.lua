@@ -48,6 +48,11 @@ logic.gui_entity = function(conf)
     return configuration.gui_entity(conf.children[1])
 end
 
+---@param conf Rates.Configuration.Meta
+logic.gui_grouping = function(conf)
+    return configuration.gui_grouping(conf.children[1])
+end
+
 ---@param tag string
 ---@param tag_extra number | string
 local function format_tag(tag, tag_extra)

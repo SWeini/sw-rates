@@ -62,6 +62,15 @@ logic.gui_entity = function(conf)
     }
 end
 
+---@param conf Rates.Configuration.FusionReactor
+logic.gui_grouping = function(conf)
+    ---@type Rates.Gui.GroupingDescription
+    return {
+        id = conf.entity.name .. "/" .. conf.quality.name,
+        entity = { element = { type = "entity-with-quality", name = conf.entity.name, quality = conf.quality.name } },
+    }
+end
+
 logic.get_production = function(conf, result, options)
     local fluids = get_fluids(conf.entity)
     local target_temperature = conf.entity.target_temperature or fluids.output.default_temperature

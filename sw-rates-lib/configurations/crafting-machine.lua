@@ -172,6 +172,14 @@ logic.gui_recipe = function(conf)
 end
 
 ---@param conf Rates.Configuration.CraftingMachine
+logic.gui_grouping = function(conf)
+    ---@type Rates.Gui.GroupingDescription
+    return {
+        id = conf.entity.name .. "/" .. conf.quality.name .. "/" .. conf.recipe.name .. "/" .. conf.recipe_quality.name
+    }
+end
+
+---@param conf Rates.Configuration.CraftingMachine
 logic.get_production = function(conf, result, options)
     if (options.annotations) then
         if (not conf.entity.fixed_recipe) then

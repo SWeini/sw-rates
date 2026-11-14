@@ -55,6 +55,21 @@ logic.gui_entity = function(conf)
 end
 
 ---@param conf Rates.Configuration.Reactor
+logic.gui_grouping = function(conf)
+    ---@type Rates.Gui.GroupingDescription
+    return {
+        id = conf.entity.name .. "/" .. conf.quality.name,
+        recipe = {
+            icon = { sprite = "tooltip-category-heat" },
+            name = { "sw-rates-node.heat" },
+        },
+        entity = {
+            element = { type = "entity-with-quality", name = conf.entity.name, quality = conf.quality.name }
+        }
+    }
+end
+
+---@param conf Rates.Configuration.Reactor
 logic.get_production = function(conf, result, options)
     local energy_usage = conf.entity.get_max_energy_usage(conf.quality)
     configuration.calculate_energy_source(result, conf.entity, energy_usage, options)

@@ -7,6 +7,11 @@
 ---@field tooltip? LocalisedString
 ---@field number_format? Rates.Node.NumberFormat
 
+---@class (exact) Rates.Gui.GroupingDescription
+---@field id string
+---@field recipe? Rates.Gui.NodeDescription
+---@field entity? Rates.Gui.NodeDescription
+
 ---GUI description for an annotation.
 ---@class (exact) Rates.Gui.AnnotationDescription
 ---@field severity "error" | "warning" | "information"

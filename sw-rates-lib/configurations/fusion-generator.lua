@@ -39,6 +39,15 @@ logic.gui_recipe = function(conf)
 end
 
 ---@param conf Rates.Configuration.FusionGenerator
+logic.gui_grouping = function(conf)
+    ---@type Rates.Gui.GroupingDescription
+    return {
+        id = conf.entity.name .. "/" .. conf.quality.name,
+        entity = { element = { type = "entity-with-quality", name = conf.entity.name, quality = conf.quality.name } },
+    }
+end
+
+---@param conf Rates.Configuration.FusionGenerator
 logic.get_production = function(conf, result, options)
     local fluids = get_fluids(conf.entity)
 

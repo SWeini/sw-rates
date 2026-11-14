@@ -127,6 +127,17 @@ logic.gui_recipe = function(conf)
 end
 
 ---@param conf Rates.Configuration.AsteroidCollector
+logic.gui_grouping = function(conf)
+    ---@type Rates.Gui.GroupingDescription
+    return {
+        id = conf.entity.name .. "/" .. conf.quality.name,
+        entity = {
+            element = { type = "entity-with-quality", name = conf.entity.name, quality = conf.quality.name }
+        }
+    }
+end
+
+---@param conf Rates.Configuration.AsteroidCollector
 logic.get_production = function(conf, result, options)
     local speed = get_speed(conf.entity, conf.quality)
     local frequency = speed.amount / speed.ticks * 60

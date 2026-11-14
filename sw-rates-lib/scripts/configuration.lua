@@ -18,6 +18,8 @@
 ---@field gui_recipe? fun(conf: Rates.Configuration): Rates.Gui.NodeDescription
 ---Used to provide GUI in the entity column
 ---@field gui_entity? fun(conf: Rates.Configuration): Rates.Gui.NodeDescription
+---Used to group similar configurations
+---@field gui_grouping? fun(conf: Rates.Configuration): Rates.Gui.GroupingDescription
 ---Calculates the production rates of a configuration
 ---@field get_production? fun(conf: Rates.Configuration, result: Rates.Configuration.Amount[], options: Rates.Configuration.ProductionOptions)
 ---Get annotations about configuration
@@ -158,6 +160,7 @@ local function register_one(type)
         get_id = type.get_id,
         gui_recipe = type.gui_recipe,
         gui_entity = type.gui_entity,
+        gui_grouping = type.gui_grouping,
         get_production = type.get_production and function(conf, options)
             local result = {} ---@type Rates.Configuration.Amount[]
             type.get_production(conf, result, options)
@@ -345,6 +348,50 @@ local function gui_entity(conf)
         icon = { sprite = "virtual-signal/signal-question-mark" },
         name = conf.id
     }
+end
+
+---@param conf Rates.Configuration
+---@return Rates.Gui.GroupingDescription
+local function gui_grouping(conf)
+    local logic = registry.get(conf.type)
+    if (logic) then
+        if (logic.gui_grouping) then
+            return logic.gui_grouping(conf)
+        end
+    else
+        local interface = interface_name(conf.type)
+        if (remote.interfaces[interface].gui_grouping) then
+            return remote.call(interface, "gui_grouping", conf) --[[@as Rates.Gui.GroupingDescription]]
+        end
+    end
+
+    local id
+    if (logic) then
+        if (logic.get_id) then
+            id = logic.get_id(conf)
+        end
+    else
+        local interface = interface_name(conf.type)
+        if (remote.interfaces[interface].get_id) then
+            id = remote.call(interface, "get_id", conf) --[[@as string]]
+        end
+    end
+
+    if (not id) then
+        id = ""
+    end
+
+    if (conf.entity and conf.quality) then
+        if (id ~= "") then
+            id = conf.entity.name .. "(" .. conf.quality.name .. ")/" .. id
+        else
+            id = conf.entity.name .. "(" .. conf.quality.name .. ")"
+        end
+    end
+
+    id = conf.type .. "/" .. id
+    ---@type Rates.Gui.GroupingDescription
+    return { id = id }
 end
 
 ---@param conf Rates.Configuration
@@ -758,6 +805,7 @@ return {
     get_id = get_id,
     gui_recipe = gui_recipe,
     gui_entity = gui_entity,
+    gui_grouping = gui_grouping,
     get_production = get_production,
     get_annotations = get_annotations,
     gui_annotation = gui_annotation,
