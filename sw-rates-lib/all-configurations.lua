@@ -26,6 +26,8 @@ local registry = require("scripts.configuration-registry")
 --- | Rates.Configuration.OffshorePump
 --- | Rates.Configuration.Reactor
 --- | Rates.Configuration.Recipe
+--- | Rates.Configuration.SendToOrbit
+--- | Rates.Configuration.SendToPlatform
 --- | Rates.Configuration.SolarPanel
 --- | Rates.Configuration.SpaceLocation
 --- | Rates.Configuration.Thruster

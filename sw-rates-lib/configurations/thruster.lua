@@ -22,6 +22,8 @@ local function get_fluids(prototype)
     return { fuel = fuel, oxidizer = oxidizer }
 end
 
+---@param prototype LuaEntityPrototype
+---@param load number
 ---@return { fluid_usage: number, effectivity: number }
 local function get_performance(prototype, load)
     local min = prototype.min_performance ---@cast min -nil
