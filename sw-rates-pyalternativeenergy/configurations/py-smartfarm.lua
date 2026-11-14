@@ -126,7 +126,7 @@ logic.fill_progression = function(result, options)
 end
 
 logic.affects_entity = function(prototype)
-    return prototype.type == "assembling-machine" and prototype.name == "mega-farm"
+    return prototype.type == "rocket-silo" and prototype.name == "mega-farm"
 end
 
 logic.modify_from_entity = function(entity, conf, options)
