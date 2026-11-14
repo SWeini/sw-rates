@@ -8,6 +8,7 @@ end
 local configuration = require("scripts.configuration-util")
 local node = require("scripts.node")
 local progression = require("scripts.progression")
+local quality_util = require("scripts.quality")
 
 local logic = { type = "item-spoil" } ---@type Rates.Configuration.Type
 
@@ -37,14 +38,17 @@ end
 
 ---@param conf Rates.Configuration.ItemSpoil
 logic.get_production = function(conf, result, options)
+    local item = conf.item
+    local quality = quality_util.apply_quality_adjustments(conf.quality,
+        item.spoil_quality_min, item.spoil_quality_max, item.spoil_quality_change)
     result[#result + 1] = {
         tag = "ingredient",
-        node = node.create.item(conf.item, conf.quality),
+        node = node.create.item(item, quality),
         amount = -1
     }
     result[#result + 1] = {
         tag = "product",
-        node = node.create.item(conf.item.spoil_result, conf.quality),
+        node = node.create.item(item.spoil_result, quality),
         amount = 1
     }
 end
