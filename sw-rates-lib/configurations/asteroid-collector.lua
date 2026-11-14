@@ -143,6 +143,11 @@ logic.get_production = function(conf, result, options)
             amount = -drain_energy_usage * 60
         }
     end
+    result[#result + 1] = {
+        tag = "resource",
+        node = node.create.asteroid_chunk(conf.asteroid),
+        amount = -frequency
+    }
     configuration.calculate_products(result, prototypes.quality.normal, conf.asteroid.mineable_properties.products,
         frequency, 0)
 end
