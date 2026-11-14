@@ -92,7 +92,7 @@ local function scale_number(amount, number_format)
     end
 
     if (unit == "#") then
-        unit = "" ---@diagnostic disable-line: cast-local-type
+        unit = " ×" ---@diagnostic disable-line: cast-local-type
     end
 
     return { amount = amount, unit = unit }
