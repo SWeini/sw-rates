@@ -849,7 +849,7 @@ end
 
 ---@param box1 BoundingBox.0
 ---@param box2 BoundingBox.0
-local function collides_with(box1, box2)
+function util.bbox_collide(box1, box2)
     -- separate implementation because C++ and math2d.lua do not agree on edge case (bounding boxes touch exactly)
     return box1.left_top.x <= box2.right_bottom.x and
         box2.left_top.x <= box1.right_bottom.x and
@@ -873,7 +873,7 @@ local function is_beacon_in_range(entity, beacon, beacon_prototype, beacon_quali
         right_bottom = math2d.position.add(beacon_box.right_bottom, diagonal)
     }
 
-    return collides_with(supply_box, entity_box)
+    return util.bbox_collide(supply_box, entity_box)
 end
 
 ---@param map table<string, Rates.Configuration.Module>
