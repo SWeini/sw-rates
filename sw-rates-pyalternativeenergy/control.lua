@@ -10,6 +10,7 @@ local configurations = {
     require("configurations.py-smartfarm"),
     require("configurations.py-solar"),
     require("configurations.py-turd"),
+    require("configurations.py-vatbrain"),
 }
 
 handler.add_libraries({ {
