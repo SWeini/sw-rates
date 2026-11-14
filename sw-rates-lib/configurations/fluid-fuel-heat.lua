@@ -38,7 +38,8 @@ logic.gui_entity = function(conf)
     ---@type Rates.Gui.NodeDescription
     return {
         element = { type = "fluid", name = conf.fluid.name },
-        qualifier = qualifier
+        qualifier = qualifier,
+        number_format = { unit = "/s", factor = 1 },
     }
 end
 

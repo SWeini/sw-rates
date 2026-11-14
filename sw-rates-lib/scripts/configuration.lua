@@ -324,33 +324,41 @@ local function gui_recipe(conf)
     return {}
 end
 
+---@param gui Rates.Gui.NodeDescription
+---@return Rates.Gui.NodeDescription
+local function add_entity_number_format(gui)
+    if (not gui.number_format) then
+        gui.number_format = { unit = "#", factor = 1 }
+    end
+
+    return gui
+end
+
 ---@param conf Rates.Configuration
 ---@return Rates.Gui.NodeDescription
 local function gui_entity(conf)
     local logic = registry.get(conf.type)
     if (logic) then
         if (logic.gui_entity) then
-            return logic.gui_entity(conf)
+            return add_entity_number_format(logic.gui_entity(conf))
         end
     else
         local interface = interface_name(conf.type)
         if (remote.interfaces[interface].gui_entity) then
-            return remote.call(interface, "gui_entity", conf) --[[@as Rates.Gui.NodeDescription]]
+            return add_entity_number_format(remote.call(interface, "gui_entity", conf) --[[@as Rates.Gui.NodeDescription]])
         end
     end
 
     if (conf.entity) then
-        ---@type Rates.Gui.NodeDescription
-        return {
-            element = { type = "entity-with-quality", name = conf.entity.name, quality = conf.quality.name }
-        }
+        return add_entity_number_format({
+            element = { type = "entity-with-quality", name = conf.entity.name, quality = conf.quality.name },
+        })
     end
 
-    ---@type Rates.Gui.NodeDescription
-    return {
+    return add_entity_number_format({
         icon = { sprite = "virtual-signal/signal-question-mark" },
-        name = conf.id
-    }
+        name = conf.id,
+    })
 end
 
 ---@param conf Rates.Configuration
