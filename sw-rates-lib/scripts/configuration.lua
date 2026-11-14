@@ -92,9 +92,14 @@
 ---@field surface? Rates.Location used to add global effects on that surface
 ---@field annotations? Rates.Configuration.Annotation[] used to collect annotations related to production rates
 
+---@alias Rates.Configuration.LocationId string | integer
+
+---@alias Rates.Configuration.AmountTag "energy-source-input" | "energy-source-output" | "pollution" | "resource" | "mining-fluid" | "ingredient" | "product" | "infrastructure" | "import" | "export"
+---@alias Rates.Configuration.AmountTagExtra number | string | "drain" | "depends-on-fuel"
+
 ---@class (exact) Rates.Configuration.Amount
----@field tag "energy-source-input" | "energy-source-output" | "pollution" | "resource" | "mining-fluid" | "ingredient" | "product" | "infrastructure"
----@field tag_extra? number | string | "drain" | "depends-on-fuel"
+---@field tag Rates.Configuration.AmountTag
+---@field tag_extra? Rates.Configuration.AmountTagExtra
 ---@field node Rates.Node
 ---@field amount number
 
