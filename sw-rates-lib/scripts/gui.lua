@@ -214,6 +214,12 @@ gui_element_decompose["tile"] = gui_element_default
 gui_element_decompose["item-with-quality"] = gui_element_default_with_quality
 gui_element_decompose["entity-with-quality"] = gui_element_default_with_quality
 gui_element_decompose["recipe-with-quality"] = gui_element_default_with_quality
+gui_element_decompose["space-location"] = function(element)
+    return {
+        name = prototypes.space_location[element.name].localised_name,
+        sprite = "space-location/" .. element.name
+    }
+end
 gui_element_decompose["asteroid-chunk"] = function(element)
     return {
         name = prototypes.asteroid_chunk[element.name].localised_name,
