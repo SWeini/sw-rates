@@ -158,6 +158,18 @@ logic.gui_recipe = function(conf)
 end
 
 ---@param conf Rates.Configuration.PyDigsite
+logic.gui_fuel = function(conf)
+    if (conf.food and conf.food_quality) then
+        ---@type Rates.Gui.NodeDescription
+        return {
+            element = { type = "item-with-quality", name = conf.food.name, quality = conf.food_quality.name }
+        }
+    end
+
+    return nil
+end
+
+---@param conf Rates.Configuration.PyDigsite
 logic.gui_grouping = function(conf)
     ---@type Rates.Gui.GroupingDescription
     return {

@@ -18,6 +18,8 @@
 ---@field gui_recipe? fun(conf: Rates.Configuration): Rates.Gui.NodeDescription
 ---Used to provide GUI in the entity column
 ---@field gui_entity? fun(conf: Rates.Configuration): Rates.Gui.NodeDescription
+---Used to provide GUI in the fuel column
+---@field gui_fuel? fun(conf: Rates.Configuration): Rates.Gui.NodeDescription
 ---Used to group similar configurations
 ---@field gui_grouping? fun(conf: Rates.Configuration): Rates.Gui.GroupingDescription
 ---Calculates the production rates of a configuration
@@ -160,6 +162,7 @@ local function register_one(type)
         get_id = type.get_id,
         gui_recipe = type.gui_recipe,
         gui_entity = type.gui_entity,
+        gui_fuel = type.gui_fuel,
         gui_grouping = type.gui_grouping,
         get_production = type.get_production and function(conf, options)
             local result = {} ---@type Rates.Configuration.Amount[]
@@ -348,6 +351,28 @@ local function gui_entity(conf)
         icon = { sprite = "virtual-signal/signal-question-mark" },
         name = conf.id
     }
+end
+
+---@param conf Rates.Configuration
+---@return Rates.Gui.NodeDescription?
+local function gui_fuel(conf)
+    local logic = registry.get(conf.type)
+    if (logic) then
+        if (logic.gui_fuel) then
+            return logic.gui_fuel(conf)
+        end
+    else
+        local interface = interface_name(conf.type)
+        if (remote.interfaces[interface].gui_fuel) then
+            return remote.call(interface, "gui_fuel", conf) --[[@as Rates.Gui.NodeDescription]]
+        end
+    end
+
+    if (conf.fuel) then
+        return gui_entity(conf.fuel)
+    end
+
+    return nil
 end
 
 ---@param conf Rates.Configuration
@@ -805,6 +830,7 @@ return {
     get_id = get_id,
     gui_recipe = gui_recipe,
     gui_entity = gui_entity,
+    gui_fuel = gui_fuel,
     gui_grouping = gui_grouping,
     get_production = get_production,
     get_annotations = get_annotations,
