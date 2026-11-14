@@ -32,6 +32,7 @@ logic.gui_entity = function(conf)
     ---@type Rates.Gui.NodeDescription
     return {
         element = { type = "item-with-quality", name = conf.item.name, quality = conf.quality.name },
+        name = conf.item.localised_name,
         number_format = { unit = "/s", factor = 1 },
     }
 end
