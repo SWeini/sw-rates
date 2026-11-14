@@ -24,7 +24,7 @@ logic.gui_recipe = function(conf)
     local categories = conf.item.fuel_categories ---@cast categories -nil
     local sprite = "tooltip-category-" .. (#categories == 1 and categories[1] or "")
     if (not helpers.is_valid_sprite_path(sprite)) then
-        sprite = "tooltip-category-fuel"
+        sprite = "virtual-signal/signal-fire"
     end
 
     local name = { "" } ---@type LocalisedString

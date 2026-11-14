@@ -74,7 +74,7 @@ end
 result.gui_default = function(node)
     local sprite = "tooltip-category-" .. node.category.name
     if (not helpers.is_valid_sprite_path(sprite)) then
-        sprite = "tooltip-category-consumes"
+        sprite = "virtual-signal/signal-fire"
     end
 
     ---@type Rates.Gui.NodeDescription
@@ -100,7 +100,7 @@ result_any.gui_default = function(node)
 
     ---@type Rates.Gui.NodeDescription
     return {
-        icon = { sprite = "tooltip-category-consumes" },
+        icon = { sprite = "virtual-signal/signal-fire" },
         name = { "sw-rates-node.item-fuel" },
         tooltip = tooltip,
         number_format = { factor = 1, unit = "W" },

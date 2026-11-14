@@ -39,6 +39,22 @@ logic.get_id = function(conf)
     return (conf.fluid and conf.fluid.name or "<no-fluid>") .. tostring(conf.temperature)
 end
 
+logic.gui_entity = function(conf)
+    local qualifier ---@type Rates.Gui.NodeQualifier.Temperature?
+    local temps = generated_temperatures.get_generated_fluid_temperatures(conf.fluid)
+    if (#temps == 1 and temps[1] == conf.temperature) then
+        qualifier = nil
+    else
+        qualifier = configuration.create_qualifier_temperature(conf.temperature)
+    end
+
+    ---@type Rates.Gui.NodeDescription
+    return {
+        element = { type = "entity-with-quality", name = conf.entity.name, quality = conf.quality.name },
+        qualifier = qualifier,
+    }
+end
+
 ---@param conf Rates.Configuration.Generator
 logic.gui_recipe = function(conf)
     ---@type Rates.Gui.NodeDescription

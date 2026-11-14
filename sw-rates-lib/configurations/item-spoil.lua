@@ -23,9 +23,8 @@ end
 logic.gui_recipe = function(conf)
     ---@type Rates.Gui.NodeDescription
     return {
-        element = { type = "item-with-quality", name = conf.item.spoil_result.name, quality = conf.quality.name }
+        icon = { sprite = "virtual-signal/signal-clock" },
     }
-    -- or use "tooltip-category-spoilable"?
 end
 
 ---@param conf Rates.Configuration.ItemSpoil

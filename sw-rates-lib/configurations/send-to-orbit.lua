@@ -22,7 +22,8 @@ end
 logic.gui_recipe = function(conf)
     ---@type Rates.Gui.NodeDescription
     return {
-        element = { type = "item-with-quality", name = conf.item.name, quality = conf.quality.name }
+        icon = { sprite = "utility/space_age_icon" },
+        name = { "sw-rates-node.send-to-orbit" }
     }
 end
 
@@ -30,8 +31,7 @@ end
 logic.gui_entity = function(conf)
     ---@type Rates.Gui.NodeDescription
     return {
-        icon = { sprite = "utility/space_age_icon" },
-        name = { "sw-rates-node.send-to-orbit" }
+        element = { type = "item-with-quality", name = conf.item.name, quality = conf.quality.name },
     }
 end
 

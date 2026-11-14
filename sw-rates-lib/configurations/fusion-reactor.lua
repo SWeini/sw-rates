@@ -55,10 +55,11 @@ end
 
 ---@param conf Rates.Configuration.FusionReactor
 logic.gui_entity = function(conf)
+    local has_neighbour_bonus = conf.entity.neighbour_bonus ~= 0
     ---@type Rates.Gui.NodeDescription
     return {
         element = { type = "entity-with-quality", name = conf.entity.name, quality = conf.quality.name },
-        qualifier = configuration.create_qualifier_neighbours(conf.neighbours)
+        qualifier = has_neighbour_bonus and configuration.create_qualifier_neighbours(conf.neighbours) or nil,
     }
 end
 
@@ -79,8 +80,8 @@ logic.get_production = function(conf, result, options)
     local burner_energy_usage = flow * energy_per_fluid
     local energy_usage = conf.entity.get_max_energy_usage(conf.quality)
 
-    local neighbour_bonus = conf.entity.neighbour_bonus
-    local output_temperature = target_temperature * (1 + conf.neighbours * neighbour_bonus)
+    local neighbour_bonus = conf.entity.neighbour_bonus * conf.neighbours
+    local output_temperature = target_temperature * (1 + neighbour_bonus)
     if (output_temperature > fluids.output.max_temperature) then
         output_temperature = fluids.output.max_temperature
     end
@@ -189,8 +190,8 @@ logic.analyze_flow = function(entity, prototype, inputs)
     local fluids = get_fluids(prototype)
     local target_temperature = prototype.target_temperature or fluids.output.default_temperature
 
-    local neighbour_bonus = prototype.neighbour_bonus
-    local output_temperature = target_temperature * (1 + neighbours * neighbour_bonus)
+    local neighbour_bonus = prototype.neighbour_bonus * neighbours
+    local output_temperature = target_temperature * (1 + neighbour_bonus)
     if (output_temperature > fluids.output.max_temperature) then
         output_temperature = fluids.output.max_temperature
     end
