@@ -8,6 +8,11 @@ do
     ---@field recipe_quality LuaQualityPrototype
 end
 
+do
+    ---@class (exact) Rates.Configuration.Annotation.CraftingMachineRecipeNotUnlocked : Rates.Configuration.Annotation.Base
+    ---@field type "crafting-machine/recipe-not-unlocked"
+end
+
 local configuration = require("scripts.configuration-util")
 local node = require("scripts.node")
 local progression = require("scripts.progression")
@@ -167,6 +172,16 @@ end
 
 ---@param conf Rates.Configuration.CraftingMachine
 logic.get_production = function(conf, result, options)
+    if (options.annotations) then
+        if (not conf.entity.fixed_recipe) then
+            if (options.force and not options.force.recipes[conf.recipe.name].enabled) then
+                options.annotations[#options.annotations + 1] = {
+                    type = "crafting-machine/recipe-not-unlocked"
+                } --[[@as Rates.Configuration.Annotation.CraftingMachineRecipeNotUnlocked]]
+            end
+        end
+    end
+
     local effective_values = {} ---@type Effect
     local speed
     if (conf.entity.type == "character") then
@@ -239,6 +254,16 @@ logic.get_production = function(conf, result, options)
     else
         configuration.calculate_recipe_products(result, conf.recipe, conf.recipe_quality, frequency,
             effective_values.productivity, effective_values.quality, options.force)
+    end
+end
+
+logic.gui_annotation = function(annotation, conf)
+    if (annotation.type == "crafting-machine/recipe-not-unlocked") then
+        ---@type Rates.Gui.AnnotationDescription
+        return {
+            severity = "error",
+            text = { "sw-rates-annotation.crafting-machine-recipe-not-unlocked" },
+        }
     end
 end
 
