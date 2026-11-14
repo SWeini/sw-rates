@@ -24,6 +24,7 @@ local energy_source = require("scripts.energy-source")
 local logic = { type = "crafting-machine" } ---@type Rates.Configuration.Type
 
 local entities = prototypes.get_entity_filtered { { filter = "type", type = { "assembling-machine", "furnace", "rocket-silo" } } }
+local rocket_lift_weight = prototypes.utility_constants["default_rocket_lift_weight"] --[[@as number]]
 
 ---@param entity LuaEntity
 ---@return LuaRecipePrototype?, LuaQualityPrototype?
@@ -241,7 +242,7 @@ logic.get_production = function(conf, result, options)
             result[#result + 1] = {
                 tag = "product",
                 node = node.create.send_to_platform(),
-                amount = amount
+                amount = amount * (conf.entity.lift_weight / rocket_lift_weight)
             }
         else
             local rocket_capacity = conf.entity.get_inventory_size(defines.inventory.rocket_silo_rocket)
