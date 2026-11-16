@@ -1,4 +1,26 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.5.0
+Date: 2026-11-16
+  Changes:
+    - Experimental release, expect more bugs than usual
+    - Complete rewrite of GUI layer
+  Features:
+    - Option for window default position
+    - Navigation in the window, show details about nodes and configurations
+    - Undo/redo changes
+    - Save sheets in the library
+    - New selection modes, allows adding the same building multiple times
+    - Option to ignore building counts
+    - Switch timescale to second, minute or hour
+    - Group similar configurations
+    - Improved multi-surface selection
+    - Option to not use ghosts
+    - Option to ignore fuels (and use fuel recipes instead)
+    - Configure fuel, spoilage and rocket launches manually
+    - Open Factoriopedia
+    - Show tooltips to explain possible actions
+    - Added error handling, should log error instead of crashing the game
+---------------------------------------------------------------------------------------------------
 Version: 0.4.1
 Date: 2026-08-22
   Changes:

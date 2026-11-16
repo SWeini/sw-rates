@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.3
+Date: 2026-11-16
+  Features:
+    - Support grouping and "fuel" of dig-site
+    - Added ghost support for vatbrain biocomputers
+  Bugfixes:
+    - Fixed smart farms not working since 0.4.2
+---------------------------------------------------------------------------------------------------
 Version: 0.4.2
 Date: 2026-09-09
   Features:

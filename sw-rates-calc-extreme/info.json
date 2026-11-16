@@ -1,13 +1,13 @@
 {
   "name": "sw-rates-calc-extreme",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "factorio_version": "2.1",
   "title": "Production Rates Calculator Extreme",
   "author": "SWeini",
   "homepage": "https://github.com/SWeini/sw-rates",
   "description": "Uses simplex algorithm to balance production chains.",
   "dependencies": [
-    "sw-rates-lib",
+    "sw-rates-lib >= 0.5.8",
     "+sw-entity-tracker",
     "glib"
   ],
