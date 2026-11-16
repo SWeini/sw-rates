@@ -8,8 +8,8 @@
   "description": "Uses simplex algorithm to balance production chains.",
   "dependencies": [
     "sw-rates-lib",
-    "sw-entity-tracker",
-    "flib"
+    "+sw-entity-tracker",
+    "glib"
   ],
   "package": {
     "ignore": [
