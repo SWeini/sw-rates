@@ -6,22 +6,38 @@ At its heart Production Rates Calculator Extreme (PRCE) is a rate calculator mod
 ![](basic-select.png)
 
 If you do so, you will see the production rates of the selected buildings.
-On the left side you can see all products and ingredients. Each section is sorted by type (roughly: power, weird stuff, items, then fluids), then by rate. If rates are very small they might use minutes (`/m`) or hours (`/h`).
+On the left side you can see all products and ingredients. Each section is sorted by type (roughly: power, weird stuff, items, then fluids), then by rate.
 On the right side you can see all selected buildings, one line per "identical" building.
 
 ![](basic-rates.png)
 
-Factorio 2.0 already shows the production rates of a single machine, but if you are interested in more than 1 building you have to do some math in your head, and if you're still waiting for bots to finish building you're out of luck completely.
+Factorio already shows the production rates of a single machine, but if you are interested in more than 1 building you have to do some math in your head, and even though module requests and ghost beacons are respected in 2.1 there are still some scenarios that don't show the final numbers.
 
 ![](basic-vanilla.png)
 
-To add to (or remove from) your selected buildings, hold `Shift` and click-drag using the left (or right) mouse button.
+The main toolbar hosts some very important buttons. Left-click the first icon to navigate back one step, or right-click for navigating all the way back to the overview. The undo/redo buttons interact with any changes you make to the selection or settings. You can give a name to the sheet if you want to keep it for longer.
 
-Contrary to other mods, PRCE keeps track of the buildings themselves. This means you can't increase building count by adding the same building multiple times. However, you can copy-paste and select those ghost buildings.
+![](basic-rename.png)
+
+The library gives you access to all your named sheets as well as the last 5 unnamed sheets. The first click gives you a preview, the second click opens the sheet. The time you can see next to each sheet is the playtime of the last change.
+
+![](basic-library.png)
+
+ Configure how you want to see item/fluid rates using the dropdown. `Automatic` displays rates per second `/s` by default, with a fallback to minutes (`/m`) or hours (`/h`) for small numbers.
+
+![](basic-timescale.png)
+
+To add to (or remove from) your selected buildings, click-drag using the left (or right) mouse button. When holding shift you can increase (or decrease) how often the selected buildings are counted. By holding control+shift you start a new sheet from scratch instead of modifying your current sheet.
+
+Selecting the tool while it is already active opens the window with the last sheet.
+
+Multi-selecting buildings using shift is just one way of many. You can also build ghosts and select those (good to get a feeling for the space requirements) or ignore building counts completely (explained later).
 
 ![](basic-ghosts.png)
 
-Keeping track of the buildings allows you to make small changes (manually or via undo/redo) and then update everything by `Shift`-selecting an empty area. This is especially useful when selecting buildings from different parts of your base. As an example, here I have upgraded all 6 buildings and then updated PRCE by `Shift`-selecting nothing.
+PRCE keeps track of the buildings, which allows you to make small changes (manually or via undo/redo) and then update everything by reopening the window. As an example, here I have upgraded all 6 buildings and then updated PRCE.
+
+The selected buildings are only evaluated when the window opens or the selection changes. This keeps the navigation smooth when doing other changes.
 
 ![](basic-upgrade.png)
 
@@ -29,19 +45,25 @@ Everything gets a lot more interesting with more than just one building type. In
 
 ![](basic-intermediates.png)
 
-Let's add some modules into the mix! Suddenly the ratio isn't perfect anymore. The right side tells you that there are 3 buildings for copper cable and 2 buildings for electronic circuits, but of the former only 2.78 are actually running (on average). They produce 8.1/s copper cable which is exactly the amount you need for the electronic circuits. If the used building count is white there is still headroom left, if red all the buildings are used - not necessarily a bad thing.
+Let's add some modules into the mix! Suddenly the ratio isn't perfect anymore. The right side tells you that there are 3 buildings for copper cable and 2 buildings for electronic circuits, but of the former only 2.78 are actually running (on average). They produce 8.1/s copper cable which is exactly the amount you need for the electronic circuits. If the building count is white there is still headroom left, if orange all the buildings are used - not necessarily a bad thing.
 
 ![](basic-balanced.png)
 
-By default, intermediates are automatically balanced (icon is red), but it's possible to not balance (icon is white). Click the icon to change between the two modes. Even if an intermediate is not forced to be balanced it might still be balanced because the rates turned out that way.
+By default, intermediates are automatically balanced (lock icon is locked), but it's possible to not balance (lock icon is unlocked). Right-click the icon to change between the two modes. Even if an intermediate is not forced to be balanced it might still be balanced because the rates turned out that way.
 
-Here the copper cables are unbalanced and PRCE tells you that 8.1/s are used internally and another 0.65/s can be exported. These are the numbers that most other mods calculate, but with no way to switch to balanced intermediates.
+Here the copper cables are unbalanced and PRCE tells you that 8.1/s are used internally and another 0.65/s can be exported. These are the numbers that most other mods calculate, but with no way to switch to balanced intermediates. The belts just exist to showcase a scenario where this makes sense.
 
 ![](basic-override.png)
 
-Let's have a closer look at the right side of the window. Every row shows the effective building count (red for 100% utilization), the used recipe, the used building (and the number of buildings), the used modules (and their number per building), and the used beacons with modules (per beacon). If buildings are not exactly the same they go into two different rows. All of these buildings produce copper cables, but they are all different.
+Let's have a closer look at the right side of the window. Every row shows the effective building count, the used recipe, the used building, the number of buildings (in orange for 100% utilization), the used fuel (if configured) the used modules (and their number per building), and the used beacons with modules (per beacon). Beacons without a count mean 1 beacon, modules without a count mean the full building/beacon.
+
+If buildings are not exactly the same they go into two different rows. All of these buildings produce copper cables, but they are all different. Some similar buildings might be automatically grouped, you can expand those to get the full view.
 
 ![](basic-configurations.png)
+
+If you don't know how many buildings you need you can assume an infinite number by right-clicking the building icon. This should be simpler than increasing the number by shift-selecting multiple times or a massive amount of ghosts. In this example all building counts except for the transport belts are ignored (number shown in grey).
+
+![](basic-building-count.png)
 
 In vanilla factorio the assembling machines are the most important type of building, with furnaces being a close second. Especially in early game you are building furnace stacks to smelt your ores into plates.
 
@@ -56,17 +78,19 @@ PRCE does not analyze belt throughput and connectivity, it is "only" determining
 
 For example, 8 of the 10 mining drills are not connected, and PRCE still shows the ratio as if all stone from mining drills will reach the stone furnaces. You still have to design a proper build, with full connectivity and enough throughput on belts/inserters. PRCE is a rate calculator, and the item detection exists to help with furnace ghosts.
 
-This system isn't perfect yet, e.g. some building types are missing and spoilage is not respected. One well-placed inserter with a filter should be enough to select the recipe and calculate ratios.
+This system isn't perfect yet, e.g. spoilage is not respected, but in most cases it is working very well. If not, one well-placed inserter with a filter should be enough to select the recipe and calculate ratios.
 
 ![](basic-item-tracking.png)
 
-By the way, the above example shows some weird ingredients: burnable fuel and stone.
-
-The burnable fuel is the fuel category accepted by the stone furnace. If you want to use coal you can set a filter on the fuel inventory. There is no item detection for fuels to minimize the performance-heavy belt tracing.
+By the way, the above example shows burnable fuel as an ingredient. This is the fuel category accepted by the stone furnace. If you want to use coal you can set a filter on the fuel inventory. There is no item detection for fuels to minimize the performance-heavy belt tracing.
 
 ![](basic-fuel.png)
 
-The stone is not the __item__ stone, it is the __resource__ stone on the map. Productivity modules, mining productivity research and better mining drills with better (less) resource drain all influence this value. This is one mighty mining drill!
+Alternatively you can configure a burnable fuel by clicking its icon and adding any fuel you want (or multiple).
+
+![](configure-fuel.png)
+
+The environment section lists everything happening on the map, most importantly resource consumption and pollution. Productivity modules, mining productivity research and better mining drills with better (less) resource drain all influence resource consumption. This is one mighty mining drill!
 
 ![](basic-resource.png)
 
@@ -74,11 +98,15 @@ Sometimes the fluid (and their temperatures) are important. In those cases PRCE 
 
 ![](basic-steam.png)
 
-Two fluids of different temperature are different things. They don't interact and you won't get the results you want. Connecting the pipes does help. By the way, the water temperature does matter, but you normally don't create water with a temperature different from the default. Play overhaul mods and this might change. Connect the water pipes properly and that warning will also go away.
+Two fluids of different temperature are different things. They don't interact and you won't get the results you want. Steam turbines use a different default temperature.
+
+![](basic-no-pipe-tracking.png)
+
+Connecting the pipes does help. By the way, the water temperature does matter, but you normally don't create water with a temperature different from the default. Play overhaul mods and this might change. Connect the water pipes properly and that warning will also go away.
 
 ![](basic-pipe-tracking.png)
 
-Many buildings "just work". For example, here is my very first spaceship I built and the rates in PRCE - just one selection, nothing more.
+When it comes to Space Age, many buildings "just work". For example, here is my very first spaceship I built and the rates in PRCE - just one selection, nothing more.
 
 ![](basic-space.png)
 
@@ -86,8 +114,12 @@ A few notes about that:
 - Electricity is not linked by default. If you have power-producing buildings, you are often interested in the surplus of energy.
 - The calculated thrust is using the thrusters' efficiency profile.
 - Solar panels use the solar power of Nauvis orbit (where this ship is currently sitting).
-- I didn't filter the asteroid collectors, and so all 4 appear multiple times. (The same would happen if you feed a sushi belt into a recycler).
+- I didn't filter the asteroid collectors, and so all 4 appear multiple times. (The same would happen if you feed a sushi belt into a recycler). At least they are automatically grouped.
 - Rates of asteroid collectors are just a good guess, and they assume that there are always asteroid chunks to grab. Definitely build more than what PRCE thinks is a perfect ratio.
+
+You can even select buildings from multiple surfaces. If you do so, PRCE keeps them separate and you can export products to different surfaces. Exporting from a platform is free, exporting from a planet costs rocket lauches (which are "produced" by rocket silos). To simplify things (and because 2.1 added mixed rockets) the rocket launches assume zero waste.
+
+![](basic-multi-surface.png)
 
 ## Under The Hood
 
@@ -123,7 +155,6 @@ This is a quite involved step, and it covers a lot of edge cases (probably not a
 Not covered right now are:
 - Spoilage
 - Items sent to orbit in rocket silo
-- Many other building types, so far I mostly started with assembling machines and furnaces
 - Detection of item fuels (for performance reasons and because there are fuel inventory filters)
 
 ### Configurations
