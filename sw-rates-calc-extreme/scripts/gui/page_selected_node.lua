@@ -1065,7 +1065,7 @@ page.right_panel.define_content = function(data, page)
 
     local id = location .. "/" .. api.node.get_id(node)
     local sheet_node = sheet.nodes[id]
-    local is_forced_balanced = sheet_node.min == 0 and sheet_node.max == 0
+    local is_forced_balanced = sheet_node and sheet_node.min == 0 and sheet_node.max == 0
 
     ---@type GuiElemDef[]
     local children = {}
